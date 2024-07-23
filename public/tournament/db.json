@@ -1,0 +1,2087 @@
+{
+  "users": [
+    {
+      "username": "test",
+      "message": "test"
+    }
+  ],
+  "tournaments": [
+    {
+      "admin": [
+        "608461964578127883",
+        "1123359473839394886"
+      ],
+      "receiptUsers": [
+        {
+          "id": "268487608680579072",
+          "status": false
+        },
+        {
+          "id": "266763549785718784",
+          "status": true
+        },
+        {
+          "id": "291341745529028608",
+          "status": false
+        },
+        {
+          "id": "166388388121935872",
+          "status": true
+        },
+        {
+          "id": "302993232516612106",
+          "status": false
+        },
+        {
+          "id": "150096030719803392",
+          "status": false
+        },
+        {
+          "id": "218136128375619585",
+          "status": true
+        },
+        {
+          "id": "1130692315615346859",
+          "status": true
+        },
+        {
+          "id": "165663829135458305",
+          "status": false
+        },
+        {
+          "id": "152986614140764160",
+          "status": true
+        },
+        {
+          "id": "349638312669085696",
+          "status": true
+        },
+        {
+          "id": "719687986274631741",
+          "status": true
+        },
+        {
+          "id": "119985170857066499",
+          "status": false
+        },
+        {
+          "id": "240590628482842625",
+          "status": true
+        },
+        {
+          "id": "206514649947045889",
+          "status": false
+        },
+        {
+          "id": "221772142709047296",
+          "status": true
+        },
+        {
+          "id": "206999008483213312",
+          "status": false
+        },
+        {
+          "id": "714517801490186241",
+          "status": false
+        },
+        {
+          "id": "586187175356530689",
+          "status": true
+        },
+        {
+          "id": "871537723075330058",
+          "status": false
+        },
+        {
+          "id": "187273092425449474",
+          "status": true
+        },
+        {
+          "id": "236071760053665792",
+          "status": false
+        },
+        {
+          "id": "110406215426674688",
+          "status": false
+        },
+        {
+          "id": "418525306794803220",
+          "status": false
+        },
+        {
+          "id": "366988267943362560",
+          "status": false
+        },
+        {
+          "id": "723217216211910716",
+          "status": false
+        },
+        {
+          "id": "529114546397511691",
+          "status": false
+        },
+        {
+          "id": "344956222296031252",
+          "status": true
+        },
+        {
+          "id": "297491890528583681",
+          "status": false
+        },
+        {
+          "id": "608461964578127883",
+          "status": false
+        },
+        {
+          "id": "135503460438245388",
+          "status": false
+        },
+        {
+          "id": "197134533127176192",
+          "status": false
+        },
+        {
+          "id": "191213137913970688",
+          "status": false
+        },
+        {
+          "id": "495199932668706816",
+          "status": true
+        },
+        {
+          "id": "665735084975980564",
+          "status": false
+        },
+        {
+          "id": "634701056181272584",
+          "status": true
+        },
+        {
+          "id": "583655432296595457",
+          "status": true
+        },
+        {
+          "id": "158737482983145472",
+          "status": true
+        }
+      ],
+      "currentTournament": "Best VGM List Cameo Contest",
+      "Best VGM List Cameo Contest": {
+        "startingParticipantCount": 32,
+        "nextWinnerInNextRound": 48,
+        "nextLoserInNextRound": 32,
+        "matchNumber": 2,
+        "round": 1,
+        "currentBracket": "winnersBracket",
+        "roundsPerTurn": 2,
+        "matches": [
+          {
+            "braket": "winnersBracket",
+            "round": 1,
+            "match": 1,
+            "progress": "in-progress",
+            "entrant1": {
+              "name": "Rush Hour",
+              "title": "A Hat In Time",
+              "link": "https://youtu.be/JpZca8I2QEQ",
+              "voters": [
+                "266763549785718784",
+                "291341745529028608",
+                "152986614140764160",
+                "349638312669085696",
+                "719687986274631741",
+                "240590628482842625",
+                "206514649947045889",
+                "221772142709047296",
+                "206999008483213312",
+                "714517801490186241",
+                "586187175356530689",
+                "608461964578127883",
+                "871537723075330058",
+                "187273092425449474",
+                "236071760053665792",
+                "418525306794803220",
+                "366988267943362560",
+                "88050289315184640",
+                "529114546397511691",
+                "297491890528583681",
+                "135503460438245388",
+                "197134533127176192",
+                "191213137913970688",
+                "495199932668706816",
+                "634701056181272584",
+                "268487608680579072",
+                "158737482983145472"
+              ],
+              "points": 27
+            },
+            "entrant2": {
+              "name": "What Am I Fighting For",
+              "title": "Girls' Frontline",
+              "link": "https://www.youtube.com/watch?v=s7XiNTrm0G0",
+              "voters": [
+                "166388388121935872",
+                "302993232516612106",
+                "150096030719803392",
+                "218136128375619585",
+                "1130692315615346859",
+                "119985170857066499",
+                "110406215426674688",
+                "723217216211910716",
+                "344956222296031252",
+                "665735084975980564",
+                "583655432296595457"
+              ],
+              "points": 11
+            }
+          },
+          {
+            "braket": "winnersBracket",
+            "round": 1,
+            "match": 2,
+            "progress": "in-progress",
+            "entrant1": {
+              "name": "Burninating the Jumpers",
+              "title": "Hive Jump",
+              "link": "https://youtu.be/LvBle76xuvQ",
+              "voters": [
+                "291341745529028608",
+                "166388388121935872",
+                "302993232516612106",
+                "150096030719803392",
+                "165663829135458305",
+                "152986614140764160",
+                "206514649947045889",
+                "236071760053665792",
+                "110406215426674688",
+                "418525306794803220",
+                "366988267943362560",
+                "135503460438245388",
+                "495199932668706816",
+                "634701056181272584",
+                "268487608680579072"
+              ],
+              "points": 15
+            },
+            "entrant2": {
+              "name": "Plizzanet",
+              "title": "Yo! Noid 2",
+              "link": "https://youtu.be/0qjJiokWNFY",
+              "voters": [
+                "218136128375619585",
+                "1130692315615346859",
+                "871537723075330058",
+                "719687986274631741",
+                "119985170857066499",
+                "349638312669085696",
+                "240590628482842625",
+                "221772142709047296",
+                "714517801490186241",
+                "206999008483213312",
+                "586187175356530689",
+                "187273092425449474",
+                "88050289315184640",
+                "723217216211910716",
+                "344956222296031252",
+                "529114546397511691",
+                "297491890528583681",
+                "608461964578127883",
+                "197134533127176192",
+                "191213137913970688",
+                "665735084975980564",
+                "583655432296595457",
+                "158737482983145472"
+              ],
+              "points": 23
+            }
+          }
+        ],
+        "winnersBracket": {
+          "1": [
+            {
+              "name": "Rush Hour",
+              "title": "A Hat In Time",
+              "link": "https://youtu.be/JpZca8I2QEQ",
+              "match": 1
+            },
+            {
+              "name": "What Am I Fighting For",
+              "title": "Girls' Frontline",
+              "link": "https://www.youtube.com/watch?v=s7XiNTrm0G0",
+              "match": 1
+            },
+            {
+              "name": "Burninating the Jumpers",
+              "title": "Hive Jump",
+              "link": "https://youtu.be/LvBle76xuvQ",
+              "match": 2
+            },
+            {
+              "name": "Plizzanet",
+              "title": "Yo! Noid 2",
+              "link": "https://youtu.be/0qjJiokWNFY",
+              "match": 2
+            },
+            {
+              "name": "Pac Twin Attack (5 Minutes)",
+              "title": "Pac Man Championship Edition 2 Plus",
+              "link": "https://youtu.be/apWzu6lwgEc",
+              "match": 3
+            },
+            {
+              "name": "Citadel Agartha",
+              "title": "Rogue Legacy 2",
+              "link": "https://youtu.be/X77awNVp1IE",
+              "match": 3
+            },
+            {
+              "name": "Trainer Battle",
+              "title": "Pokemon FR/LG",
+              "link": "https://youtu.be/M3o5-Ny4eU0",
+              "match": 4
+            },
+            {
+              "name": "Pledge",
+              "title": "Chaos Legion",
+              "link": "https://www.youtube.com/watch?v=rU-Yht4tr48",
+              "match": 4
+            },
+            {
+              "name": "A La Idavay",
+              "title": "Cook Serve Delicious",
+              "link": "https://youtu.be/aesfIE76h_4",
+              "match": 5
+            },
+            {
+              "name": "Zero",
+              "title": "Ace Combat Zero",
+              "link": "https://youtu.be/FlSLCnbXMIE",
+              "match": 5
+            },
+            {
+              "name": "Mirror Temple (Mirror Magic Mix)",
+              "title": "Celeste",
+              "link": "https://youtu.be/iKnwVvXkWq0",
+              "match": 6
+            },
+            {
+              "name": "Boss",
+              "title": "Sonic the Hedgehog 2",
+              "link": "https://www.youtube.com/watch?v=S3JZKyaucK4",
+              "match": 6
+            },
+            {
+              "name": "True Love Makin'",
+              "title": "Capcom vs SNK 2",
+              "link": "https://youtu.be/2-_unC-g_rY",
+              "match": 7
+            },
+            {
+              "name": "Beautiful Dead",
+              "title": "Danganronpa",
+              "link": "https://youtu.be/vOnwjBpR1Sc",
+              "match": 7
+            },
+            {
+              "name": "Hidden by Night (Lich Yard)",
+              "title": "Shovel Knight~ Specter of Torment",
+              "link": "https://youtu.be/70-tkPCkPTk",
+              "match": 8
+            },
+            {
+              "name": "Octal Game",
+              "title": "9 Hours, 9 Persons, 9 Doors (Remastered)",
+              "link": "https://youtu.be/grQ2iE9LxFY",
+              "match": 8
+            },
+            {
+              "name": "Garage",
+              "title": "KartRider Drift",
+              "link": "https://youtu.be/oHcLKfmpLqQ",
+              "match": 9
+            },
+            {
+              "name": "Medievil",
+              "title": "CroMag Rally",
+              "link": "https://www.youtube.com/watch?v=JbpABzYYNYs",
+              "match": 9
+            },
+            {
+              "name": "Crystal Caves 2",
+              "title": "Ms. Pac Man Maze Madness",
+              "link": "https://www.youtube.com/watch?v=WapeWnX-FLI&ab_channel=NeoDark93",
+              "match": 10
+            },
+            {
+              "name": "See You Later",
+              "title": "Bumpy Trot",
+              "link": "https://www.youtube.com/watch?v=OxmVUSLoAuM",
+              "match": 10
+            },
+            {
+              "name": "Class::CIEL_N_PROTECTA;",
+              "title": "Ar nosurge: Ode to an Unborn Star",
+              "link": "https://youtu.be/TxO_N4Xy1Ik",
+              "match": 11
+            },
+            {
+              "name": "Doggy Style (menu theme)",
+              "title": "Arkanoid Win32",
+              "link": "https://www.youtube.com/watch?v=f5uaUkLDdh4",
+              "match": 11
+            },
+            {
+              "name": "My Actual Code ~ GiGi's song",
+              "title": "There is No Game: Wrong Dimension",
+              "link": "https://youtu.be/qDN7Z6d1qQA",
+              "match": 12
+            },
+            {
+              "name": "Gestation",
+              "title": "Cave Story",
+              "link": "https://youtu.be/Q2mdnKVlWMI",
+              "match": 12
+            },
+            {
+              "name": "Cityscape ~ The Sun Rises for Ones Who Smile",
+              "title": "Etrian Odyssey 5",
+              "link": "https://youtu.be/IqyHeMELZkE",
+              "match": 13
+            },
+            {
+              "name": "An Endless Desert",
+              "title": "Alto's Odyssey",
+              "link": "https://www.youtube.com/watch?v=Ia4CTx-Zi7o",
+              "match": 13
+            },
+            {
+              "name": "Ruin of Sadness",
+              "title": "Klonoa 2~ Hyuponia",
+              "link": "https://youtu.be/cfGRZPbkdUY",
+              "match": 14
+            },
+            {
+              "name": "Ayumi's Theme",
+              "title": "Famicom Detective Club Part II: The Girl Who Stands Behind (SNES)",
+              "link": "https://www.youtube.com/watch?v=CRVyHuVkV3s",
+              "match": 14
+            },
+            {
+              "name": "Lonely Rolling No More",
+              "title": "Katamari Forever",
+              "link": "https://www.youtube.com/watch?v=9lx7w1dNs5Y",
+              "match": 15
+            },
+            {
+              "name": "DOGMA",
+              "title": "Pop'n Music Kaimei Riddles",
+              "link": "https://www.youtube.com/watch?v=Q28vYb8bL7g",
+              "match": 15
+            },
+            {
+              "name": "Welcome to China",
+              "title": "Dynasty Warriors 6",
+              "link": "https://www.youtube.com/watch?v=LU-h0GP1Foc",
+              "match": 16
+            },
+            {
+              "name": "Wastelands",
+              "title": "The Dog Island",
+              "link": "https://www.youtube.com/watch?v=_KrhprH18Y8",
+              "match": 16
+            },
+            {
+              "name": "Desert Area ~ Save the Saboten Princess",
+              "title": "LaTale Online",
+              "link": "https://youtu.be/r-zosmYKmys",
+              "match": 17
+            },
+            {
+              "name": "The Lagoon",
+              "title": "Fury of the Furries",
+              "link": "https://www.youtube.com/watch?v=KFIapVMSk7c",
+              "match": 17
+            },
+            {
+              "name": "Johnathan Taylor Thomas",
+              "title": "Barkley, Shut up adn Jam: Gaiden",
+              "link": "https://m.youtube.com/watch?v=h8Yp3Pdo4ho",
+              "match": 18
+            },
+            {
+              "name": "Level 0",
+              "title": "Tetris (CDi)",
+              "link": "https://www.youtube.com/watch?v=f_SwDWKf-78",
+              "match": 18
+            },
+            {
+              "name": "Four Unrestful Flowers",
+              "title": "Like A Dragon: Ishin!",
+              "link": "https://www.youtube.com/watch?v=jxceVmViv-8",
+              "match": 19
+            },
+            {
+              "name": "Inevitable Struggle",
+              "title": "Trails from Zero",
+              "link": "https://youtu.be/6XUzvISRwUQ",
+              "match": 19
+            },
+            {
+              "name": "We Ain't Came to Lose",
+              "title": "TMNT Shredder's Revenge",
+              "link": "https://youtu.be/4AeHzp11cwU",
+              "match": 20
+            },
+            {
+              "name": "Lynne ~A Targeted Redhead",
+              "title": "Ghost Trick",
+              "link": "https://youtu.be/xkQuX8KyFcU",
+              "match": 20
+            },
+            {
+              "name": "Stars",
+              "title": "Tatsunoko vs. Captcom: Ultimate All",
+              "link": "https://youtu.be/bp1ZkMq26A8",
+              "match": 21
+            },
+            {
+              "name": "Song of Mothers",
+              "title": "Kabaret",
+              "link": "https://www.youtube.com/watch?v=HTrW0XYY5yQ&ab_channel=sambasundaindonesia",
+              "match": 21
+            },
+            {
+              "name": "Lunar Bass",
+              "title": "Spark the Electric Jester",
+              "link": "https://youtu.be/1zgEAV4C2Us",
+              "match": 22
+            },
+            {
+              "name": "The Eternal Steam Engine",
+              "title": "Touhou 12.3~ Unthinkable Natural Law",
+              "link": "https://youtu.be/75FqhZYdjGA",
+              "match": 22
+            },
+            {
+              "name": "Zero Stage 2",
+              "title": "Mega Man X5",
+              "link": "https://youtu.be/QJ1pFSf3Be8",
+              "match": 23
+            },
+            {
+              "name": "Yellow River ~ Yangtze River",
+              "title": "Romance of the Three Kingdoms",
+              "link": "https://www.youtube.com/watch?v=jhSRjCSrqDw",
+              "match": 23
+            },
+            {
+              "name": "Hanging on to Something",
+              "title": "Harmony~ The Fall of Reverie",
+              "link": "https://youtu.be/VvDpCL7gO18",
+              "match": 24
+            },
+            {
+              "name": "The Concept of Love",
+              "title": "Jet Set Radio Future",
+              "link": "https://www.youtube.com/watch?v=HNy_retSME0",
+              "match": 24
+            },
+            {
+              "name": "Hamabe no Fuukei",
+              "title": "Tokyo Necro",
+              "link": "https://youtu.be/4CiZUjfzRIs",
+              "match": 25
+            },
+            {
+              "name": "Broken Boy",
+              "title": "Hacknet",
+              "link": "https://www.youtube.com/watch?v=-rIfNR2DDt4",
+              "match": 25
+            },
+            {
+              "name": "Ktuka Ruins ~ Wind from the Middle East",
+              "title": "LaTale Online",
+              "link": "https://youtu.be/yJbg0h8329E",
+              "match": 26
+            },
+            {
+              "name": "Telescopic",
+              "title": "There Came an Echo",
+              "link": "https://www.youtube.com/watch?v=XzUGmQsjH6M",
+              "match": 26
+            },
+            {
+              "name": "Spiral of Erebos",
+              "title": "Trails of Cold Steel III",
+              "link": "https://www.youtube.com/watch?v=wHvnwxAg5ww",
+              "match": 27
+            },
+            {
+              "name": "Race 2",
+              "title": "Bunny Hill",
+              "link": "https://youtu.be/F6f4vDXxnpA",
+              "match": 27
+            },
+            {
+              "name": "Lightning Dance",
+              "title": "Wangan Midnight Maximum Tune 5",
+              "link": "https://www.youtube.com/watch?v=K9jQCrrU1JI",
+              "match": 28
+            },
+            {
+              "name": "In",
+              "title": "Monty on the Run",
+              "link": "https://www.youtube.com/watch?v=YIA_0cvS2gQ",
+              "match": 28
+            },
+            {
+              "name": "Yesterday's Enemy is Today's Ingredient",
+              "title": "Atelier Ayesha: The Alchemist of Dusk",
+              "link": "https://www.youtube.com/watch?v=tcu184PSShc",
+              "match": 29
+            },
+            {
+              "name": "Flora and Fauna",
+              "title": "Pikmin 2",
+              "link": "https://youtu.be/QJQNLpzJJDA",
+              "match": 29
+            },
+            {
+              "name": "Ekoroshia",
+              "title": "Super Danganronpa 2",
+              "link": "https://www.youtube.com/watch?v=8Rr4qHfKR08",
+              "match": 30
+            },
+            {
+              "name": "Theme of Madril",
+              "title": "Okage~ Shadow King",
+              "link": "https://www.youtube.com/watch?v=NA8mZ7M58yc&ab_channel=poposhitas",
+              "match": 30
+            },
+            {
+              "name": "The Unsung War",
+              "title": "Ace Combat 5",
+              "link": "https://www.youtube.com/watch?v=mjY6awCr2_c",
+              "match": 31
+            },
+            {
+              "name": "Rustling Throb ~Cloche~",
+              "title": "Ar Tonelico II: Melody of Metafalica",
+              "link": "https://www.youtube.com/watch?v=jndRUvxUXxA",
+              "match": 31
+            },
+            {
+              "name": "Starry Night (feat. SAK.)",
+              "title": "Wangan Midnight Maximum Tune 6",
+              "link": "https://www.youtube.com/watch?v=9HwfayByQnY",
+              "match": 32
+            },
+            {
+              "name": "The First Thing",
+              "title": "Mr. Bones",
+              "link": "https://www.youtube.com/watch?v=AWEomTuwnts",
+              "match": 32
+            }
+          ]
+        },
+        "losersBracket": {},
+        "eliminated": [],
+        "final": []
+      }
+    }
+  ],
+  "bestvgm2022awards": [
+    {
+      "round": 1,
+      "isCurrentRound": true,
+      "entries": [
+        {
+          "name": "Freedom Planet 2 - Dragon Valley (Stage 1)",
+          "link": "https://youtu.be/49mVLN8OJSo",
+          "battle": 1,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Pokémon Scarlet & Violet - Team Star Boss Battle",
+          "link": "https://youtu.be/uRbDCEJ23WI",
+          "battle": 1,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "A Dance of Fire and Ice: Neo Cosmos - Divine Intervention",
+          "link": "https://www.youtube.com/watch?v=-AOW64B2bnY",
+          "battle": 1,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Triangle Strategy - Combat -Destiny",
+          "link": "https://youtu.be/XJwWN4wle_Q",
+          "battle": 2,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "TMNT Shredder’s Revenge - Panic in the Sky!",
+          "link": "https://youtu.be/EmJdPSo0hfQ",
+          "battle": 2,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Jellycar Worlds - Thinking Ahead",
+          "link": "https://youtu.be/JQUAkJjX88o",
+          "battle": 2,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sonic Frontiers - I'm With You",
+          "link": "https://youtu.be/veCfjt4MYxU",
+          "battle": 3,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Amazing Bomberman - Reaching to the Top",
+          "link": "https://youtu.be/24HLkepZ95c",
+          "battle": 3,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "The King of Fighters XV - How about a Trip to PAOPAO CAFE?",
+          "link": "https://youtu.be/wgWUHhG5AXU",
+          "battle": 3,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sephonie - Poured sunrise, hearts revealed",
+          "link": "https://youtu.be/F1kkeoSRy0s",
+          "battle": 4,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - Where We Belong",
+          "link": "https://youtu.be/3OSlUabG_e0",
+          "battle": 4,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Harvestella - Our Souls Touch",
+          "link": "https://youtu.be/OTa4ixCbm_k",
+          "battle": 4,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Splatoon 3 - Fins in the Air",
+          "link": "https://youtu.be/LOw5-bNoutg",
+          "battle": 5,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "AI: The Somnium Files -nirvanA Initiative- - Novel Ingres",
+          "link": "https://youtu.be/jbwteRDJ2hM",
+          "battle": 5,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Phantasy Star Online 2: New Genesis - Kvaris Ancient Boss Fight",
+          "link": "https://www.youtube.com/watch?v=bBSnkOHJrxk",
+          "battle": 5,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "DEEMO II - Un Deux Trois",
+          "link": "https://youtu.be/qNxbCr0DmDw",
+          "battle": 6,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Bayonetta 3 - GH()ST",
+          "link": "https://youtu.be/BP4RwvfXJus",
+          "battle": 6,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Arknights - Awaken",
+          "link": "https://www.youtube.com/watch?v=pWU3RKBSGx8",
+          "battle": 6,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Kirby and the Forgotten Land - Roar of Dedede",
+          "link": "https://youtu.be/XqHh5oYYaLM",
+          "battle": 7,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Dr. Kobushi's Labyrinthine Laboratory - Section consulaire de l'ambassade",
+          "link": "https://www.youtube.com/watch?v=AUiOtRYlce4",
+          "battle": 7,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sonic Frontiers - Ares Island: 2nd Mvt. ",
+          "link": "https://www.youtube.com/watch?v=8m38VtEZtKo",
+          "battle": 7,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Cuphead: The Delicious Last Course - Baking the Wondertart",
+          "link": "https://www.youtube.com/watch?v=6wdxamIMJ-Y",
+          "battle": 8,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Cult of the Lamb - Work and Worship",
+          "link": "https://youtube.com/watch?v=CsxCKkrWc6M",
+          "battle": 8,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Super Mega Zero - Fortitude",
+          "link": "https://www.youtube.com/watch?v=g3u8lOm9Bcs",
+          "battle": 8,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "FAR: Changing Tides - Rough Sea",
+          "link": "https://youtu.be/-6Qq6bqVIQk",
+          "battle": 9,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Genshin Impact - No Turning Back",
+          "link": "https://youtu.be/LIOGWrZLqLo",
+          "battle": 9,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Splatoon 3 - Cryogenic Hopetown",
+          "link": "https://www.youtube.com/watch?v=aFiLMG_wS0Q",
+          "battle": 9,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - The Weight of Life",
+          "link": "https://www.youtube.com/watch?v=mC5s9KcaHHY",
+          "battle": 10,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Risk of Rain 2: Survivors of the Void - The Face of the Deep",
+          "link": "https://youtu.be/103F1YbbSv0",
+          "battle": 10,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Final Fantasy XIV: Endwalker - Scream",
+          "link": "https://youtu.be/I4O5CVvwgFI",
+          "battle": 10,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Punishing: Gray Raven - Under Dimension",
+          "link": "https://www.youtube.com/watch?v=fzlQmQ1Eesk",
+          "battle": 11,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Bear and Breakfast - Timber Crossing (Untitled Track 2)",
+          "link": "https://youtu.be/_n_r50mzn9M",
+          "battle": 11,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Mario + Rabbids Sparks of Hope - Ballad of Barrendale Mesa",
+          "link": "https://youtu.be/eSTEXa4NkKw",
+          "battle": 11,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Kirby and the Forgotten Land - The Battle of Blizzard Bridge",
+          "link": "https://youtu.be/Ay8QAUDmyyo",
+          "battle": 12,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "League of Legends - Nilah, the Joy Unbound",
+          "link": "https://www.youtube.com/watch?v=xiCXFXIFqGA",
+          "battle": 12,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Bayonetta 3 - Moonlight Serenade (Eternal Climax Mix)",
+          "link": "https://www.youtube.com/watch?v=J7IcAFBU59g",
+          "battle": 12,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Live A Live HD-2D Remake - MEGALOMANIA",
+          "link": "https://youtu.be/e_MKOlfXKmY",
+          "battle": 13,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Splatoon 3 - Till Depth Do Us Part",
+          "link": "https://youtu.be/lw1XwyW39uk",
+          "battle": 13,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sonic Frontiers - Undefeatable",
+          "link": "https://www.youtube.com/watch?v=u_FRDqHT5y0",
+          "battle": 13,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Neon White - Sin to Win!",
+          "link": "https://youtu.be/X5I64Oobpfc",
+          "battle": 14,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Lunistice - Forest (Melancholy)",
+          "link": "https://youtu.be/wZ9XoO6G2Uk",
+          "battle": 14,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "beatmania IIDX 29 CastHour - Nocturnal 2097",
+          "link": "https://www.youtube.com/watch?v=sO51eCkUAQ4",
+          "battle": 14,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Genshin Impact - Before the Light Fades",
+          "link": "https://youtu.be/Kg6FZVnfdWY",
+          "battle": 15,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - Chain Attack!",
+          "link": "https://www.youtube.com/watch?v=pRoklPq43Xo",
+          "battle": 15,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Overwatch 2 - Esperança",
+          "link": "https://www.youtube.com/watch?v=oSt7T1FkQcI",
+          "battle": 15,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Pokémon Scarlet & Violet - Battle! (Tera Raid)",
+          "link": "https://www.youtube.com/watch?v=Gm7XpLj42GI",
+          "battle": 16,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Neon White - Hand of God",
+          "link": "https://www.youtube.com/watch?v=SpkWA2r7TDU",
+          "battle": 16,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Guilty Gear -Strive- - Like a Weed, Naturally, As a Matter of Course",
+          "link": "https://www.youtube.com/watch?v=uMFucoFEUoA",
+          "battle": 16,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "God of War Ragnarök - Raeb's Lament",
+          "link": "https://youtu.be/AXwUy2uoI_M",
+          "battle": 17,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Atelier Sophie 2 - On Sale Today",
+          "link": "https://www.youtube.com/watch?v=nJkjtK_Sybs",
+          "battle": 17,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Who's Lila? - Ascension",
+          "link": "https://www.youtube.com/watch?v=AiF46VcuqDg",
+          "battle": 17,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Kirby and the Forgotten Land - Two Planets Approach the Roche Limit",
+          "link": "https://youtu.be/Paw4n5xmqxQ",
+          "battle": 18,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "GITADORA FUZZ-UP - GLACIER EXPRESS",
+          "link": "https://www.youtube.com/watch?v=hNikqtaeKU8",
+          "battle": 18,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Shovel Knight Dig - Thermal Vent (Secret Fountain)",
+          "link": "https://youtu.be/3P1ztC-Vffw",
+          "battle": 18,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Phantasy Star Online 2: New Genesis - Song of Mourning ~ Eternal Wind",
+          "link": "https://www.youtube.com/watch?v=AE8-FVSMOQE",
+          "battle": 19,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Arknights - All Hail Savior!",
+          "link": "https://youtu.be/Y8x5KSy74Ck",
+          "battle": 19,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sonic Frontiers - One Way Dream",
+          "link": "https://youtu.be/1BdEngZU6Ns",
+          "battle": 19,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "TUNIC - Ocean Glaze",
+          "link": "https://youtu.be/ruyC7mwwxmE",
+          "battle": 20,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Alto's Adventure - The Spirit of the Mountain",
+          "link": "https://youtu.be/rW_0Niws2p0",
+          "battle": 20,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sonic Triple Trouble 16-Bit - Tidal Plant Zone Act 2",
+          "link": "https://youtu.be/MTpqx2O2emU",
+          "battle": 20,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Pokémon Scarlet & Violet - Wild Battle Theme (South Province)",
+          "link": "https://www.youtube.com/watch?v=NinMCQhDsto&t",
+          "battle": 21,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Shredders - For All of You",
+          "link": "https://www.youtube.com/watch?v=QRfgkfZX4DU",
+          "battle": 21,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Made in Abyss - Interference Device Battle Theme No.2",
+          "link": "https://www.youtube.com/watch?v=M3hypJ-tnOI",
+          "battle": 21,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Kirby and the Forgotten Land - Northeast Frost Street",
+          "link": "https://youtu.be/nlUx8_9gtvc",
+          "battle": 22,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Super Kiwi 64 - Desert",
+          "link": "https://www.youtube.com/watch?v=ttCIUHv-3o4",
+          "battle": 22,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Atelier Sophie 2 - Water Reflected in the Sky",
+          "link": "https://www.youtube.com/watch?v=CS6jv1yD1Mk",
+          "battle": 22,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "The Somnium Files: NirvanA Initiative - Secret Faith",
+          "link": "https://www.youtube.com/watch?v=SC0ZZ5dTBhs",
+          "battle": 23,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - Fort O'Virbus (Night)",
+          "link": "https://youtu.be/-EthinqXr-Q",
+          "battle": 23,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Spark the Electric Jester 3 - Utopia Shelter - In The Depths",
+          "link": "https://www.youtube.com/watch?v=M98kX2hhRr0",
+          "battle": 23,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sonic Frontiers - Break Through It All",
+          "link": "https://youtu.be/AzSIuBwPAKs",
+          "battle": 24,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "TMNT Shredder’s Revenge - A Dish Best Served Cold",
+          "link": "https://youtu.be/bVYQdsevdEU",
+          "battle": 24,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Arknights - Operation Dawnseeker",
+          "link": "https://www.youtube.com/watch?v=ADaCv6FXq8I",
+          "battle": 24,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "The King of Fighters XV - Liberty (Krohnen Team Theme)",
+          "link": "https://www.youtube.com/watch?v=q2gdgxsef6E",
+          "battle": 25,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "MUSYNX & MUSYN - Untrodden Morn",
+          "link": "https://www.youtube.com/watch?v=OrbyjwCcr8U",
+          "battle": 25,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Super Lesbian Animal RPG - t r a n s c e n d",
+          "link": "https://youtu.be/uapPwXDfpW4",
+          "battle": 25,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Risk of Rain 2: Survivors of the Void - Once in a Lullaby",
+          "link": "https://youtu.be/81QhAo3hLrM",
+          "battle": 26,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Guardian Tales - World 14 ~ Demonshire (Main)",
+          "link": "https://youtube.com/watch?v=G0mCwFINmFs",
+          "battle": 26,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Neon White - Glass Ocean",
+          "link": "https://youtu.be/f8Kjn9qw-rw",
+          "battle": 26,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Pokémon Scarlet & Violet - Battle! Zero Lab",
+          "link": "https://www.youtube.com/watch?v=PMVzCbx8atA",
+          "battle": 27,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Counter:Side - Wrong Color Bishop",
+          "link": "https://www.youtube.com/watch?v=gK7DoeDlsDA",
+          "battle": 27,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "beatmania IIDX 30 RESIDENT - Summerblue",
+          "link": "https://youtu.be/rxWmsXKfn0w",
+          "battle": 27,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "League of Legends - Everything Goes On",
+          "link": "https://youtu.be/8YWX3mRQZ88",
+          "battle": 28,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Chrono Cross: The Radical Dreamers Edition - Dreams of the Past, Memories of My Soul",
+          "link": "https://youtu.be/SZC3Nb9BwP0",
+          "battle": 28,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - A Step Away",
+          "link": "https://www.youtube.com/watch?v=Sia_qMLrl6k",
+          "battle": 28,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "TUNIC - Redwood Colonnade",
+          "link": "https://www.youtube.com/watch?v=GYQyo3CaIZ4",
+          "battle": 29,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Pokémon Scarlet & Violet - Area Zero",
+          "link": "https://youtu.be/FuMHCJ_fWJg",
+          "battle": 29,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Dwarf Fortress - Strike the Earth!",
+          "link": "https://youtu.be/Sp07rRgDQCw",
+          "battle": 29,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Final Fantasy XIV: Endwalker - In the Balance",
+          "link": "https://youtu.be/nih4x5hv89Q",
+          "battle": 30,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Bayonetta 3 - Whispers of Destiny",
+          "link": "https://www.youtube.com/watch?v=ZvFqN-y4Eak",
+          "battle": 30,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "The Cruel King and The Great Hero - Txilrcka",
+          "link": "https://youtu.be/firXMKKJJvc",
+          "battle": 30,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Soundodger 2 - Outta Dodge",
+          "link": "https://youtu.be/WbkwBZMS800",
+          "battle": 31,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Crystal Project - Heated Battle",
+          "link": "https://www.youtube.com/watch?v=HifT2aylVEE",
+          "battle": 31,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Live A Live HD-2D Remake - Heroic Struggle",
+          "link": "https://www.youtube.com/watch?v=y6V9-YiNNG8",
+          "battle": 31,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Rogue Legacy 2 - Immortal Cain",
+          "link": "https://youtu.be/YzYqAwdSYPY",
+          "battle": 32,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sonic Frontiers - Go Slap (Cyber Space 3-2)",
+          "link": "https://youtu.be/A1lNff2s3fA",
+          "battle": 32,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Fire Emblem Warriors: Three Hopes - Between Heaven and Earth (Inferno)",
+          "link": "https://www.youtube.com/watch?v=yeXdNjF8DMY",
+          "battle": 32,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Chained Echoes - Rohlan Fields",
+          "link": "https://youtu.be/iVRr02VqAh8",
+          "battle": 33,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Pokémon Scarlet & Violet - Battle! (Ruinous Pokémon)",
+          "link": "https://youtu.be/obv4FEupHVg",
+          "battle": 33,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Vampire Survivors - Forest Night Fever",
+          "link": "https://youtu.be/dxx6fvhf5Pc",
+          "battle": 33,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Triga - Dreams from Another World",
+          "link": "https://youtu.be/eiVXQo5f-ks",
+          "battle": 34,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Elden Ring - The Final Battle",
+          "link": "https://www.youtube.com/watch?v=mOyUNu9cKmM",
+          "battle": 34,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Pokémon Legends Arceus - Credits",
+          "link": "https://www.youtube.com/watch?v=P1L66NknKDw",
+          "battle": 34,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - Moebius Battle",
+          "link": "https://www.youtube.com/watch?v=EKsOyTB98As",
+          "battle": 35,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Yu-Gi-Oh! Master Duel - Complete Theme #2",
+          "link": "https://www.youtube.com/watch?v=KqA2i5VXcMo",
+          "battle": 35,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Horizon Forbidden West - In the Flood",
+          "link": "https://www.youtube.com/watch?v=9H8zNzSC5Cg",
+          "battle": 35,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Chained Echoes - Calling Upon Bravery",
+          "link": "https://youtu.be/MTtRzw19jdU",
+          "battle": 36,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Heaven Burns Red - Smoke That Obstructs the Path",
+          "link": "https://www.youtube.com/watch?v=nFQKKvhgzHU",
+          "battle": 36,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Live A Live HD-2D Remake - GIGALOMANIA",
+          "link": "https://www.youtube.com/watch?v=Gx4gNmSxs_0",
+          "battle": 36,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        }
+      ],
+      "votedToday": []
+    },
+    {
+      "round": 2,
+      "isCurrentRound": false,
+      "entries": [
+        {
+          "name": "Freedom Planet 2 - Dragon Valley (Stage 1)",
+          "link": "https://youtu.be/49mVLN8OJSo",
+          "battle": 1,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Triangle Strategy - Combat -Destiny",
+          "link": "https://youtu.be/XJwWN4wle_Q",
+          "battle": 1,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "The King of Fighters XV - How about a Trip to PAOPAO CAFE?",
+          "link": "https://youtu.be/wgWUHhG5AXU",
+          "battle": 1,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sephonie - Poured sunrise, hearts revealed",
+          "link": "https://youtu.be/F1kkeoSRy0s",
+          "battle": 2,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "AI: The Somnium Files -nirvanA Initiative- - Novel Ingres",
+          "link": "https://youtu.be/jbwteRDJ2hM",
+          "battle": 2,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "DEEMO II - Un Deux Trois",
+          "link": "https://youtu.be/qNxbCr0DmDw",
+          "battle": 2,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Dr. Kobushi's Labyrinthine Laboratory - Section consulaire de l'ambassade",
+          "link": "https://www.youtube.com/watch?v=AUiOtRYlce4",
+          "battle": 3,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Cuphead: The Delicious Last Course - Baking the Wondertart",
+          "link": "https://www.youtube.com/watch?v=6wdxamIMJ-Y",
+          "battle": 3,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Genshin Impact - No Turning Back",
+          "link": "https://youtu.be/LIOGWrZLqLo",
+          "battle": 3,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - The Weight of Life",
+          "link": "https://www.youtube.com/watch?v=mC5s9KcaHHY",
+          "battle": 4,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Mario + Rabbids Sparks of Hope - Ballad of Barrendale Mesa",
+          "link": "https://youtu.be/eSTEXa4NkKw",
+          "battle": 4,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Kirby and the Forgotten Land - The Battle of Blizzard Bridge",
+          "link": "https://youtu.be/Ay8QAUDmyyo",
+          "battle": 4,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Sonic Frontiers - Undefeatable",
+          "link": "https://www.youtube.com/watch?v=u_FRDqHT5y0",
+          "battle": 5,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "beatmania IIDX 29 CastHour - Nocturnal 2097",
+          "link": "https://www.youtube.com/watch?v=sO51eCkUAQ4",
+          "battle": 5,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - Chain Attack!",
+          "link": "https://www.youtube.com/watch?v=pRoklPq43Xo",
+          "battle": 5,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Guilty Gear -Strive- - Like a Weed, Naturally, As a Matter of Course",
+          "link": "https://www.youtube.com/watch?v=uMFucoFEUoA",
+          "battle": 6,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "God of War Ragnarök - Raeb's Lament",
+          "link": "https://youtu.be/AXwUy2uoI_M",
+          "battle": 6,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Shovel Knight Dig - Thermal Vent (Secret Fountain)",
+          "link": "https://www.youtube.com/watch?v=hNikqtaeKU8",
+          "battle": 6,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Phantasy Star Online 2: New Genesis - Song of Mourning ~ Eternal Wind",
+          "link": "https://www.youtube.com/watch?v=AE8-FVSMOQE",
+          "battle": 7,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Alto's Adventure - The Spirit of the Mountain",
+          "link": "https://youtu.be/rW_0Niws2p0",
+          "battle": 7,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Made in Abyss - Interference Device Battle Theme No.2",
+          "link": "https://www.youtube.com/watch?v=M3hypJ-tnOI",
+          "battle": 7,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Super Kiwi 64 - Desert",
+          "link": "https://www.youtube.com/watch?v=ttCIUHv-3o4",
+          "battle": 8,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - Fort O'Virbus (Night)",
+          "link": "https://youtu.be/-EthinqXr-Q",
+          "battle": 8,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Arknights - Operation Dawnseeker",
+          "link": "https://www.youtube.com/watch?v=ADaCv6FXq8I",
+          "battle": 8,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "MUSYNX & MUSYN - Untrodden Morn",
+          "link": "https://www.youtube.com/watch?v=OrbyjwCcr8U",
+          "battle": 9,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Neon White - Glass Ocean",
+          "link": "https://youtu.be/f8Kjn9qw-rw",
+          "battle": 9,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Pokémon Scarlet & Violet - Battle! Zero Lab",
+          "link": "https://www.youtube.com/watch?v=PMVzCbx8atA",
+          "battle": 9,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        },
+        {
+          "name": "Xenoblade Chronicles 3 - A Step Away",
+          "link": "https://www.youtube.com/watch?v=Sia_qMLrl6k",
+          "battle": 10,
+          "points": 0,
+          "hasTakenPlace": false,
+          "usersFirstPick": [],
+          "usersSecondPick": [],
+          "usersDidNotPlace": []
+        }
+      ],
+      "votedToday": []
+    },
+    {
+      "round": 3,
+      "isCurrentRound": false,
+      "entries": [],
+      "votedToday": []
+    },
+    {
+      "round": 4,
+      "isCurrentRound": false,
+      "entries": [],
+      "votedToday": []
+    },
+    {
+      "round": 5,
+      "isCurrentRound": false,
+      "entries": [],
+      "votedToday": []
+    }
+  ]
+}

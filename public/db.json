@@ -1,0 +1,15 @@
+{
+  "users": [
+    {
+      "username": "test",
+      "message": "test"
+    }
+  ],
+  "tournaments": [
+    {
+      "admin": ["608461964578127883", "1123359473839394886"],
+      "receiptUsers":[],
+      "currentTournament": "N/A"
+    }
+  ]
+}
