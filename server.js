@@ -1,7 +1,7 @@
 // server.js
 // where your node app starts
 
-//FFMPG imports fop package.json
+//FFMPG imports fop package.json (not using currently)
 
     //"fluent-ffmpeg": "^2.1.2",
     //"ffmpeg-static": "^5.2.0",
