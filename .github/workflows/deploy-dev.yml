@@ -23,32 +23,62 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: |
-            set -e
+            set -euo pipefail
 
-            echo "[1/6] Go to dev app dir"
-            cd /home/botuser/bots/dev || exit 1
+            APP_DIR="/home/botuser/bots/dev"
+            BRANCH="dev"
 
-            echo "[2/6] Ensure repo present on dev branch"
-            if [ ! -d .git ]; then
-              echo "Repo not found; cloning fresh..."
-              rm -rf /home/botuser/bots/dev
-              git clone https://github.com/Chaos-Zero/sd-dev-bot.git /home/botuser/bots/dev
-              cd /home/botuser/bots/dev
-            fi
-            git fetch --all --prune
-            git checkout dev || git checkout -b dev
-            git reset --hard origin/dev
-
-            echo "[3/6] Install dependencies"
-            if [ -f package-lock.json ]; then
-              npm ci --omit=dev
+            echo "[1/7] Ensure repo exists on $BRANCH"
+            if [ ! -d "$APP_DIR/.git" ]; then
+              rm -rf "$APP_DIR"
+              git clone https://github.com/Chaos-Zero/sd-dev-bot.git "$APP_DIR"
+              cd "$APP_DIR"
+              git checkout "$BRANCH" || git checkout -b "$BRANCH"
+              # First-time install
+              if [ -f package-lock.json ]; then
+                npm ci --omit=dev
+              else
+                npm i --omit=dev
+              fi
             else
-              npm i --omit=dev
+              cd "$APP_DIR"
             fi
-            
-            echo "[5/6] Reload PM2 process"
+
+            echo "[2/7] Fetch latest from origin/$BRANCH"
+            git fetch --all --prune
+
+            echo "[3/7] Determine if dependencies changed"
+            # OLD: currently deployed commit (or empty if repo was just cloned)
+            OLD_SHA="$(git rev-parse HEAD || true)"
+            NEW_SHA="$(git rev-parse origin/$BRANCH)"
+
+            NEED_INSTALL=0
+            if [ -n "$OLD_SHA" ] && [ "$OLD_SHA" != "$NEW_SHA" ]; then
+              CHANGED="$(git diff --name-only "$OLD_SHA" "$NEW_SHA" || true)"
+              echo "$CHANGED" | grep -Eq '^(package\.json|package-lock\.json)$' && NEED_INSTALL=1 || true
+            fi
+
+            echo "[4/7] Deploy new code"
+            git reset --hard "$NEW_SHA"
+
+            echo "[5/7] Install deps only if needed"
+            if [ "$NEED_INSTALL" -eq 1 ] || [ ! -d node_modules ]; then
+              echo "→ Dependencies changed or node_modules missing: running npm ci"
+              if [ -f package-lock.json ]; then
+                npm ci --omit=dev
+              else
+                npm i --omit=dev
+              fi
+            else
+              echo "→ No dependency changes detected; skipping npm install"
+            fi
+
+            # Optional: rebuild native modules if Node changed on the server
+            # npm rebuild || true
+
+            echo "[6/7] Reload PM2 dev process"
             pm2 reload bot-dev || pm2 start /home/botuser/ecosystem.config.js --only bot-dev --update-env
             pm2 save
 
-            echo "[6/6] Show PM2 status"
+            echo "[7/7] Show PM2 status"
             pm2 list
