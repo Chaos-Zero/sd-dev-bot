@@ -37,6 +37,7 @@ jobs:
               cd /home/botuser/bots/dev
               FIRST_CLONE=1
             fi
+
             git fetch --all --prune
             git checkout dev || git checkout -b dev
 
@@ -46,15 +47,17 @@ jobs:
             NEED_INSTALL=0
             if [ "$FIRST_CLONE" -eq 1 ]; then
               NEED_INSTALL=1
-            elif [ -n "$OLD_SHA" ] && [ "$OLD_SHA" != "$NEW_SHA" ]; then
-              if git diff --name-only "$OLD_SHA" "$NEW_SHA" | grep -Eq '^(package\.json|package-lock\.json)$'; then
+            elif [ -n "${OLD_SHA:-}" ] && [ "$OLD_SHA" != "$NEW_SHA" ]; then
+              CHANGED="$(git diff --name-only "$OLD_SHA" "$NEW_SHA" || true)"
+              if echo "$CHANGED" | grep -qE '^(package\.json|package-lock\.json)$'; then
                 NEED_INSTALL=1
               fi
             fi
 
+            echo "[4/6] Deploy new code"
             git reset --hard "$NEW_SHA"
 
-            echo "[3/6] Install dependencies (only if needed)"
+            echo "[5/6] Install dependencies (only if needed)"
             if [ "$NEED_INSTALL" -eq 1 ] || [ ! -d node_modules ]; then
               echo "→ Installing deps..."
               if [ -f package-lock.json ]; then
@@ -65,10 +68,10 @@ jobs:
             else
               echo "→ No dependency changes detected; skipping npm install"
             fi
-            
-            echo "[5/6] Reload PM2 process"
+
+            echo "[6/6] Reload PM2 process"
             pm2 reload bot-dev || pm2 start /home/botuser/ecosystem.config.js --only bot-dev --update-env
             pm2 save
 
-            echo "[6/6] Show PM2 status"
+            echo "[Done] PM2 status:"
             pm2 list
