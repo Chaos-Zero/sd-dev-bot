@@ -1,13 +1,8 @@
-// server.js
-// where your node app starts
-
 //FFMPG imports fop package.json
 
     //"fluent-ffmpeg": "^2.1.2",
     //"ffmpeg-static": "^5.2.0",
 
-// we've started you off with Express (https://expressjs.com/)
-// but feel free to use whatever libraries or frameworks you'd like through `package.json`.
 require('dotenv').config({ path: '/home/botuser/bots/live/.env' });
 const express = require("express");
 const session = require("express-session");
