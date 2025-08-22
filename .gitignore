@@ -4,3 +4,4 @@
 node_modules
 public/commands/gif/
 .data/token.json
+package-lock.json
