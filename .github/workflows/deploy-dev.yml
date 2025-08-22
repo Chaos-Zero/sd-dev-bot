@@ -32,7 +32,7 @@ jobs:
             if [ ! -d .git ]; then
               echo "Repo not found; cloning fresh..."
               rm -rf /home/botuser/bots/dev
-              git clone https://github.com/YOUR_ORG/YOUR_REPO.git /home/botuser/bots/dev
+              git clone https://github.com/Chaos-Zero/sd-dev-bot.git /home/botuser/bots/dev
               cd /home/botuser/bots/dev
             fi
             git fetch --all --prune
