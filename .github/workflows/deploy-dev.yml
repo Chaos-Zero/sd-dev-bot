@@ -49,10 +49,19 @@ jobs:
               NEED_INSTALL=1
             elif [ -n "${OLD_SHA:-}" ] && [ "$OLD_SHA" != "$NEW_SHA" ]; then
               CHANGED="$(git diff --name-only "$OLD_SHA" "$NEW_SHA" || true)"
-              if echo "$CHANGED" | grep -qE '^(package\.json|package-lock\.json)$'; then
+              # Make grep non-fatal under -e by testing its status explicitly
+              if echo "$CHANGED" | grep -qE '(^|/)(package\.json|package-lock\.json)$'; then
                 NEED_INSTALL=1
               fi
             fi
+
+            echo "[debug] OLD_SHA=$OLD_SHA"
+            echo "[debug] NEW_SHA=$NEW_SHA"
+            echo "[debug] FIRST_CLONE=$FIRST_CLONE"
+            echo "[debug] NEED_INSTALL=$NEED_INSTALL"
+            if [ -d node_modules ]; then echo "[debug] node_modules present: yes"; else echo "[debug] node_modules present: no"; fi
+            command -v npm  >/dev/null 2>&1 && echo "[debug] npm path: $(command -v npm)" || { echo "[error] npm not found in PATH"; exit 1; }
+            command -v pm2  >/dev/null 2>&1 && echo "[debug] pm2 path: $(command -v pm2)" || { echo "[error] pm2 not found in PATH"; exit 1; }
 
             echo "[4/6] Deploy new code"
             git reset --hard "$NEW_SHA"
