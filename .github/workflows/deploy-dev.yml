@@ -23,74 +23,32 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: |
-            set -euo pipefail
+            set -e
 
             echo "[1/6] Go to dev app dir"
             cd /home/botuser/bots/dev || exit 1
 
             echo "[2/6] Ensure repo present on dev branch"
-            FIRST_CLONE=0
             if [ ! -d .git ]; then
               echo "Repo not found; cloning fresh..."
               rm -rf /home/botuser/bots/dev
               git clone https://github.com/Chaos-Zero/sd-dev-bot.git /home/botuser/bots/dev
               cd /home/botuser/bots/dev
-              FIRST_CLONE=1
             fi
-
             git fetch --all --prune
             git checkout dev || git checkout -b dev
+            git reset --hard origin/dev
 
-            # Determine if deps changed between current HEAD and origin/dev
-            OLD_SHA="$(git rev-parse HEAD || true)"
-            NEW_SHA="$(git rev-parse origin/dev)"
-            NEED_INSTALL=0
-            if [ "$FIRST_CLONE" -eq 1 ]; then
-              NEED_INSTALL=1
-            elif [ -n "${OLD_SHA:-}" ] && [ "$OLD_SHA" != "$NEW_SHA" ]; then
-              CHANGED="$(git diff --name-only "$OLD_SHA" "$NEW_SHA" || true)"
-              if echo "$CHANGED" | grep -qE '(^|/)(package\.json|package-lock\.json)$'; then
-                NEED_INSTALL=1
-              fi
-            fi
-
-            echo "[debug] OLD_SHA=$OLD_SHA"
-            echo "[debug] NEW_SHA=$NEW_SHA"
-            echo "[debug] FIRST_CLONE=$FIRST_CLONE"
-            echo "[debug] NEED_INSTALL=$NEED_INSTALL"
-            if [ -d node_modules ]; then echo "[debug] node_modules present: yes"; else echo "[debug] node_modules present: no"; fi
-            command -v npm  >/dev/null 2>&1 && echo "[debug] npm path: $(command -v npm)" || { echo "[error] npm not found in PATH"; exit 1; }
-            command -v pm2  >/dev/null 2>&1 && echo "[debug] pm2 path: $(command -v pm2)" || { echo "[error] pm2 not found in PATH"; exit 1; }
-
-            echo "[4/6] Deploy new code"
-            git reset --hard "$NEW_SHA"
-
-            echo "[5/6] Install dependencies (only if needed)"
-            INSTALL_RC=0
-            set +e  # prevent -e from killing the shell during conditional install
-            if [ "${NEED_INSTALL:-0}" = "1" ] || [ ! -d node_modules ]; then
-              echo "→ Installing deps..."
-              if [ -f package-lock.json ]; then
-                npm ci --omit=dev
-                INSTALL_RC=$?
-              else
-                npm i --omit=dev
-                INSTALL_RC=$?
-              fi
+            echo "[3/6] Install dependencies"
+            if [ -f package-lock.json ]; then
+              npm ci --omit=dev
             else
-              echo "→ No dependency changes detected; skipping npm install"
-              INSTALL_RC=0
+              npm i --omit=dev
             fi
-            set -e
-            echo "[debug] INSTALL_RC=$INSTALL_RC"
-            if [ "$INSTALL_RC" -ne 0 ]; then
-              echo "[error] npm install failed with code $INSTALL_RC"
-              exit "$INSTALL_RC"
-            fi
-
-            echo "[6/6] Reload PM2 process"
+            
+            echo "[5/6] Reload PM2 process"
             pm2 reload bot-dev || pm2 start /home/botuser/ecosystem.config.js --only bot-dev --update-env
             pm2 save
 
-            echo "[Done] PM2 status:"
+            echo "[6/6] Show PM2 status"
             pm2 list
