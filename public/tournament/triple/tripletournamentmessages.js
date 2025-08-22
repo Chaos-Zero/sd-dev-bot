@@ -627,8 +627,8 @@ async function SendTripleDailyEmbed(
   });
 
   // Add songs to YTPlaylist
-  await AddTournamentSongsToTournamentPlaylist(youtubeUrls);
-  await sleep(1500);
+  //await AddTournamentSongsToTournamentPlaylist(youtubeUrls);
+  //await sleep(1500);
 
   const sheetUrl =
     "https://docs.google.com/spreadsheets/d/1A9eNaKBuVMycRHYZGSyidapKqqSg-fIL0RzSFL9N2_Q";

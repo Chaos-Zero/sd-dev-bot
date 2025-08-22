@@ -7,13 +7,14 @@ const sleep = require("util").promisify(setTimeout);
 
 eval(fs.readFileSync("./public/database/read.js") + "");
 eval(fs.readFileSync("./public/database/write.js") + "");
-eval(
-  fs.readFileSync("./public/tournament/single/singleTournament.js") + ""
-);
+eval(fs.readFileSync("./public/tournament/tournamentutils.js") + "");
+eval(fs.readFileSync("./public/tournament/single/singleTournament.js") + "");
 eval(
   fs.readFileSync("./public/tournament/doubleElim/doubleElimTournament.js") + ""
 );
 eval(fs.readFileSync("./public/tournament/triple/tripleTournament.js") + "");
+
+eval(fs.readFileSync("./public/tournament/challonge/challongeClient.js") + "");
 
 const low = require("lowdb");
 const FileSync = require("lowdb/adapters/FileSync");
@@ -29,10 +30,12 @@ async function registerTournament(
   tournamentTitle,
   tournamentFormat,
   isRandom,
+  isChallonge,
+  isHiddenBracket,
   csvFilePath,
-  roundsPerTurn = 1,
-  adminId
+  roundsPerTurn = 1
 ) {
+  console.log("Received CSV file path (URL):", csvFilePath);
   var db = GetDb();
   db.read();
   let currentTournamentName = await getCurrentTournament(db);
@@ -44,21 +47,30 @@ async function registerTournament(
 
   let participantNum = tournamentFormat == "3v3 Ranked" ? 3 : 2;
   let participants = [];
-  downloadFile(csvFilePath).then((readStream) => {
+
+  let participantNames = [];
+
+  try {
+    const readStream = await downloadFile(csvFilePath);
     readStream
       .pipe(csvParser())
       .on("data", (row) => {
-        // Split the Name field into name and title
         participants.push({
           name: row.Name,
           title: row.Title,
           link: row.Link,
+          contest: row.Contest,
           match: 0,
         });
       })
       .on("end", () => {
-        // Prepare the tournament details
-        let currentTournamentName = tournamentTitle;
+        console.log(`Processed ${participants.length} participants.`);
+
+        if (participants.length === 0) {
+          console.error("No participants found in CSV.");
+          return;
+        }
+
         if (isRandom) {
           let shuffled = participants
             .map((value) => ({ value, sort: Math.random() }))
@@ -71,12 +83,24 @@ async function registerTournament(
         for (var i = 0; i < participants.length; i++) {
           participants[i].match = tempMatchNumber;
 
+          var entrantNum = i + 1;
+          if (isChallonge) {
+            participants[i].challongeSeed = entrantNum;
+            participants[i].challongeSeed = i + 1;
+          }
+          if (isHiddenBracket) {
+            participantNames.push("Entrant #" + entrantNum);
+          } else {
+            participantNames.push(
+              participants[i].name + " - " + participants[i].title
+            );
+          }
+
           if ((i + 1) % participantNum == 0) {
             tempMatchNumber++;
           }
         }
 
-        console.log("Here's the Random entries: " + participants);
         var RoundLength =
           tournamentFormat == "3v3 Ranked"
             ? parseInt(participants.length) / 3
@@ -89,8 +113,8 @@ async function registerTournament(
           db.get("tournaments")
             .nth(0)
             .assign({
-              currentTournament: currentTournamentName,
-              [currentTournamentName]: {
+              currentTournament: tournamentTitle,
+              [tournamentTitle]: {
                 tournamentFormat: tournamentFormat,
                 startingParticipantCount: RoundLength,
                 nextWinnerInNextRound: RoundLength + nextRoundLength,
@@ -104,6 +128,7 @@ async function registerTournament(
                 losersBracket: {},
                 eliminated: [],
                 final: [],
+                isChallonge: isChallonge,
               },
             })
             .write();
@@ -111,8 +136,8 @@ async function registerTournament(
           db.get("tournaments")
             .nth(0)
             .assign({
-              currentTournament: currentTournamentName,
-              [currentTournamentName]: {
+              currentTournament: tournamentTitle,
+              [tournamentTitle]: {
                 tournamentFormat: tournamentFormat,
                 startingMatchCount: RoundLength,
                 nextRoundNextMatch: RoundLength + 1,
@@ -123,19 +148,42 @@ async function registerTournament(
                 rounds: { 1: participants },
                 eliminated: [],
                 final: [],
+                isChallonge: isChallonge,
               },
             })
             .write();
         }
-        // Check if the admin ID is not already present and add if necessary
-        //          if (adminId && !tournamentDetails.admin.includes(adminId)) {
-        //           tournamentDetails.admin.push(adminId);
-        //        }
 
+        // Handle Challonge integration if required
+        const urlName = replaceSpacesWithUnderlines(tournamentTitle);
+        const url = "https://challonge.com/" + urlName;
+
+        if (isChallonge) {
+          createChallongeTournament(
+            tournamentTitle,
+            urlName,
+            "",
+            "Single Elimination",
+            isHiddenBracket
+          )
+            .then(() => sleep(8000))
+            .then(() => addChallongeEntrants(participantNames, urlName))
+            .catch((error) =>
+              console.warn("Challonge integration error:", error)
+            );
+        }
+      })
+      .on("error", (error) => {
+        console.error("Error processing CSV file:", error);
+        // Handle the error (e.g., notify the user, abort the operation)
         // Save the tournament details
         // db.get("tournaments").push(tournamentDetails).write();
       });
-  });
+  } catch (error) {
+    console.error("Failed to download or process CSV file:", error);
+    // Handle the error appropriately
+    return;
+  }
 }
 
 // Neeed Round, Match Number, Names, Game, Links, Status
@@ -168,7 +216,8 @@ async function StartMatch(
   let tournament = tournamentDetails[currentTournamentName];
 
   switch (tournament.tournamentFormat) {
-    case "Single":
+    case "Single Elimination":
+      console.log("Starting Single Match");
       StartSingleMatch(interaction, bot, secondOfDay, previousMatches);
       break;
     case "Double Elimination":
@@ -204,7 +253,7 @@ async function EndMatches(interaction = "") {
   let tournament = tournamentDetails[currentTournamentName];
   var previousMatches = [];
   switch (tournament.tournamentFormat) {
-    case "Single":
+    case "Single Elimination":
       previousMatches = await EndSingleMatches(interaction);
       break;
     case "Double Elimination":

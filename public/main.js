@@ -52,8 +52,6 @@ function GetDb() {
   return db;
 }
 
-let populatedDb = GetDbTable(db, process.env.TOURNAMENT_NAME);
-
 function refreshDb() {
   //db.read()
   console.log("Db's reloaded");
@@ -61,10 +59,6 @@ function refreshDb() {
 
 // If we want to pass this around, it needs to be in an object to pass the value by refernce, otherwise, it's just copied
 global.userAlbumResults = new Map();
-
-function GetLocalDb() {
-  return populatedDb;
-}
 
 function CreateBot() {
   const intents = [
@@ -101,6 +95,7 @@ function CreateBot() {
   });
   botAccess = bot;
   //sendDailyEmbed.start();
+  //sendAprilFools.start();
   //checkTournamentBattleReactions.start();
   //checkTournamentBattleReactions2.start();
   return bot;
@@ -110,7 +105,12 @@ function GetBot() {
   return botAccess;
 }
 
-let sendDailyEmbed = new cron.CronJob("00 00 19 * * 1-5", async () => {
+let sendAprilFools = new cron.CronJob("00 00 19 * * 1-5", async () => {
+  CreateAprilFools();
+  //await StartMatch("", GetBot(), true);
+});
+
+let sendDailyEmbed = new cron.CronJob("30 17 20 * * 1-5", async () => {
   var previousMatches = "";
   let guildObject = await bot.guilds.cache.get(process.env.GUILD_ID);
   previousMatches = await EndMatches();
@@ -130,22 +130,15 @@ let sendDailyEmbed = new cron.CronJob("00 00 19 * * 1-5", async () => {
   let tournamentName = await db.get("tournaments[0].currentTournament").value();
   console.log(tournamentName);
   let tournamentDb = await tournamentDetails[tournamentName];
-  
-  /* Challonge stuff
+
+  // Challonge stuff
   const urlName = replaceSpacesWithUnderlines(currentTournamentName);
-  await saveTournamentStructure(urlName, tournamentDb, db)
-    .then((response) => {
-     console.log("Users ordered:", response);
-    })
-    .catch((error) => {
-      console.error("Error: ", error);
-    });
-  await sleep(10000);
-*/
+
   await sleep(1000);
+
   console.log("Finished with previous Matches");
-  await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, []);
-  //await StartMatch("", GetBot(), false, previousMatches);
+  //await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, []);
+  await StartMatch("", GetBot(), false, previousMatches);
   // 30 Seconds to be safe
   //await sleep(30000);
   //await StartMatch("", GetBot(), true);

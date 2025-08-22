@@ -443,7 +443,7 @@
         "tournamentFormat": "Single Elimination",
         "startingMatchCount": 64,
         "nextRoundNextMatch": 129,
-        "matchNumber": 129,
+        "matchNumber": 128,
         "round": 7,
         "roundsPerTurn": 2,
         "matches": [
@@ -7782,7 +7782,7 @@
             "match": 128,
             "nextRoundNextMatch": "1",
             "isChallonge": true,
-            "progress": "complete",
+            "progress": "in-progress",
             "entrant1": {
               "name": "Precipice",
               "title": "Minecraft Tricky Trials",
@@ -7841,27 +7841,6 @@
                 "723217216211910716"
               ],
               "points": 18
-            }
-          },
-          {
-            "round": "7",
-            "match": 129,
-            "nextRoundNextMatch": "1",
-            "isChallonge": true,
-            "progress": "in-progress",
-            "entrant1": {
-              "name": "Tokyo",
-              "title": "The Hokkaido Serial Murder Case The Okhotsk Disappearance ~Memories in Ice, Tearful Figurine~",
-              "link": "https://youtu.be/yrAokKQNT4Q",
-              "voters": [],
-              "points": 0
-            },
-            "entrant2": {
-              "name": "Shiva (Glacier Mix)",
-              "title": "Heaven Burns Red",
-              "link": "https://youtu.be/lfWD-jIrIcs",
-              "voters": [],
-              "points": 0
             }
           }
         ],
@@ -9567,12 +9546,6 @@
               "name": "Shiva (Glacier Mix)",
               "title": "Heaven Burns Red",
               "link": "https://youtu.be/lfWD-jIrIcs",
-              "match": 129
-            },
-            {
-              "name": "Precipice",
-              "title": "Minecraft Tricky Trials",
-              "link": "https://youtu.be/dEgjOyBwIaE",
               "match": 129
             }
           ]

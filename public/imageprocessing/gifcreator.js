@@ -23,44 +23,50 @@ let imagesOutputFolder = "/app/public/commands/gif/jpg/";
 
 let dstPath = "/app/public/commands/gif/output";
 
-console.log(imagesFolder + " + " + dstPath);
-
 async function createGif(algorithm, gifName) {
-  return new Promise((resolve) => {
-    // Delete Previous Gif
-    readdirAsync(dstPath, (err, files) => {
-      if (err) throw err;
-
-      //for (const file of files) {
-      //  unlink(path.join(dstPath, file), (err) => {
-      //    if (err) throw err;
-      //  });
-      //}
-    });
-
-    return new Promise(async (resolve1) => {
-      // read image directory
+  return new Promise(async (resolve) => {
+    try {
+      const dstPath = path.join(
+        "/app/public/commands/gif/output/",
+        gifName + ".gif"
+      );
       const files = await readdirAsync(imagesFolder);
+      console.log("Files found:", files);
 
-      // base GIF filepath on which algorithm is being used
-      const dstPath = "/app/public/commands/gif/output/" + gifName + ".gif";
       if (existsSync(dstPath)) {
         console.log("gif already exists");
         resolve();
       } else {
+        if (files.length === 0) {
+          throw new Error("No files found in the images folder.");
+        }
+
+        const firstFile = path.join(imagesFolder, files[0]);
+        console.log("First file path:", firstFile);
+
+        if (!existsSync(firstFile)) {
+          throw new Error(`The file ${firstFile} does not exist.`);
+        }
+
         // find the width and height of the image
         const [width, height] = await new Promise((resolve2) => {
           const image = new Image();
           image.onload = () => resolve2([image.width, image.height]);
-          image.src = path.join(imagesFolder, files[0]);
+          image.onerror = (err) => {
+            console.error("Error loading image:", err);
+            resolve2([undefined, undefined]);
+          };
+          image.src = firstFile;
         });
 
-        //const dstPath = path.join(__dirname, "./gif/output/", imagename + `.gif`);
-        // create a write stream for GIF data
+        if (!width || !height) {
+          throw new Error("Image dimensions could not be determined.");
+        }
+
         const writeStream = createWriteStream(dstPath);
         // when stream closes GIF is created so resolve promise
         writeStream.on("close", () => {
-          resolve1();
+          resolve();
         });
 
         const encoder = new GIFEncoder(width, height, algorithm, true);
@@ -77,21 +83,31 @@ async function createGif(algorithm, gifName) {
         // draw an image for each file and add frame to encoder
         for (const file of files) {
           await new Promise((resolve3) => {
-            console.log("We got to the promise");
             const image = new Image();
             image.onload = () => {
               ctx.drawImage(image, 0, 0);
               encoder.addFrame(ctx);
               resolve3();
             };
+            image.onerror = (err) => {
+              console.error(`Error loading image ${file}:`, err);
+              resolve3();
+            };
             image.src = path.join(imagesFolder, file);
+
+            // Log the image path being processed
+            console.log(`Processing file: ${image.src}`);
           });
         }
+
         encoder.finish();
         console.log("gif created");
         resolve();
       }
-    });
+    } catch (error) {
+      console.error("An error occurred during GIF creation:", error);
+      resolve();
+    }
   });
 }
 //createGif('neuquant')

@@ -10,142 +10,168 @@ eval(fs.readFileSync("./public/utils/messageutils.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("edit-battle-urls")
-    .setDescription("Edit an urls in a battle by the message id")
+    .setName("edit-tournament-embeds")
+    .setDescription("Edit an embed by the message ID")
     .addStringOption((option) =>
       option
         .setName("channel-name")
-        .setDescription(
-          "The name of the channel where the battle is taking place"
-        )
+        .setDescription("The name of the channel where the message is")
         .setRequired(true)
     )
     .addStringOption((option) =>
       option
         .setName("message-id")
-        .setDescription("The ID of the message containing the battle embed")
+        .setDescription("The ID of the message containing the embed")
         .setRequired(true)
     ),
   async execute(interaction) {
     const channelName = interaction.options.getString("channel-name");
     const messageId = interaction.options.getString("message-id");
 
-    // Retrieve the message containing the embed
-    const channel = await GetChannelByName(
-      interaction.member.guild,
-      process.env.TOURNAMENT_CHANNEL
+    // Retrieve the channel by its name
+    const channel = interaction.guild.channels.cache.find(
+      (c) => c.name === channelName
     );
-    const message = await channel.messages.fetch(messageId);
-
-    // Make sure the message contains an embed
-    if (!message.embeds.length) {
-      return interaction.reply(
-        "This message does not contain an embed we can edit."
-      );
-    }
-
-    // Retrieve the first embed in the message
-    var embeds = message;
-    const editedEmbed = message.embeds[0];
-
-    console.log(embeds.embeds[0].data.fields);
-
-    // Break the embed into categories
-    var fields = editedEmbed.data.fields;
-    const categories = [];
-    for (var i = 0; i < fields.length; i++) {
-      if (i > 0 && i < fields.length - 1) {
-        categories.push({ name: fields[i].name, url: fields[i].value });
-      }
-    }
-
-    var stringSelect = [];
-
-    for (var i = 0; i < categories.length; i++) {
-      stringSelect.push({
-        label: categories[i].name,
-        description: categories[i].url,
-        value: categories[i].name,
+    if (!channel) {
+      return interaction.reply({
+        content: "Channel not found.",
+        ephemeral: true,
       });
     }
 
-    const categorySelect = new StringSelectMenuBuilder()
-      .setCustomId("entry-select")
-      .setPlaceholder("Select an entry")
-      .addOptions(stringSelect);
+    // Fetch the message with the provided ID
+    const message = await channel.messages.fetch(messageId);
+    if (!message) {
+      return interaction.reply({
+        content: "Message not found.",
+        ephemeral: true,
+      });
+    }
+
+    // Ensure the message contains an embed
+    if (!message.embeds.length) {
+      return interaction.reply({
+        content: "The specified message does not contain an embed.",
+        ephemeral: true,
+      });
+    }
+
+    const embed = message.embeds[0]; // The first embed in the message
+
+    // Offer the user a choice of what part of the embed to edit (field name or field value)
+    const truncate = (text, maxLength = 100) =>
+      text.length > maxLength ? text.slice(0, maxLength - 3) + "..." : text;
+
+    const options = [
+      {
+        label: "Title",
+        description: truncate(embed.title || "No title"),
+        value: "title",
+      },
+      {
+        label: "Description",
+        description: truncate(embed.description || "No description"),
+        value: "description",
+      },
+      ...embed.fields.map((field, index) => ({
+        label: truncate(`${field.name} (Field Name)`),
+        description: truncate(field.name),
+        value: `field_name_${index}`,
+      })),
+      ...embed.fields.map((field, index) => ({
+        label: truncate(`${field.name} (Field Value)`),
+        description: truncate(field.value),
+        value: `field_value_${index}`,
+      })),
+    ];
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId("edit-select")
+      .setPlaceholder("Select part of the embed to edit")
+      .addOptions(options);
 
     await interaction.reply({
-      content: "Which entry would you like to update?",
-      components: [new ActionRowBuilder().addComponents(categorySelect)],
+      content: "Which part of the embed would you like to update?",
+      components: [new ActionRowBuilder().addComponents(selectMenu)],
       ephemeral: true,
     });
 
     const collector = interaction.channel.createMessageComponentCollector({
       filter: (i) =>
         i.isStringSelectMenu() &&
-        i.customId === "entry-select" &&
+        i.customId === "edit-select" &&
         i.user.id === interaction.user.id,
-      time: 60000, // time in ms
+      time: 60000, // 60 seconds
     });
 
-    // Listen for user input and ask for new value
     collector.on("collect", async (i) => {
-      const category = i.values[0];
-      const currentValue = categories[category];
+      const selectedOption = i.values[0];
       i.deferUpdate();
       collector.stop();
 
-      // Ask the user for the new value
+      // Ask the user for the new value based on their selection
+      let prompt;
+      if (selectedOption === "title") {
+        prompt = "Please enter the new title.";
+      } else if (selectedOption === "description") {
+        prompt = "Please enter the new description.";
+      } else if (selectedOption.startsWith("field_name_")) {
+        const fieldIndex = parseInt(selectedOption.split("_")[2], 10);
+        prompt = `Please enter the new title for field \`${embed.fields[fieldIndex].name}\`.`;
+      } else if (selectedOption.startsWith("field_value_")) {
+        const fieldIndex = parseInt(selectedOption.split("_")[2], 10);
+        prompt = `Please enter the new value for field \`${embed.fields[fieldIndex].name}\`.`;
+      }
+
       await interaction.followUp({
-        content:
-          "What URL would you like to set for `" +
-          category +
-          "`?\nSend a message to the channel to enter your new URL.",
+        content: prompt,
         ephemeral: true,
       });
 
       const valueCollector = interaction.channel.createMessageCollector({
         filter: (m) => m.author.id === interaction.user.id,
-        time: 60000, // time in ms
+        time: 60000, // 60 seconds
       });
 
-      // Listen for user input and update the embed accordingly
       valueCollector.on("collect", async (m) => {
         const newValue = m.content;
         m.delete();
-        console.log(newValue);
-        console.log(embeds.embeds[0].data.fields);
-        for (var entry of editedEmbed.data.fields) {
-          if (entry.name == category) {
-            entry.value = newValue;
-            break;
-          }
-        }
-        console.log(editedEmbed.data.fields);
 
-        // // Update the embed with the new value
-        // embed[category.toLowerCase()] = newValue;
-        //
-        // // Send the updated embed
-        var toSendEmbeds = [
-          new EmbedBuilder(editedEmbed),
-        ];
-        await message.edit({ embeds: toSendEmbeds });
-        //
+        let updatedEmbed = EmbedBuilder.from(embed); // Clone the original embed
+
+        // Update the selected part of the embed
+        if (selectedOption === "title") {
+          updatedEmbed.setTitle(newValue);
+        } else if (selectedOption === "description") {
+          updatedEmbed.setDescription(newValue);
+        } else if (selectedOption.startsWith("field_name_")) {
+          const fieldIndex = parseInt(selectedOption.split("_")[2], 10);
+          const updatedFields = [...embed.fields]; // Clone fields array
+          updatedFields[fieldIndex].name = newValue; // Update the field name
+          updatedEmbed.setFields(updatedFields); // Reapply fields
+        } else if (selectedOption.startsWith("field_value_")) {
+          const fieldIndex = parseInt(selectedOption.split("_")[2], 10);
+          const updatedFields = [...embed.fields]; // Clone fields array
+          updatedFields[fieldIndex].value = newValue; // Update the field value
+          updatedEmbed.setFields(updatedFields); // Reapply fields
+        }
+
+        // Edit the message to update the embed
+        await message.edit({ embeds: [updatedEmbed] });
+
         // Confirm the update to the user
         await interaction.followUp({
-          content:
-            "Embed field `" + category + "` updated to `" + newValue + "`",
+          content: "Embed updated successfully!",
           ephemeral: true,
         });
-        collector.stop();
+
         valueCollector.stop();
       });
 
       valueCollector.on("end", (_, reason) => {
         if (reason === "time") {
           interaction.followUp({
-            content: "No input received in 60 seconds, command cancelled.",
+            content: "No input received in time, edit cancelled.",
             ephemeral: true,
           });
         }
@@ -153,77 +179,3 @@ module.exports = {
     });
   },
 };
-//module.exports = {
-//    data: new SlashCommandBuilder()
-//        .setName('edit-embed')
-//        .setDescription('Edit an existing embed message')
-//        .addStringOption(option =>
-//            option
-//                .setName('message_id')
-//                .setDescription('The ID of the message with the embed you want to edit')
-//                .setRequired(true)),
-//    async execute(interaction, client) {
-//        // Get the provided message ID
-//        const messageId = interaction.options.getString('message_id');
-//        const channel = interaction.channel;
-//
-//        try {
-//            // Fetch the message with the provided ID
-//            const message = await channel.messages.fetch(messageId);
-//
-//            // Check if the message has an embed
-//            if (!message.embeds || message.embeds.length === 0) {
-//                await interaction.reply('No embed found in the specified message.');
-//                return;
-//            }
-//
-//            // Get the embed
-//            const embed = message.embeds.length > 1 ? message.embeds[1] : message.embeds[0];
-//
-//            // Break the embed into categories (title, description, fields, etc.)
-//            const categories = {
-//                title: embed.title || '',
-//                description: embed.description || '',
-//                fields: embed.fields || [],
-//            };
-//
-//            // Ask the user which fields they would like to change
-//            const question = 'Which fields would you like to change? (title, description, fields)';
-//            await interaction.reply(question);
-//            const filter = m => m.author.id === interaction.user.id;
-//            const collected = await channel.awaitMessages({ filter, max: 1, time: 30000 });
-//
-//            if (collected.size === 0) {
-//                await interaction.followUp('No response received. Aborting the edit process.');
-//                return;
-//            }
-//
-//            const response = collected.first().content;
-//
-//            // Update the selected fields
-//            const updatedCategories = await updateCategories(response, categories, interaction, channel);
-//
-//            // Update the embed
-//            const updatedEmbed = new MessageEmbed(embed)
-//                .setTitle(updatedCategories.title)
-//                .setDescription(updatedCategories.description)
-//                .setFields(updatedCategories.fields);
-//
-//            // Edit the message with the updated embed
-//            await message.edit({ embeds: [updatedEmbed] });
-//
-//            // Notify the user that the embed was updated
-//            await interaction.followUp('Embed updated successfully!');
-//        } catch (err) {
-//            console.error(err);
-//            await interaction.reply('An error occurred while trying to edit the embed.');
-//        }
-//    },
-//};
-//
-//async function updateCategories(response, categories, interaction, channel) {
-//    // Here you should implement your logic to update the selected categories.
-//    // You can use a series of if-else statements or a switch statement to handle
-//    // different user inputs and ask for new values for the selected fields.
-//    // Make sure to return the updated categories object.
-//}

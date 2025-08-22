@@ -1,24 +1,32 @@
 const path = require("path");
 const fs = require("fs");
+const { readdir, unlink, writeFileSync, copyFile } = require("fs");
 const { promisify } = require("util");
-const readdirAsync = promisify(fs.readdir);
+
+const http = require("http");
+const https = require("https");
+const Stream = require("stream").Transform;
 
 eval(fs.readFileSync("./public/tournament/tournamentutils.js") + "");
 
-var request = require("request"),
-  http = require("http"),
-  https = require("https");
+var request = require("request");
 
-async function GetYtThumb(urls) {
+const readdirAsync = promisify(readdir);
+const unlinkAsync = promisify(unlink);
+const copyFileAsync = promisify(copyFile);
+
+async function GetYtThumb(urls, standardRes = false) {
   var formattedUrls = [];
   urls.forEach((url) => {
     var ytVideoId = extractYoutubeVideoID(url);
-  
+
+    const urlEnd = standardRes ? "/sddefault.jpg" : "/mqdefault.jpg";
+
     //let thumb = "https://i1.ytimg.com/vi/" + ytVideoId + "/maxresdefault.jpg";
-      let thumb =
+    let thumb =
       ytVideoId == "zero"
-        ? "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062"
-        : "https://i1.ytimg.com/vi/" + ytVideoId + "/mqdefault.jpg";
+        ? "https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/Album%20Art.png?v=1724065338538"
+        : "https://i1.ytimg.com/vi/" + ytVideoId + urlEnd;
 
     formattedUrls.push([thumb, ytVideoId]);
   });
@@ -32,111 +40,98 @@ async function downloadImages(urls, singleImage = false) {
     if (urls.length < 1) {
       resolve();
     } else {
-      youtubeImages = await GetYtThumb(urls);
-      //  "https://youtu.be/49mVLN8OJSo",
-      //  "https://youtu.be/uRbDCEJ23WI",
-      //  "https://youtu.be/-AOW64B2bnY",
-      //]);
+      const youtubeImages = await GetYtThumb(urls);
 
       let inputPath = "/app/public/commands/gif/input/";
       let endImgPath = "/app/public/commands/gif/jpg/";
       console.log(inputPath);
 
       if (!singleImage) {
-        readdirAsync(inputPath, (err, files) => {
-          if (err) throw err;
-
-          for (const file of files) {
-            fs.unlink(path.join(inputPath, file), (err) => {
-              if (err) throw err;
-            });
-          }
-        });
+        const files = await readdirAsync(inputPath);
+        await Promise.all(
+          files.map((file) => unlinkAsync(path.join(inputPath, file)))
+        );
       }
 
-      youtubeImages.forEach(function (image) {
-        //console.log("HERE: " + image);
-        var fileExists = fileExistsWithoutExtension(inputPath, image[1]);
+      await Promise.all(
+        youtubeImages.map(async (image) => {
+          const fileExists = fileExistsWithoutExtension(inputPath, image[1]);
 
-        if (fileExists) {
-          if (singleImage == false) {
-            copyFileWithoutExtension(endImgPath, image[1], inputPath);
+          if (fileExists) {
+            if (!singleImage) {
+              await copyFileWithoutExtension(endImgPath, image[1], inputPath);
+            }
+          } else {
+            const downloadPath = singleImage ? endImgPath : inputPath;
+            await downloadImage(
+              image[0],
+              path.join(downloadPath, image[1] + ".jpg")
+            );
           }
-        } else {
-          var path = singleImage !== false ? endImgPath : inputPath;
-          downloadImage(image[0], path + image[1] + ".jpg");
-        }
-      });
+        })
+      );
 
       resolve();
     }
   });
 }
 
-async function downloadImage(uri, filename, callback) {
-  var client = http;
-  if (uri.toString().indexOf("https") === 0) {
-    client = https;
-  }
+async function downloadImage(uri, filename) {
+  return new Promise((resolve, reject) => {
+    const client = uri.startsWith("https") ? https : http;
+    client
+      .request(uri, (response) => {
+        const data = new Stream();
 
-  client
-    .request(uri, function (response) {
-      var data = new Stream();
+        response.on("data", (chunk) => {
+          data.push(chunk);
+        });
 
-      response.on("data", function (chunk) {
-        data.push(chunk);
-      });
-
-      response.on("end", function () {
-        writeFileSync(filename, data.read());
-      });
-    })
-    .end();
-  console.log("File downloaded");
-}
-
-function fileExistsWithoutExtension(folderPath, fileName) {
-  fs.readdir(folderPath, (err, files) => {
-    if (err) {
-      console.error("Error reading directory:", err);
-      return;
-    }
-
-    const fileFound = files.some((file) => {
-      const fileNameWithoutExt = path.parse(file).name;
-      return fileNameWithoutExt === fileName;
-    });
-
-    if (fileFound) {
-      return true;
-    } else {
-      return false;
-    }
+        response.on("end", () => {
+          try {
+            writeFileSync(filename, data.read());
+            console.log(`File downloaded: ${filename}`);
+            resolve();
+          } catch (error) {
+            reject(`Error writing file: ${error.message}`);
+          }
+        });
+      })
+      .end();
   });
 }
 
-function copyFileWithoutExtension(folderPath, fileName, targetFolderPath) {
-  fs.readdir(folderPath, (err, files) => {
-    if (err) {
-      console.error("Error reading directory:", err);
-      return;
-    }
+function fileExistsWithoutExtension(folderPath, fileName) {
+  const files = fs.readdirSync(folderPath);
 
-    files.forEach((file) => {
+  return files.some((file) => {
+    const fileNameWithoutExt = path.parse(file).name;
+    return fileNameWithoutExt === fileName;
+  });
+}
+
+async function copyFileWithoutExtension(
+  folderPath,
+  fileName,
+  targetFolderPath
+) {
+  const files = await readdirAsync(folderPath);
+
+  await Promise.all(
+    files.map(async (file) => {
       const fileNameWithoutExt = path.parse(file).name;
 
       if (fileNameWithoutExt === fileName) {
         const sourceFilePath = path.join(folderPath, file);
         const targetFilePath = path.join(targetFolderPath, file);
 
-        fs.copyFile(sourceFilePath, targetFilePath, (err) => {
-          if (err) {
-            console.error(`Error copying file: ${file}`, err);
-          } else {
-            console.log(`Copied file: ${file}`);
-          }
-        });
+        try {
+          await copyFileAsync(sourceFilePath, targetFilePath);
+          console.log(`Copied file: ${file}`);
+        } catch (err) {
+          console.error(`Error copying file: ${file}`, err);
+        }
       }
-    });
-  });
+    })
+  );
 }

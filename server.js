@@ -1,8 +1,14 @@
 // server.js
 // where your node app starts
 
+//FFMPG imports fop package.json
+
+    //"fluent-ffmpeg": "^2.1.2",
+    //"ffmpeg-static": "^5.2.0",
+
 // we've started you off with Express (https://expressjs.com/)
 // but feel free to use whatever libraries or frameworks you'd like through `package.json`.
+require('dotenv').config({ path: '/home/botuser/bots/live/.env' });
 const express = require("express");
 const session = require("express-session");
 const { google } = require("googleapis");
@@ -20,15 +26,17 @@ const sleep = require("util").promisify(setTimeout);
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/api/openai/chat.js") + "");
 eval(fs.readFileSync("./public/utils/messageutils.js") + "");
+eval(fs.readFileSync("./public/tournament/single/buttonfunctions.js") + "");
 eval(fs.readFileSync("./public/tournament/triple/buttonfunctions.js") + "");
 eval(fs.readFileSync("./public/tournament/doubleElim/buttonfunctions.js") + "");
-eval(fs.readFileSync("./public/api/vgmdb/buttonfunctions.js") + "");
-eval(fs.readFileSync("./public/api/vgmdb/vgmdb.js") + "");
+//eval(fs.readFileSync("./public/api/vgmdb/buttonfunctions.js") + "");
+//eval(fs.readFileSync("./public/api/vgmdb/vgmdb.js") + "");
 eval(fs.readFileSync("./public/api/google/youtubeConnector.js") + "");
-eval(fs.readFileSync("./public/ytPlayback/ytPlayback.js") + "");
+//eval(fs.readFileSync("./public/ytPlayback/ytPlayback.js") + "");
 eval(fs.readFileSync("./public/ytPlayback/pointsHandler.js") + "");
 eval(fs.readFileSync("./public/collections/roles.js") + "");
 eval(fs.readFileSync("./public/ytPlayback/ytDmMessages.js") + "");
+eval(fs.readFileSync("./public/utils/aprilbuttonfunctions.js") + "");
 
 const app = express();
 
@@ -37,7 +45,7 @@ const bot = CreateBot();
 
 var db = GetDb();
 
-var populatedDb = GetLocalDb();
+PopulateSdVgmLinks();
 
 const aiPrefix = "hey domo";
 
@@ -404,17 +412,17 @@ bot.on(Events.InteractionCreate, (interaction) => {
       const splitButtonName = interaction.customId.split("-");
       if (splitButtonName[0] == "album") {
         await handleVgmdbButtonPress(interaction);
-      } else if (
-        splitButtonName[0] == "doubleElim" ||
-        splitButtonName[0] == "single"
-      ) {
+      } else if (splitButtonName[0] === "single") {
+        handleSingleElimButtonPress(interaction, db);
+      } else if (splitButtonName[0] === "doubleElim") {
         handleDoubleElimButtonPress(interaction, db);
       } else if (splitButtonName[0] == "triple") {
         await HandleTripleButtonPress(interaction, db);
+      } else if (splitButtonName[0] === "fool") {
+        handleFoolButtonPress(interaction);
       }
     })().catch(console.error);
   }
-  console.log("We're done with the button handling");
 });
 
 function saveTokens(tokens, service) {
@@ -440,5 +448,5 @@ function extractNumberAfterSubstring(inputString, substring) {
   // Use a regular expression to find the first sequence of digits
   const match = restOfString.match(/\d+/);
 
-  return match ? match[0] : null; // Return the matched digits or null if no digits are found
+  return match ? match[0] : null;
 }

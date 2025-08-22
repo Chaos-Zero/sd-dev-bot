@@ -416,3 +416,7 @@ function extractYoutubeVideoID(url) {
     return "zero";
   }
 }
+
+function replaceSpacesWithUnderlines(str) {
+  return str.replace(/ /g, "_");
+}

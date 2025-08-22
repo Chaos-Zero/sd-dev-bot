@@ -1,4 +1,6 @@
 .glitchdotcom.json
 .node-gyp
+.env
 node_modules
-./public/commands/gif/*
+public/commands/gif/
+.data/token.json

@@ -13,7 +13,7 @@ const QueueManager = require(path.join(
 ));
 
 eval(fs.readFileSync("./public/main.js") + "");
-eval(fs.readFileSync("./public/ytPlayback/ytPlayback.js") + "");
+//eval(fs.readFileSync("./public/ytPlayback/ytPlayback.js") + "");
 eval(fs.readFileSync("./public/ytPlayback/ytQueueCommands.js") + "");
 
 module.exports = {

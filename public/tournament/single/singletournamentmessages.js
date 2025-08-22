@@ -19,6 +19,8 @@ const lightGray = { red: 0.9, green: 0.9, blue: 0.9, alpha: 0.2 };
 const lightGold = { red: 1, green: 0.9, blue: 0.5, alpha: 0.2 };
 const lightBlue = { red: 0.7, green: 0.85, blue: 1, alpha: 0.2 };
 
+const challongeBaseUrl = "https://challonge.com/";
+
 async function SendSingleBattleMessage(
   interaction,
   matchData,
@@ -56,30 +58,20 @@ async function SendSingleBattleMessage(
 
   const youtubeUrls = [matchData.entrant1.link, matchData.entrant2.link];
   let gifName = "round" + matchData.round + "match" + matchData.match;
-  console.log(gifName);
-  // downloadImages(youtubeUrls).then(async () => {
-  // Discord caches images so we have to change the name each day
-  // Just going to use the date
-  //await sleep(sleepTime);
 
-  const d = new Date();
-  //let gifname = d.toISOString().slice(0, 10);
-
+  await downloadImages(youtubeUrls);
   console.log("Making gif");
   //  await createGif("neuquant", gifName).then(async () => {
-  await sleep(5000);
+  await createGif("neuquant", gifName);
+
   SendSingleDailyEmbed(
     guildObject,
     matchData,
-    "", //gifName,
+    gifName,
     youtubeUrls,
     secondOfDay,
     previousMatches
   );
-  //});
-
-  //CreateDailyEmbedContent(tournamentRoundDetails, reactionDetails);
-  //});
 }
 
 async function SendPreviousSingleDayResultsEmbeds(
@@ -99,6 +91,19 @@ async function SendPreviousSingleDayResultsEmbeds(
 
   const members = await guild.members.fetch();
 
+  var db = GetDb();
+  db.read();
+
+  let currentTournamentName = await getCurrentTournament(db);
+  let tournamentDetails = await db.get("tournaments").nth(0).value();
+
+  console.log(matchData.round + " " + tournamentDetails.isChallonge);
+
+  let single = tournamentDetails[currentTournamentName];
+  const challongeTournamentUrlName = replaceSpacesWithUnderlines(
+    currentTournamentName
+  );
+
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
   var links = [];
@@ -106,6 +111,8 @@ async function SendPreviousSingleDayResultsEmbeds(
   let embedImg = "";
   let imagesFolder = "/app/public/commands/gif/input";
   let dstPath = "/app/public/commands/gif/jpg";
+    
+  var welcomeString = "Thank you, all and <@&1326256775262896290>, for participating.\nSee you in the next tournament!";
 
   var prevWinner = "";
 
@@ -117,154 +124,177 @@ async function SendPreviousSingleDayResultsEmbeds(
       var ytLinks = await GetYtThumb(links);
 
       let gifName =
-        "round5match" + previousMatches[0][i].match;
+        "round" +
+        previousMatches[0][i].round +
+        "match" +
+        previousMatches[0][i].match;
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];
       moveFiles(imagesFolder, dstPath);
       await sleep(1000);
 
-      await downloadImages(links, imgName).then(async () => {
-        var prevEmbed = new EmbedBuilder();
-        const previousWinnerPath = embedImg;
-        // Discord caches images so we have to change the name each day
-        // Just going to use the date
-        await sleep(3000);
+      await downloadImages(links, imgName);
+      var prevEmbed = new EmbedBuilder();
+      const previousWinnerPath = embedImg;
+      // Discord caches images so we have to change the name each day
+      // Just going to use the date
+      await sleep(3000);
 
-        console.log("Link to winner image: " + previousWinnerPath);
+      console.log("Link to winner image: " + previousWinnerPath);
 
-        function VoteString(num) {
-          return num == 1 ? num + " vote" : num + " votes";
-        }
-
-        const startCell =
+      function VoteString(num) {
+        return num == 1 ? num + " vote" : num + " votes";
+      }
+      const currentChallongeUrl =
+        "https://challonge.com/" + challongeTournamentUrlName;
+      // SHEET CODE
+      /* const startCell =
           bestVGM2023Cells[`match${previousMatches[0][i].match.toString()}`];
         const todaysSheetCell =
           "https://docs.google.com/spreadsheets/d/1A9eNaKBuVMycRHYZGSyidapKqqSg-fIL0RzSFL9N2_Q/edit#gid=0&range=" +
           startCell;
+        */
 
-        var secondPlaceText =
-          "2nd place: " +
-          previousMatches[0][i].secondPlace.title +
-          " - " +
-          previousMatches[0][i].secondPlace.name;
+      var secondPlaceText =
+        "**2nd Place:" +
+        //"Runner-up: " +
+        previousMatches[0][i].secondPlace.name +
+        " - " +
+        previousMatches[0][i].secondPlace.title + "**";
 
-        var nextRound = 6;
-        prevEmbed
-          .setTitle(
-            "**WINNER**: 1st place: " +
-              previousMatches[0][i].firstPlace.title +
-              " - " +
-              previousMatches[0][i].firstPlace.name +
-              ""
-          )
-          .setAuthor({
-            name: "Match " + previousMatches[0][i].match + " Winner",
-            iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
-          })
-          .addFields(
-            {
-              name: secondPlaceText,
-              value: "Points: " + previousMatches[0][i].secondPlace.points,
-              inline: false,
-            }
-            /*,
-            {
-              name: "Tournament Links",
-              value:
-                "[Tournament Bracket](" +
-                todaysSheetCell +
-                ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tfGylkXkwQtfWMhMpofo8TR&si=YiT1oMf3lmQASl5J)",
-              inline: false,
-            }*/
-          )
+      var nextRound = 6;
+      prevEmbed
+        .setTitle(
+          //"Winner: 1st Place:" +
+          //"Match Winner: " +
+            "1st Place:" +
+            previousMatches[0][i].firstPlace.name +
+            " - " +
+            previousMatches[0][i].firstPlace.title +
+            ""
+        )
+        .setAuthor({
+          name: "Match " + previousMatches[0][i].match + " Results",
+          iconURL:
+            "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        })
+        .addFields({
+          name: secondPlaceText,
+          value: "Points: " + previousMatches[0][i].secondPlace.points,
+          inline: false,
+        })
 
-          .setColor(0xffffff)
+        .setColor(0xffffff)
 
-          .setDescription(
-            "**Points: " + previousMatches[0][i].firstPlace.points + "**"
-          )
-          .setImage(previousWinnerPath);
+        .setDescription(
+          "**Points: " + previousMatches[0][i].firstPlace.points + "**"
+        )
+        .setImage(previousWinnerPath);
+
+      if (
+        previousMatches[0][i].firstPlace.points !==
+        previousMatches[0][i].secondPlace.points
+      ) {
         previousEmbedsToSend.push(prevEmbed);
+      }
+      ////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////////////////////////////
+      var entryA =
+        previousMatches[0][i].firstPlace.voteLetter == "A"
+          ? previousMatches[0][i].firstPlace
+          : previousMatches[0][i].secondPlace;
+      var entryB =
+        previousMatches[0][i].firstPlace.voteLetter == "B"
+          ? previousMatches[0][i].firstPlace
+          : previousMatches[0][i].secondPlace;
 
-        var entryA =
-          previousMatches[0][i].firstPlace.voteLetter == "A"
-            ? previousMatches[0][i].firstPlace
-            : previousMatches[0][i].secondPlace;
-        var entryB =
-          previousMatches[0][i].firstPlace.voteLetter == "B"
-            ? previousMatches[0][i].firstPlace
-            : previousMatches[0][i].secondPlace;
+      var aString = CreateUsersString(entryA.voters, members);
+      var bString = CreateUsersString(entryB.voters, members);
 
-        var aString = CreateUsersString(entryA.voters, members);
-        var bString = CreateUsersString(entryB.voters, members);
+      var resultLogEmbed = new EmbedBuilder();
 
-        var resultLogEmbed = new EmbedBuilder();
+      var challongeLink = challongeBaseUrl + challongeTournamentUrlName;
 
-        resultLogEmbed
-          //   .setColor(0x097969)
-          .setTitle(
-            "Round 5 -  Match: " +
-              previousMatches[0][i].match + " - **FINAL**"
-          )
-          .setAuthor({
-            name: "Best VGM 2023 Awards",
-            iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
-          })
-          .setDescription(
-            "**------------------------------------**\n**Battle Entries**:\n**A. " +
-              entryA.title +
-              " - " +
-              entryA.name +
-              "**\n> Score: " +
-              entryA.points +
-              "\n**B. " +
-              entryB.title +
-              " - " +
-              entryB.name +
-              "**\n> Score: " +
-              entryB.points +
-              "\n**------------------------------------**\n\n**Breakdown**:"
-          )
-          //.setThumbnail(
-          //  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-voting-result.gif?v=1681088448448"
-          //)
-          .setImage(
-            "https://sd-dev-bot.glitch.me/commands/gif/output/" +
-              gifName +
-              ".gif"
-          )
-          .addFields(
-            {
-              //name: "<:ABC:1090369448185172028>",
-              name: "<:A_:1101532684934725714> **A**",
-              value: "**Votes: " + entryA.voters.length + "**\n" + aString,
-              inline: false,
-            },
-            {
-              //name: "<:ACB:1090369449422499870>",
-              name: "<:B_:1101532686302052454> **B**",
-              value: "**Votes: " + entryB.voters.length + "**\n" + bString,
-              inline: false,
-            }
-          )
-          .setColor(0x4dc399)
-          .setFooter({
-            text: "Supradarky's VGM Club",
-            iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
-          });
+      resultLogEmbed
+        //   .setColor(0x097969)
+        .setTitle(
+          "Round " +
+            previousMatches[0][i].round +
+            " -  Match: " +
+            previousMatches[0][i].match 
+        )
+        .setAuthor({
+          name: "Best VGM 2024 Awards",
+          iconURL:
+            "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        })
+        .setDescription(
+          "\n**------------------------------------**\n**Match Participants**:\n**A. " +
+            entryA.name +
+            " - " +
+            entryA.title +
+            "**\n> Score: **" +
+            entryA.points +
+            "**\n**B. " +
+            entryB.name +
+            " - " +
+            entryB.title +
+            "**\n> Score: **" +
+            entryB.points +
+            "**\n**------------------------------------**\n\n**Breakdown**:"
+        )
+        //.setThumbnail(
+        //  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-voting-result.gif?v=1681088448448"
+        //)
+        .setImage(
+          "https://major-domo.glitch.me/commands/gif/output/" + gifName + ".gif"
+        )
+
+        .addFields(
+          {
+            //name: "<:ABC:1090369448185172028>",
+            name: "<:A_:1101532684934725714> **A**",
+            value: "**Votes: " + entryA.voters.length + "**\n" + aString,
+            inline: false,
+          },
+          {
+            //name: "<:ACB:1090369449422499870>",
+            name: "<:B_:1101532686302052454> **B**",
+            value: "**Votes: " + entryB.voters.length + "**\n" + bString,
+            inline: false,
+          },
+          {
+            name: "------------------------------------\nTournament Links",
+            value:
+              "[Tournament Bracket](" +
+              currentChallongeUrl +
+              ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tdOKEvLDRj_gkosnD3FGQWC&si=nbIBmK4cO2zqQpXp)",
+            inline: false,
+          }
+        )
+        .setColor(0x4dc399)
+        .setFooter({
+          text: "Supradarky's VGM Club",
+          iconURL:
+            "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+        });
+      if (
+        previousMatches[0][i].firstPlace.points !==
+        previousMatches[0][i].secondPlace.points
+      ) {
         await logsEmbedsToSend.push(resultLogEmbed);
-        //await AddSingleWinnerToNextRound(previousMatches[0][i].firstPlace);
-      });
+      }
+      await AddSingleWinnerToNextRound(previousMatches[0][i].firstPlace);
+      //resultLogEmbed;
     }
   }
 
   console.log("Sending previous day stuff");
+    channel.send(welcomeString);
+  
+  await sleep(500);
+    
   for (var i = 0; i < previousEmbedsToSend.length; i++) {
     await channel.send({ embeds: [previousEmbedsToSend[i]] });
     await sleep(250);
@@ -286,14 +316,28 @@ async function SendSingleDailyEmbed(
 ) {
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
-  //const gifPath =
-  //  "https://sd-dev-bot.glitch.me/commands/gif/output/" + gifName + ".gif";
+  var db = GetDb();
+  db.read();
+
+  let currentTournamentName = await getCurrentTournament(db);
+  let tournamentDetails = await db.get("tournaments").nth(0).value();
+
+  console.log(matchData.round + " " + tournamentDetails.isChallonge);
+
+  let single = tournamentDetails[currentTournamentName];
+  const challongeTournamentUrlName = replaceSpacesWithUnderlines(
+    currentTournamentName
+  );
+  const currentChallongeUrl =
+    "https://challonge.com/" + challongeTournamentUrlName;
+  const gifPath =
+    "https://major-domo.glitch.me/commands/gif/output/" + gifName + ".gif";
 
   const d = new Date();
   let day = d.getDay();
 
   var timeUntilNextRound =
-    day == 5 ? GetTimeInEpochStamp(72) : GetTimeInEpochStamp(24);
+    day == 5 ? GetTimeInEpochStamp(71.75) : GetTimeInEpochStamp(24);
   var todaysSheetCell = "";
 
   if (!secondOfDay) {
@@ -308,9 +352,9 @@ async function SendSingleDailyEmbed(
 
   var embed = new EmbedBuilder();
   embed
-    .setTitle("Round " + matchData.round + " - Match " + matchData.match +" - **FINAL**")
+    .setTitle(/*"Round " + matchData.round + */"FINAL - Match " + matchData.match)
     .setAuthor({
-      name: "Best VGM 2023 Awards",
+      name: currentTournamentName,
       iconURL:
         "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
     })
@@ -318,37 +362,47 @@ async function SendSingleDailyEmbed(
     .addFields(
       {
         name:
-          "**FInal Match:** Voting for this match ends <t:" +
-          timeUntilNextRound +
-          ":R>",
+          //matchData.match +
+          "**Voting for this match ends <t:" + timeUntilNextRound + ":R>**",
         value: "------------------------------------", //"\u200B",
       },
       {
         name:
-          `A. ` + matchData.entrant1.title + ` - ` + matchData.entrant1.name,
+          `A. ` + matchData.entrant1.name + ` - ` + matchData.entrant1.title,
         value: matchData.entrant1.link,
       },
       {
         name:
-          `B. ` + matchData.entrant2.title + ` - ` + matchData.entrant2.name,
+          `B. ` + matchData.entrant2.name + ` - ` + matchData.entrant2.title,
         value: matchData.entrant2.link,
+      },
+      {
+        name: "------------------------------------\nTournament Links",
+        value:
+          "[Tournament Bracket](" +
+          currentChallongeUrl +
+          ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tdOKEvLDRj_gkosnD3FGQWC&si=nbIBmK4cO2zqQpXp)",
+        inline: false,
       }
-      //{
+      // {
       //  name: "\u200B",
       //  value: "\u200B",
-      //},
+      // }
+    )
+    .setImage(
+      "https://cdn.discordapp.com/attachments/998517698881400843/1362350834406527016/Untitled78_20250416225429.png?ex=68021396&is=6800c216&hm=fe929cecae3c018bd5572b9c60d572ad2a5e659de31dfbd7819acc335047e6f5&"
     )
     .setFooter({
-      text: "Art submitted by: fox_only_final_destination_6452\nAfter having listened to all tracks, vote for your favourite.",
+      text: "Image submitted by Kind Lady Adrian Vlad Helsing(fox)\nPlease listen to both tracks before voting for your favourite.",
       iconURL:
         "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
     })
 
-    .setThumbnail(
-      "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/final.png?v=1682606926399"
-    )
-    .setImage("https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/Fox%20Entry%202.jpg?v=1712235057836");
+    .setThumbnail(gifPath);
 
+  embed.setURL("https://imgur.com/a/u46xSwV");
+
+  /*
   console.log("todaysSheetCell: " + todaysSheetCell);
   if (todaysSheetCell != "") {
     embed.addFields({
@@ -369,36 +423,37 @@ async function SendSingleDailyEmbed(
   //}
 
   //For Finals
-  /*if (matchData.match == "125") {
+  if (matchData.match == "125") {
     embed.setImage(
       "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/125-A.png?v=1698857109720"
     );
   }*/
 
   var embedsToSend = [embed];
-  var welcomeString = "Hello all and <@&1193953209019007106>";
-  /* if (previousMatches.length > 0 && previousMatches[1].length > 0) {
+  var welcomeString = "Hello all and <@&1326256775262896290>";
+  //  var welcomeString = "Thank you, all and <@&828707504363274261>, for participating.\nSee you in the next tournament!";
+  if (previousMatches.length > 0 && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {
       roundsToCheck +=
         "\n**Match " +
         entry.match +
         "**: " +
-        entry.entrant1.name +
-        " vs " +
         entry.entrant2.name +
+        " vs " +
+        entry.entrant1.name +
         "";
     }
     welcomeString +=
       "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
       roundsToCheck;
-  }*/
+  }
 
   if (!secondOfDay) {
-    channel.send(welcomeString);
+    //channel.send(welcomeString);
   }
   await sleep(1500);
-  channel.send({ embeds: embedsToSend }).then((embedMessage) => {
+  /*channel.send({ embeds: embedsToSend }).then((embedMessage) => {
     var buttonVotes = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
@@ -415,16 +470,29 @@ async function SendSingleDailyEmbed(
     embedMessage.edit({
       components: [buttonVotes],
     });
-  });
-
-  const sheetUrl =
-    "https://docs.google.com/spreadsheets/d/14R4XTkML8aoDx8ENPPWPyaWE_hhUPDlzYX6mqsytoX4/";
+  }); */
+  //const sheetUrl =
+  //  "https://docs.google.com/spreadsheets/d/14R4XTkML8aoDx8ENPPWPyaWE_hhUPDlzYX6mqsytoX4/";
   //if round 1, we need to fill in the days match
-  if (matchData.round == 1) {
-    var entrantStrings = [
-      matchData.entrant1.title + ` - ` + matchData.entrant1.name,
-      matchData.entrant2.title + ` - ` + matchData.entrant2.name,
-    ];
+  if (matchData.round == 1 && single.isChallonge) {
+    var entrantString1 =
+      matchData.entrant1.title + ` - ` + matchData.entrant1.name;
+    var entrantString2 =
+      matchData.entrant2.title + ` - ` + matchData.entrant2.name;
+
+    if (matchData.match == 1) {
+      startTournament(challongeTournamentUrlName);
+    }
+    await updateParticipantNameBySeed(
+      challongeTournamentUrlName,
+      matchData.entrant1.challongeSeed,
+      entrantString1
+    );
+    await updateParticipantNameBySeed(
+      challongeTournamentUrlName,
+      matchData.entrant2.challongeSeed,
+      entrantString2
+    );
 
     // await PopulateTournamentSheet(sheetUrl, matchData.match, entrantStrings);
     // await sleep(1000);
@@ -434,13 +502,13 @@ async function SendSingleDailyEmbed(
 
     //console.log("Prev Match count: " + previousMatches[0][0].length);
 
-    var previousMatchIndex = previousMatches[0].length - 1;
+    /* var previousMatchIndex = previousMatches[0].length - 1;
     var nextRoundStringValue =
       previousMatches[0][previousMatchIndex].firstPlace.title +
       " - " +
       previousMatches[0][previousMatchIndex].firstPlace.name;
 
-    /* console.log(
+     console.log(
       "Cell stuff:\n   matchData.nextRoundNextMatch:" +
         matchData.nextRoundNextMatch +
         "\n  differenceFromLastMultipleOfThree(matchData.match) + 1:" +
@@ -456,11 +524,13 @@ async function SendSingleDailyEmbed(
     //);
     //await sleep(1000);
   }
+  await startMatchByNumber(challongeTournamentUrlName, matchData.match);
+
   //await ColourPreviousMatches(sheetUrl, previousMatches);
   //await sleep(1000);*/
 
   // ONLY FOR MAIN BOT
-  //await AddTournamentSongsToTournamentPlaylist(youtubeUrls)
+  //await AddTournamentSongsToTournamentPlaylist(youtubeUrls);
 
   // populatedDb.map((item) => {
   //    if (item.round == tournamentRoundDetails[3]) {
@@ -622,4 +692,35 @@ async function GetCurrentBattlesVotes(db) {
   }
 
   return votedTodayCollection;
+}
+
+function switchFullName(shortName) {
+  // Define an array of objects with the shortened names and their corresponding full names
+  const nameMappings = [
+    { short: "2023", full: "2023 Main Contest" },
+    { short: "2022", full: "2022 Main Contest" },
+    { short: "2021", full: "2021 Main Contest" },
+    { short: "2020", full: "2020 Main Contest" },
+    { short: "Discovery", full: "Discovery Contest" },
+    { short: "Forest", full: "Forest Contest" },
+    { short: "BSINH", full: "Best Song I Never Heard Contest" },
+    { short: "BVGM", full: "Best VGM List Song Contest" },
+    { short: "BVGM 2", full: "Best VGM List Song Contest 2" },
+    { short: "Cameo", full: "Cameo Contest" },
+    { short: "Pokémon", full: "Pokémon Contest" },
+    { short: "Hindsight 2023", full: "Hindsight 2023" },
+    { short: "Hindsight 2022", full: "Hindsight 2022" },
+
+    // Add more mappings as needed
+  ];
+
+  // Find the matching object in the array
+  const match = nameMappings.find((mapping) => mapping.short === shortName);
+
+  // Return the full name if a match is found, otherwise return the input string
+  return match ? match.full : shortName;
+}
+
+function replaceSpacesWithUnderlines(str) {
+  return str.replace(/ /g, "_");
 }

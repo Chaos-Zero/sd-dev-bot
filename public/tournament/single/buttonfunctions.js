@@ -11,14 +11,14 @@ eval(fs.readFileSync("./public/tournament/dmUtils.js") + "");
 async function handleSingleElimButtonPress(interaction, db) {
   db.read();
   const guildObject = await bot.guilds.cache.get(process.env.GUILD_ID);
-  const reportChannel = await GetChannelByName(guildObject, "sd-contest-bot");
+  const reportChannel = await GetChannelByName(guildObject, "majordomo-logs-internal");
 
  const splitButtonName = interaction.customId.split("-");
   console.log(splitButtonName);
 
   var foundEntry = false;
 
-  console.log("Entering Doulble");
+  console.log("Entering Single");
   //Button -> doubleElim-a-matchNumber
   var selection;
   let tournamentDetails = db.get("tournaments").nth(0).value();
@@ -55,7 +55,7 @@ async function handleSingleElimButtonPress(interaction, db) {
 
   if (splitButtonName[1] != "resetVote") {
     for (const match of singleTournament.matches) {
-      // doubleElim-a-matchNumber
+      // single-a-matchNumber
       if (match.match == splitButtonName[2] && match.progress == "complete") {
         await interaction
           .reply({
@@ -100,14 +100,14 @@ async function handleSingleElimButtonPress(interaction, db) {
           new ButtonBuilder()
             //Button -> doubleElim-a-matchNumber
             .setCustomId(
-              `singleElim-resetVote-yes-${splitButtonName[1]}-${splitButtonName[2]}`
+              `single-resetVote-yes-${splitButtonName[1]}-${splitButtonName[2]}`
             )
             .setLabel("Yes")
             .setStyle("4")
         )
         .addComponents(
           new ButtonBuilder()
-            .setCustomId(`singleElim-resetVote-no-${splitButtonName[1]}`)
+            .setCustomId(`single-resetVote-no-${splitButtonName[1]}`)
             .setLabel("No")
             .setStyle("1")
         );
@@ -116,14 +116,14 @@ async function handleSingleElimButtonPress(interaction, db) {
         .addComponents(
           new ButtonBuilder()
             .setCustomId(
-              `singleElim-resetVote-remove-${splitButtonName[1]}-${splitButtonName[2]}`
+              `single-resetVote-remove-${splitButtonName[1]}-${splitButtonName[2]}`
             )
             .setLabel("Yes")
             .setStyle("4")
         )
         .addComponents(
           new ButtonBuilder()
-            .setCustomId(`singleElim-resetVote-no-${splitButtonName[1]}`)
+            .setCustomId(`single-resetVote-no-${splitButtonName[1]}`)
             .setLabel("No")
             .setStyle("1")
         );

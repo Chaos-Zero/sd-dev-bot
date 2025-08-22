@@ -44,6 +44,20 @@ module.exports = {
         .setName("randomise-tournament")
         .setDescription("Randomise the order for the player matches.")
         .setRequired(false)
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName("create-challonge-bracket")
+        .setDescription("Creates a challonge bracket.")
+        .setRequired(false)
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName("set-challonge-hidden")
+        .setDescription(
+          "Has entries on challonge hidden in first round until match."
+        )
+        .setRequired(false)
     ),
 
   async execute(interaction) {
@@ -52,6 +66,10 @@ module.exports = {
     const matchesPerDay = interaction.options.getString("matches-per-day");
     const isRandom =
       interaction.options.getBoolean("randomise-tournament") || false;
+    const isChallonge =
+      interaction.options.getBoolean("create-challonge-bracket") || false;
+    const isHiddenBracket =
+      interaction.options.getBoolean("set-challonge-hidden") || false;
 
     // Ask for a CSV file
     await interaction.reply({
@@ -81,9 +99,11 @@ module.exports = {
         );
         // Delete the user's last message after the CSV file has been loaded
         registerTournament(
-          tournamentName,
+           tournamentName,
           tournamentFormat,
           isRandom,
+          isChallonge,
+          isHiddenBracket,
           attachment,
           parseInt(matchesPerDay)
         );

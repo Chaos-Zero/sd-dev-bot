@@ -61,10 +61,10 @@ async function UpdateAlertedUsers(db, table, round, users = []) {
     .write();
 }
 
-async function UpdateTable(db, populatedDb) {
+/*async function UpdateTable(db, populatedDb) {
 
   let dbUpdateTable = db
     .get(process.env.TOURNAMENT_NAME)
     .assign(populatedDb)
     .write();
-}
+}*/

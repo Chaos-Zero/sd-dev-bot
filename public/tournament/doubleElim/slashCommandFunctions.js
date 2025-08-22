@@ -5,15 +5,15 @@ function compareDoubleUsers(interaction, currentTournament, userId1, userId2) {
   let maxWeight = 0;
   let iterations = 0;
   let disagreementWeight = 0;
-  var matchCount = 0;
+  let matchCount = 0;
 
-  var playedMatches = currentTournament.matches;
+  let playedMatches = currentTournament.matches;
 
-  if (currentTournament.matches.length < 5) {
+  if (playedMatches.length < 5) {
     return interaction
       .reply({
         content:
-          "It appears there has not been enough rounds in this tournament to run this command.",
+          "It appears there have not been enough rounds in this tournament to run this command.",
         ephemeral: true,
       })
       .then(() => console.log("Reply sent."))
@@ -21,8 +21,9 @@ function compareDoubleUsers(interaction, currentTournament, userId1, userId2) {
   }
 
   matchInner: for (const match of playedMatches) {
-    if (match.progress == "complete") {
+    if (match.progress === "complete") {
       maxWeight += 1;
+
       if (
         match.entrant1.voters.includes(userId1) &&
         match.entrant1.voters.includes(userId2)
@@ -51,9 +52,6 @@ function compareDoubleUsers(interaction, currentTournament, userId1, userId2) {
     }
   }
 
-  // function calculateMaxScore(iterations) {
-  //   return iterations * 2 + iterations;
-  // }
   matchCount = iterations;
 
   const usersCompatibility = {
@@ -179,7 +177,7 @@ function compareDoubleUsersAndReturnMostCompatible(
         maxWeight,
         userCompatPercent,
         iterations,
-        userCompatPercent
+        userCompatPercent,
       });
       tiedValues = 0;
     } else if (highestComapatValue == userCompatPercent && isUserInServer) {
@@ -192,7 +190,7 @@ function compareDoubleUsersAndReturnMostCompatible(
         maxWeight,
         userCompatPercent,
         iterations,
-        userCompatPercent
+        userCompatPercent,
       });
     }
     totalWeight = 0;

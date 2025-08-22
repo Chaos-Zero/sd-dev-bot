@@ -7,7 +7,7 @@ const challongeKey = process.env.CHALLONGE_KEY;
 // Create a pre-configured Axios instance
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 5000,
+  timeout: 8000,
 });
 
 function getHeaders() {
@@ -111,44 +111,35 @@ async function createChallongeTournament(
   name,
   url,
   description,
-  tournamentFormat
+  tournamentFormat,
+  isHiddenBracket
 ) {
-  if (tournamentFormat == "Double Elimination") {
-    try {
-      const data = {
-        api_key: challongeKey,
-        "tournament[name]": name,
-        "tournament[tournament_type]": "double elimination",
-        "tournament[url]": url,
-        "tournament[description]": description,
-        "tournament[sequential_pairings]": "True",
-      };
-
-      //console.log(data);
-      return await post("/tournaments.json", data);
-    } catch (error) {
-      console.error("Failed to create tournament:", error.response.errors);
-      throw error;
-    }
-  } else {
-    try {
-      const data = {
-        api_key: challongeKey,
-        "tournament[name]": name,
-        "tournament[url]": url,
-        "tournament[description]": description,
-        "tournament[sequential_pairings]": "True",
-      };
-
-      //console.log(data);
-      return await post("/tournaments.json", data);
-    } catch (error) {
-      console.error("Failed to create tournament:", error.response.errors);
-      throw error;
-    }
+  try {
+    const data = {
+      api_key: challongeKey,
+      "tournament[name]": name,
+      "tournament[url]": url,
+      "tournament[description]": description,
+      "tournament[sequential_pairings]": "true",
+      "tournament[hold_third_place_match]": "true",
+      "tournament[tournament_type]":
+        tournamentFormat == "Double Elimination"
+          ? "double elimination"
+          : "single elimination",
+      "tournament[hide_seeds]": isHiddenBracket ? "true" : "false", // needs to be lowercase string value
+    };
+    return await post("/tournaments.json", data);
+  } catch (error) {
+    console.error(
+      "Failed to create tournament:",
+      error.response?.data?.errors || error.message
+    );
+    throw error;
+    //console.l
   }
 }
-async function addChallongeEntrants(names, tournamentUrl) {
+
+async function addChallongeEntrants(names, tournamentName) {
   /*  // Endpoint with the API key as a query parameter
   const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}/participants/bulk_add.json?api_key=${challongeKey}`;
 
@@ -181,12 +172,12 @@ async function addChallongeEntrants(names, tournamentUrl) {
 }
 */
   for (const name of names) {
-    await addParticipant(tournamentUrl, name, challongeKey);
+    await addParticipant(tournamentName, name, challongeKey);
   }
 }
 
-async function addParticipant(tournamentUrl, name, apiKey) {
-  const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}/participants.json?api_key=${apiKey}`;
+async function addParticipant(tournamentName, name, apiKey) {
+  const endpoint = `${BASE_URL}/tournaments/${tournamentName}/participants.json?api_key=${apiKey}`;
 
   try {
     const response = await axios.post(
@@ -232,6 +223,12 @@ async function getTournamentStructure(tournamentUrl) {
     const participantsData = await participantsGet(
       `/tournaments/${tournamentUrl}/participants.json`
     );
+
+    // Ensure participants are fetched correctly
+    if (!participantsData || participantsData.length === 0) {
+      throw new Error("No participants found.");
+    }
+
     const participants = participantsData.map((p) => ({
       id: p.participant.id,
       name: p.participant.name,
@@ -241,6 +238,11 @@ async function getTournamentStructure(tournamentUrl) {
     const matchesData = await participantsGet(
       `/tournaments/${tournamentUrl}/matches.json`
     );
+
+    if (!matchesData || matchesData.length === 0) {
+      throw new Error("No matches found.");
+    }
+
     const matches = matchesData.map((m) => ({
       challongeMatchId: m.match.id,
       player1Id: m.match.player1_id,
@@ -271,6 +273,7 @@ async function getTournamentStructure(tournamentUrl) {
     //console.log(matches);
     return {
       matches,
+      participants,
     };
   } catch (error) {
     console.error("Failed to fetch tournament structure:", error);
@@ -278,15 +281,17 @@ async function getTournamentStructure(tournamentUrl) {
   }
 }
 
-async function startTournament(tournamentUrl) {
+async function startTournament(tournamentName) {
   try {
-    // Endpoint to start the tournament
-    const endpoint = `/tournaments/${tournamentUrl}/start.json`;
-
-    // Using the POST function we defined before to "start" the tournament
-    return await put(endpoint, {
-      api_key: challongeKey,
-    });
+    const response = await axios.post(
+      `${BASE_URL}/tournaments/${tournamentName}/start.json`,
+      qs.stringify({ api_key: challongeKey }),
+      {
+        headers: getHeaders(challongeKey),
+      }
+    );
+    console.log(`Tournament ${tournamentName} started successfully`);
+    return response.data;
   } catch (error) {
     console.error("Failed to start the tournament:", error);
     throw error;
@@ -341,128 +346,147 @@ async function getCurrentMatch(tournamentUrl) {
 }
 
 async function saveTournamentStructure(urlName, tournamentDb, db) {
-  var brackets = [];
-  getTournamentStructure(urlName)
-    /*
-     const matches = matchesData.map((m) => ({
-      id: m.match.id,
-      player1Id: m.match.player1_id,
-      player2Id: m.match.player2_id,
-      round: m.match.round,
-      state: m.match.state,
-      matchNumber: m.match.suggested_play_order, // Derived match number
-    }));
-*/
+  try {
+    const { matches, participants } = await getTournamentStructure(urlName);
 
-    .then((matches) => {
-      for (var match of matches.matches) {
-        //console.log(match);
-        var matchEntrant1, matchEntrant2;
-        if (!match.player1) {
-          matchEntrant1 = {
-            match: match.matchNumber,
-            challongeId: match.challongeMatchId,
-            bracket: match.bracket,
-            round: match.round,
-          };
-        } else {
-          //console.log(match.player1);
-          var entrant1 = findObjectByName(tournamentDb.entrants, match.player1);
-          matchEntrant1 = {
-            name: entrant1.name,
-            title: entrant1.title,
-            link: entrant1.link,
-            userId: match.player1Id,
-            match: match.matchNumber,
-            challongeId: match.challongeMatchId,
-            bracket: match.bracket,
-            round: match.round,
-          };
-        }
-        if (!match.player2) {
-          matchEntrant2 = {
-            match: match.matchNumber,
-            challongeId: match.id,
-            bracket: match.bracket,
-            round: match.round,
-          };
-        } else {
-          var entrant2 = findObjectByName(tournamentDb.entrants, match.player2);
-          matchEntrant2 = {
-            name: entrant2.name,
-            title: entrant2.title,
-            link: entrant2.link,
-            userId: match.player2Id,
-            match: match.matchNumber,
-            challongeId: match.challongeMatchId,
-            bracket: match.bracket,
-            round: match.round,
-          };
-        }
-        brackets.push(matchEntrant1);
-        brackets.push(matchEntrant2);
+    if (!matches || matches.length === 0) {
+      throw new Error("No matches to save.");
+    }
+
+    if (!participants || participants.length === 0) {
+      throw new Error("No participants to save.");
+    }
+
+    // Assign participants to tournamentDb
+    tournamentDb.entrants = participants;
+
+    var brackets = [];
+    matches.forEach((match) => {
+      var matchEntrant1, matchEntrant2;
+      if (!match.player1) {
+        matchEntrant1 = {
+          match: match.matchNumber,
+          challongeId: match.challongeMatchId,
+          bracket: match.bracket,
+          round: match.round,
+        };
+      } else {
+        var entrant1 = findObjectByName(tournamentDb.entrants, match.player1);
+        matchEntrant1 = {
+          name: entrant1.name,
+          title: entrant1.title,
+          link: entrant1.link,
+          userId: match.player1Id,
+          match: match.matchNumber,
+          challongeId: match.challongeMatchId,
+          bracket: match.bracket,
+          round: match.round,
+        };
       }
-      db.read();
-
-      getCurrentTournament(db)
-        .then((currentTournamentName) => {
-          db.get("tournaments")
-            .nth(0)
-            .set(`${currentTournamentName}.brackets`, brackets)
-            .write();
-        })
-        .catch((error) => {
-          console.error("Error: ", "Coulnd't get name");
-        });
-    })
-    .catch((error) => {
-      console.error("Error: ", error);
+      if (!match.player2) {
+        matchEntrant2 = {
+          match: match.matchNumber,
+          challongeId: match.id,
+          bracket: match.bracket,
+          round: match.round,
+        };
+      } else {
+        var entrant2 = findObjectByName(tournamentDb.entrants, match.player2);
+        matchEntrant2 = {
+          name: entrant2.name,
+          title: entrant2.title,
+          link: entrant2.link,
+          userId: match.player2Id,
+          match: match.matchNumber,
+          challongeId: match.challongeMatchId,
+          bracket: match.bracket,
+          round: match.round,
+        };
+      }
+      brackets.push(matchEntrant1);
+      brackets.push(matchEntrant2);
     });
+
+    db.read();
+
+    getCurrentTournament(db)
+      .then((currentTournamentName) => {
+        db.get("tournaments")
+          .nth(0)
+          .set(`${currentTournamentName}.brackets`, brackets)
+          .write();
+      })
+      .catch((error) => {
+        console.error("Error: Couldn't get the current tournament name.");
+      });
+  } catch (error) {
+    console.error("Error saving tournament structure:", error);
+  }
 }
 
 function findObjectByName(arr, searchString) {
-  return arr.find((entry) => searchString.includes(entry.name));
+  if (!Array.isArray(arr)) {
+    console.error(
+      "findObjectByName: Provided array is not an array or is undefined."
+    );
+    return undefined;
+  }
+
+  const result = arr.find((entry) => searchString.includes(entry.name));
+
+  if (!result) {
+    console.error(`findObjectByName: No match found for "${searchString}"`);
+  }
+
+  return result;
 }
 
-async function endChallongeMatch(tournamentUrl, matchId, scoresCsv, winnerId) {
+async function endChallongeMatch(tournamentUrl, matchId, scoresCsv) {
   try {
+    const match = await getChallongeMatch(tournamentUrl, matchId);
+
+    if (!match) {
+      throw new Error("Match not found.");
+    }
+
+    // Determine the winner ID based on the scores
+    const [score1, score2] = scoresCsv.split("-").map(Number);
+    let winnerId;
+
+    if (score1 > score2) {
+      winnerId = match.player1_id;
+    } else if (score2 > score1) {
+      winnerId = match.player2_id;
+    } else {
+      throw new Error("Scores must result in a clear winner.");
+    }
+
+    // Prepare the data for ending the match
     const data = {
       api_key: challongeKey,
-      "match[winner_id]": winnerId.toString(),
       "match[scores_csv]": scoresCsv,
+      "match[winner_id]": winnerId,
+      "match[state]": "complete",
     };
 
     const endpoint = `/tournaments/${tournamentUrl}/matches/${matchId}.json`;
     const response = await axiosInstance.put(endpoint, qs.stringify(data));
+    
+     if (response.status === 200) {
+      console.log(`Match ${matchId} completed successfully.`);
+    } else {
+      console.error("Failed to complete the match:", response.data);
+    }
+
     return response.data;
   } catch (error) {
     console.error(
-      "Update match request failed:",
+     "Failed to complete the match:",
       error.response ? error.response.data : error.message
     );
     throw error;
   }
 }
-
-/*async function completeChallongeMatch(tournamentUrl, matchId) {
-  const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}/matches/${matchId}.json`;
-
-  const data = {
-    "match[state]": "complete", // Setting the match to its completed state
-    api_key: challongeKey,
-  };
-
-  try {
-    const response = await axios.put(endpoint, qs.stringify(data));
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Failed to complete match:",
-      error.response ? error.response.data : error.message
-    );
-    throw error;
-  }
-}*/
 
 async function getChallongeMatch(tournamentUrl, matchId) {
   const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}/matches/${matchId}.json?api_key=${challongeKey}`;
@@ -509,3 +533,139 @@ async function completeChallongeMatch(tournamentUrl, matchId) {
     throw error;
   }
 }
+
+async function updateParticipantNameBySeed(
+  tournamentName,
+  seedNumber,
+  newName
+) {
+  try {
+    const participantsResponse = await axios.get(
+      `${BASE_URL}/tournaments/${tournamentName}/participants.json`,
+      {
+        params: {
+          api_key: challongeKey,
+        },
+      }
+    );
+    const participants = participantsResponse.data;
+
+    // Step 2: Find the participant with the given seed number
+    const participant = participants.find(
+      (p) => p.participant.seed === seedNumber
+    );
+
+    if (!participant) {
+      console.log(`No participant found with seed number ${seedNumber}`);
+      return;
+    }
+
+    // Step 3: Update the participant's name
+    const participantId = participant.participant.id;
+    const updateData = {
+      api_key: challongeKey,
+      "participant[name]": newName,
+    };
+
+    const updateResponse = await axios.put(
+      `${BASE_URL}/tournaments/${tournamentName}/participants/${participantId}.json`,
+      qs.stringify(updateData),
+      {
+        headers: getHeaders(challongeKey),
+      }
+    );
+
+    if (updateResponse.status === 200) {
+      console.log(
+        `Participant with seed ${seedNumber} updated to "${newName}"`
+      );
+    } else {
+      console.error("Failed to update participant:", updateResponse.data);
+    }
+  } catch (error) {
+    console.error("An error occurred:", error);
+  }
+}
+
+async function getMatchIdByNumber(tournamentName, matchNumber) {
+  try {
+    // Log the request URL
+    console.log(`Requesting matches for tournament: ${tournamentName}`);
+
+    const response = await axios.get(
+      `${BASE_URL}/tournaments/${tournamentName}/matches.json`,
+      {
+        params: {
+          api_key: challongeKey,
+        },
+      }
+    );
+
+    const matches = response.data;
+
+    // Log the matches array to ensure it's not empty
+    if (!matches.length) {
+      console.error('No matches found for this tournament');
+      return null;
+    }
+
+    // Log the match number being searched for
+    console.log(`Searching for match number: ${matchNumber}`);
+
+    const match = matches.find(
+      (m) => m.match.suggested_play_order === matchNumber
+    );
+
+    if (!match) {
+      console.error(`No match found with match number ${matchNumber}`);
+      return null;
+    }
+
+    // Log the found match ID
+    console.log(`Found match ID: ${match.match.id}`);
+
+    return match.match.id;
+  } catch (error) {
+    console.error("Failed to retrieve matches:", error);
+    throw error;
+  }
+}
+
+
+async function endMatchByNumber(tournamentName, matchNumber, scoresCsv) {
+  try {
+    // Get the match ID based on the match number
+    const matchId = await getMatchIdByNumber(tournamentName, matchNumber);
+
+    if (!matchId) {
+      console.error(`Could not find a match with number ${matchNumber}`);
+      return;
+    }
+
+    // Update the match with the provided scores
+    await endChallongeMatch(tournamentName, matchId, scoresCsv);
+    console.log(`Match ${matchNumber} updated successfully`);
+  } catch (error) {
+    console.error("Failed to update match by number:", error);
+  }
+}
+
+async function startMatchByNumber(tournamentName, matchNumber) {
+  try {
+    // Get the match ID based on the match number
+    const matchId = await getMatchIdByNumber(tournamentName, 63);
+
+    if (!matchId) {
+      console.error(`Could not find a match with number ${matchNumber}`);
+      return;
+    }
+
+    // Start the match
+    await startChallongeMatch(tournamentName, matchId);
+    console.log(`Match ${matchNumber} started successfully`);
+  } catch (error) {
+    console.error("Failed to start match by number:", error);
+  }
+}
+
+

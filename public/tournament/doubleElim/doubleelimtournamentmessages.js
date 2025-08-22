@@ -353,7 +353,7 @@ async function SendDoubleElimDailyEmbed(
       
   var embedsToSend = [embed];
   var welcomeString =
-    "Hello all and <@&828707504363274261>\nFollow along with this contest here: https://challonge.com/Best_VGM_List_Cameo_Contest";
+    "Hello all and <@&1326256775262896290>\nFollow along with this contest here: https://challonge.com/Best_VGM_List_Cameo_Contest";
   if (previousMatches.length > 0 && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {

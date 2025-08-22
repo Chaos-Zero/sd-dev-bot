@@ -56,11 +56,18 @@ function GetTimeInEpochStamp(hoursToAdd = 0) {
 }
 
 async function downloadFile(url) {
-  const response = await axios({
-    method: "GET",
-    url: url,
-    responseType: "stream",
-  });
+  console.log("Downloading file from URL:", url);
+  try {
+    const response = await axios({
+      method: "GET",
+      url: url,
+      responseType: "stream",
+      timeout: 10000, // 10 seconds timeout, adjust as needed
+    });
 
-  return response.data;
+    return response.data;
+  } catch (error) {
+    console.error("Failed to download file:", error.message);
+    throw error;
+  }
 }

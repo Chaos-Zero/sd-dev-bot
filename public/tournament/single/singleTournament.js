@@ -83,16 +83,18 @@ async function StartSingleMatch(
 
   var stringRound = thisRound.toString();
 
-  console.log("single  obejct: " + single);
-   var matchData = {
+  var matchData = {
     round: stringRound,
     match: matchNumber,
-    nextRoundNextMatch: "5",
+    nextRoundNextMatch: "1",
+    isChallonge: single.isChallonge,
     progress: "in-progress",
     entrant1: {
       name: foundEntries[0].name,
       title: foundEntries[0].title,
       link: foundEntries[0].link,
+      contest: foundEntries[0].contest,
+      challongeSeed: foundEntries[0].challongeSeed,
       voters: [],
       points: 0,
     },
@@ -100,6 +102,8 @@ async function StartSingleMatch(
       name: foundEntries[1].name,
       title: foundEntries[1].title,
       link: foundEntries[1].link,
+      contest: foundEntries[1].contest,
+      challongeSeed: foundEntries[1].challongeSeed,
       voters: [],
       points: 0,
     },
@@ -192,6 +196,8 @@ async function EndSingleMatches(interaction = "") {
       title: "",
       link: "",
       match: "",
+      contest: "",
+      challongeSeed: "",
     };
 
     var secondPlace = {
@@ -199,6 +205,8 @@ async function EndSingleMatches(interaction = "") {
       title: "",
       link: "",
       match: "",
+      contest: "",
+      challongeSeed: "",
     };
 
     var winnerExists =
@@ -210,17 +218,11 @@ async function EndSingleMatches(interaction = "") {
 
       firstPlace.name = "placeholder";
       firstPlace.match = match.match;
-      firstPlace.link = [
-        match.entrant1.link,
-        match.entrant2.link,
-      ];
+      firstPlace.link = [match.entrant1.link, match.entrant2.link];
 
       secondPlace.name = "placeholder";
       secondPlace.match = match.match;
-      secondPlace.link = [
-        match.entrant1.link,
-        match.entrant2.link,
-      ];
+      secondPlace.link = [match.entrant1.link, match.entrant2.link];
 
       if (match.progress == "tie") {
         continuedTie = true;
@@ -245,6 +247,8 @@ async function EndSingleMatches(interaction = "") {
           title: match.entrant1.title,
           link: match.entrant1.link,
           match: match.match,
+          contest: match.entrant1.contest,
+          challongeSeed: match.entrant1.challongeSeed,
           points: match.entrant1.points,
           voters: match.entrant1.voters,
           voteLetter: "A",
@@ -254,6 +258,8 @@ async function EndSingleMatches(interaction = "") {
           title: match.entrant2.title,
           link: match.entrant2.link,
           match: match.match,
+          contest: match.entrant2.contest,
+          challongeSeed: match.entrant2.challongeSeed,
           points: match.entrant2.points,
           voters: match.entrant2.voters,
           voteLetter: "B",
@@ -268,6 +274,8 @@ async function EndSingleMatches(interaction = "") {
           title: match.entrant2.title,
           link: match.entrant2.link,
           match: match.match,
+          contest: match.entrant2.contest,
+          challongeSeed: match.entrant2.challongeSeed,
           points: match.entrant2.points,
           voters: match.entrant2.voters,
           voteLetter: "B",
@@ -277,6 +285,8 @@ async function EndSingleMatches(interaction = "") {
           title: match.entrant1.title,
           link: match.entrant1.link,
           match: match.match,
+          contest: match.entrant1.contest,
+          challongeSeed: match.entrant1.challongeSeed,
           points: match.entrant1.points,
           voters: match.entrant1.voters,
           voteLetter: "A",
@@ -296,6 +306,17 @@ async function EndSingleMatches(interaction = "") {
         (dbMatch) => dbMatch.match == match.match
       );
       matchObj = match;
+
+      if (single.isChallonge) {
+        const challongeResults =
+          match.entrant1.points + "-" + match.entrant2.points;
+
+        endMatchByNumber(
+          replaceSpacesWithUnderlines(currentTournamentName),
+          match.match,
+          challongeResults
+        );
+      }
     }
 
     /*
@@ -315,6 +336,8 @@ async function EndSingleMatches(interaction = "") {
         name: firstPlace.name,
         title: firstPlace.title,
         link: firstPlace.link,
+        contest: firstPlace.contest,
+        challongeSeed: firstPlace.challongeSeed,
         voters: firstPlace.voters,
         points: firstPlace.points,
         voteLetter: firstPlace.voteLetter,
@@ -323,6 +346,8 @@ async function EndSingleMatches(interaction = "") {
         name: secondPlace.name,
         title: secondPlace.title,
         link: secondPlace.link,
+        contest: secondPlace.contest,
+        challongeSeed: secondPlace.challongeSeed,
         voters: secondPlace.voters,
         points: secondPlace.points,
         voteLetter: secondPlace.voteLetter,
@@ -331,7 +356,6 @@ async function EndSingleMatches(interaction = "") {
     if (firstPlaceEntrant.points > secondPlaceEntrant.points) {
       matchesForEmbed.push(embedDetails);
     }
-
 
     //elimatedArray.push(secondPlace);
     //  }
