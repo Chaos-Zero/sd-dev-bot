@@ -1,0 +1,59 @@
+name: Deploy Live Bot to Hetzner
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}  # allow manual runs from the Actions tab
+
+jobs:
+  deploy-live:
+    runs-on: ubuntu-latest
+
+    # Prevent overlapping deploys
+    concurrency:
+      group: deploy-live
+      cancel-in-progress: true
+
+    steps:
+      # (checkout not strictly required for SSH-only deploy; kept for clarity)
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            echo "[1/6] Go to live app dir"
+            cd /home/botuser/bots/live || exit 1
+
+            echo "[2/6] Ensure repo present on main branch"
+            if [ ! -d .git ]; then
+              echo "Repo not found; cloning fresh..."
+              rm -rf /home/botuser/bots/live
+              git clone https://github.com/Chaos-Zero/sd-dev-bot.git /home/botuser/bots/live
+              cd /home/botuser/bots/live
+            fi
+            git fetch --all --prune
+            git checkout main || git checkout -b main
+            git reset --hard origin/main
+
+            echo "[3/6] Install dependencies"
+            if [ -f package-lock.json ]; then
+              npm ci --omit=dev
+            else
+              npm i --omit=dev
+            fi
+
+            echo "[4/5] Reload PM2 process"
+            pm2 reload bot-live || pm2 start /home/botuser/ecosystem.config.js --only bot-live --update-env
+            pm2 save
+
+            echo "[5/5] Show PM2 status"
+            pm2 list
