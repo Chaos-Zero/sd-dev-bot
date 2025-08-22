@@ -1,4 +1,4 @@
-name: Deploy Dev Bot to Hetzner
+name: Deploy Dev Bot to Hetzner (fast installs)
 
 on:
   push:
@@ -6,15 +6,39 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  deploy-dev:
+  # 1) Detect whether dependencies changed
+  detect-deps-change:
     runs-on: ubuntu-latest
-
-    concurrency:
-      group: deploy-dev
-      cancel-in-progress: true
-
+    outputs:
+      deps_changed: ${{ steps.filter.outputs.deps_changed }}
     steps:
-      - name: Deploy over SSH
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for dependency file changes
+        id: filter
+        run: |
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            CHANGED=$(git diff --name-only HEAD^ HEAD || true)
+          else
+            # first commit or shallow checkout; treat as changed
+            CHANGED="package.json"
+          fi
+          echo "Changed files:"
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '(^|/)(package\.json|package-lock\.json)$'; then
+            echo "deps_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deps_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # 2A) Fast path: no deps change -> just SSH, pull, reload
+  quick-deploy:
+    needs: detect-deps-change
+    if: needs.detect-deps-change.outputs.deps_changed == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH (no install)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -24,31 +48,94 @@ jobs:
           script_stop: true
           script: |
             set -e
-
-            echo "[1/6] Go to dev app dir"
-            cd /home/botuser/bots/dev || exit 1
-
-            echo "[2/6] Ensure repo present on dev branch"
-            if [ ! -d .git ]; then
-              echo "Repo not found; cloning fresh..."
-              rm -rf /home/botuser/bots/dev
-              git clone https://github.com/Chaos-Zero/sd-dev-bot.git /home/botuser/bots/dev
-              cd /home/botuser/bots/dev
-            fi
+            cd /home/botuser/bots/dev
             git fetch --all --prune
             git checkout dev || git checkout -b dev
             git reset --hard origin/dev
-
-            echo "[3/6] Install dependencies"
-            if [ -f package-lock.json ]; then
-              npm ci --omit=dev
-            else
-              npm i --omit=dev
-            fi
-            
-            echo "[5/6] Reload PM2 process"
             pm2 reload bot-dev || pm2 start /home/botuser/ecosystem.config.js --only bot-dev --update-env
             pm2 save
+            pm2 list
 
-            echo "[6/6] Show PM2 status"
+  # 2B) Slow path (but still fast!): deps changed -> build on runner, upload bundle, unpack, reload
+  build-and-ship:
+    needs: detect-deps-change
+    if: needs.detect-deps-change.outputs.deps_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node (v20) with npm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Clean install (runner, cached)
+        run: |
+          npm ci --omit=dev
+          # if you build assets, do it here:
+          # npm run build
+
+      - name: Create deploy bundle (includes node_modules)
+        run: |
+          mkdir -p deploy
+          # Copy everything except git metadata and CI files
+          rsync -a --delete \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "deploy" \
+            ./ ./deploy/app/
+          # Create tarball
+          tar -C deploy -czf dev_bundle.tgz app
+
+      - name: Upload bundle to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: dev_bundle.tgz
+          target: /home/botuser/releases/
+
+      - name: Unpack & activate on server (no install on server)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            APP_DIR="/home/botuser/bots/dev"
+            RELEASE_DIR="/home/botuser/releases"
+            BUNDLE="$RELEASE_DIR/dev_bundle.tgz"
+
+            # Ensure dirs exist
+            mkdir -p "$APP_DIR" "$RELEASE_DIR"
+
+            # Extract to a temp folder, then rsync into APP_DIR to preserve .env/.data
+            TMPDIR="$RELEASE_DIR/tmp-$$"
+            mkdir -p "$TMPDIR"
+            tar -C "$TMPDIR" -xzf "$BUNDLE"
+            # rsync app/ -> APP_DIR (keeps .env and .data in APP_DIR intact)
+            rsync -a --delete \
+              --exclude ".env" \
+              --exclude ".data" \
+              "$TMPDIR/app/" "$APP_DIR/"
+
+            rm -rf "$TMPDIR" "$BUNDLE"
+
+            # Make sure branch info is updated for transparency (optional)
+            cd "$APP_DIR"
+            if [ -d .git ]; then
+              git fetch --all --prune || true
+              git rev-parse --short HEAD || true
+            fi
+
+            # Reload PM2 without any install on server
+            pm2 reload bot-dev || pm2 start /home/botuser/ecosystem.config.js --only bot-dev --update-env
+            pm2 save
             pm2 list
