@@ -66,27 +66,26 @@ jobs:
             git reset --hard "$NEW_SHA"
 
             echo "[5/6] Install dependencies (only if needed)"
-            # Robust decision block so set -euo doesn't kill the shell
-            set +e
-            INSTALL_NEEDED=0
-            if [ "${NEED_INSTALL:-0}" = "1" ]; then
-              INSTALL_NEEDED=1
-            fi
-            if [ ! -d "node_modules" ]; then
-              INSTALL_NEEDED=1
-            fi
-            set -e
-            echo "[debug] INSTALL_NEEDED=$INSTALL_NEEDED"
-
-            if [ "$INSTALL_NEEDED" = "1" ]; then
+            INSTALL_RC=0
+            set +e  # prevent -e from killing the shell during conditional install
+            if [ "${NEED_INSTALL:-0}" = "1" ] || [ ! -d node_modules ]; then
               echo "→ Installing deps..."
               if [ -f package-lock.json ]; then
                 npm ci --omit=dev
+                INSTALL_RC=$?
               else
                 npm i --omit=dev
+                INSTALL_RC=$?
               fi
             else
               echo "→ No dependency changes detected; skipping npm install"
+              INSTALL_RC=0
+            fi
+            set -e
+            echo "[debug] INSTALL_RC=$INSTALL_RC"
+            if [ "$INSTALL_RC" -ne 0 ]; then
+              echo "[error] npm install failed with code $INSTALL_RC"
+              exit "$INSTALL_RC"
             fi
 
             echo "[6/6] Reload PM2 process"
