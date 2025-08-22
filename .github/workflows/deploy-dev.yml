@@ -1,4 +1,4 @@
-name: Deploy Dev Bot to Hetzner (fast installs)
+name: Deploy Dev Bot to Hetzner (no-lockfile friendly)
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  # 1) Detect whether dependencies changed
   detect-deps-change:
     runs-on: ubuntu-latest
     outputs:
@@ -19,12 +18,10 @@ jobs:
         id: filter
         run: |
           if git rev-parse HEAD^ >/dev/null 2>&1; then
-            CHANGED=$(git diff --name-only HEAD^ HEAD || true)
+            CHANGED="$(git diff --name-only HEAD^ HEAD || true)"
           else
-            # first commit or shallow checkout; treat as changed
             CHANGED="package.json"
           fi
-          echo "Changed files:"
           echo "$CHANGED"
           if echo "$CHANGED" | grep -qE '(^|/)(package\.json|package-lock\.json)$'; then
             echo "deps_changed=true" >> "$GITHUB_OUTPUT"
@@ -32,7 +29,6 @@ jobs:
             echo "deps_changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # 2A) Fast path: no deps change -> just SSH, pull, reload
   quick-deploy:
     needs: detect-deps-change
     if: needs.detect-deps-change.outputs.deps_changed == 'false'
@@ -56,7 +52,6 @@ jobs:
             pm2 save
             pm2 list
 
-  # 2B) Slow path (but still fast!): deps changed -> build on runner, upload bundle, unpack, reload
   build-and-ship:
     needs: detect-deps-change
     if: needs.detect-deps-change.outputs.deps_changed == 'true'
@@ -65,28 +60,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node (v20) with npm cache
+      - name: Setup Node (no cache; lockfile not committed)
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      - name: Clean install (runner, cached)
+      - name: Install deps on runner
         run: |
-          npm ci --omit=dev
-          # if you build assets, do it here:
+          if [ -f package-lock.json ]; then
+            npm ci --omit=dev
+          else
+            npm i --omit=dev
+          fi
+          # If you build assets, do it here:
           # npm run build
 
       - name: Create deploy bundle (includes node_modules)
         run: |
           mkdir -p deploy
-          # Copy everything except git metadata and CI files
           rsync -a --delete \
             --exclude ".git" \
             --exclude ".github" \
             --exclude "deploy" \
             ./ ./deploy/app/
-          # Create tarball
           tar -C deploy -czf dev_bundle.tgz app
 
       - name: Upload bundle to server
@@ -99,7 +95,7 @@ jobs:
           source: dev_bundle.tgz
           target: /home/botuser/releases/
 
-      - name: Unpack & activate on server (no install on server)
+      - name: Unpack & activate on server (no server-side install)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -113,14 +109,12 @@ jobs:
             RELEASE_DIR="/home/botuser/releases"
             BUNDLE="$RELEASE_DIR/dev_bundle.tgz"
 
-            # Ensure dirs exist
             mkdir -p "$APP_DIR" "$RELEASE_DIR"
-
-            # Extract to a temp folder, then rsync into APP_DIR to preserve .env/.data
             TMPDIR="$RELEASE_DIR/tmp-$$"
             mkdir -p "$TMPDIR"
             tar -C "$TMPDIR" -xzf "$BUNDLE"
-            # rsync app/ -> APP_DIR (keeps .env and .data in APP_DIR intact)
+
+            # Keep .env and .data on the server; replace the rest atomically
             rsync -a --delete \
               --exclude ".env" \
               --exclude ".data" \
@@ -128,14 +122,6 @@ jobs:
 
             rm -rf "$TMPDIR" "$BUNDLE"
 
-            # Make sure branch info is updated for transparency (optional)
-            cd "$APP_DIR"
-            if [ -d .git ]; then
-              git fetch --all --prune || true
-              git rev-parse --short HEAD || true
-            fi
-
-            # Reload PM2 without any install on server
             pm2 reload bot-dev || pm2 start /home/botuser/ecosystem.config.js --only bot-dev --update-env
             pm2 save
             pm2 list
