@@ -56,10 +56,9 @@ async function registerTournament(
       .pipe(csvParser())
       .on("data", (row) => {
         participants.push({
-          name: row.Name,
           title: row.Title,
+          name: row.Name,
           link: row.Link,
-          contest: row.Contest,
           match: 0,
         });
       })
