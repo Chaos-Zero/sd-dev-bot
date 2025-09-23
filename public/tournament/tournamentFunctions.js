@@ -59,6 +59,7 @@ async function registerTournament(
           title: row.Title,
           name: row.Name,
           link: row.Link,
+          type: row.Type,
           match: 0,
         });
       })
