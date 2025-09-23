@@ -112,7 +112,7 @@ async function SendPreviousSingleDayResultsEmbeds(
   let imagesFolder = "/app/public/commands/gif/input";
   let dstPath = "/app/public/commands/gif/jpg";
     
-  var welcomeString = "Thank you, all and <@&1326256775262896290>, for participating.\nSee you in the next tournament!";
+  var welcomeString = "Hello all and <@&1326256775262896290>\nFollow along with this contest here: https://challonge.com/Technology_vs_Nature";
 
   var prevWinner = "";
 
@@ -157,8 +157,8 @@ async function SendPreviousSingleDayResultsEmbeds(
         */
 
       var secondPlaceText =
-        "**2nd Place:" +
-        //"Runner-up: " +
+        //"**2nd Place:" +
+        "Runner-up: " +
         previousMatches[0][i].secondPlace.name +
         " - " +
         previousMatches[0][i].secondPlace.title + "**";
@@ -167,8 +167,9 @@ async function SendPreviousSingleDayResultsEmbeds(
       prevEmbed
         .setTitle(
           //"Winner: 1st Place:" +
+          previousMatches[0][i].firstPlace.type + " wins!" + 
           //"Match Winner: " +
-            "1st Place:" +
+          //  "1st Place:" +
             previousMatches[0][i].firstPlace.name +
             " - " +
             previousMatches[0][i].firstPlace.title +
@@ -217,7 +218,7 @@ async function SendPreviousSingleDayResultsEmbeds(
       var challongeLink = challongeBaseUrl + challongeTournamentUrlName;
 
       resultLogEmbed
-        //   .setColor(0x097969)
+        .setColor(0x097969)
         .setTitle(
           "Round " +
             previousMatches[0][i].round +
@@ -225,7 +226,7 @@ async function SendPreviousSingleDayResultsEmbeds(
             previousMatches[0][i].match 
         )
         .setAuthor({
-          name: "Best VGM 2024 Awards",
+          name: "Technology Vs Nature",
           iconURL:
             "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
         })
@@ -352,7 +353,7 @@ async function SendSingleDailyEmbed(
 
   var embed = new EmbedBuilder();
   embed
-    .setTitle(/*"Round " + matchData.round + */"FINAL - Match " + matchData.match)
+    .setTitle("Round " + matchData.round + " - Match " + matchData.match)
     .setAuthor({
       name: currentTournamentName,
       iconURL:
@@ -369,19 +370,19 @@ async function SendSingleDailyEmbed(
       {
         name:
           `A. ` + matchData.entrant1.name + ` - ` + matchData.entrant1.title,
-        value: matchData.entrant1.link,
+        value: "Faction: " + matchData.entrant1.type + "\n" + matchData.entrant1.link,
       },
       {
         name:
           `B. ` + matchData.entrant2.name + ` - ` + matchData.entrant2.title,
-        value: matchData.entrant2.link,
+        value: "Faction: " + matchData.entrant2.type + "\n" + matchData.entrant2.link,
       },
       {
         name: "------------------------------------\nTournament Links",
         value:
           "[Tournament Bracket](" +
-          currentChallongeUrl +
-          ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tdOKEvLDRj_gkosnD3FGQWC&si=nbIBmK4cO2zqQpXp)",
+          currentChallongeUrl,// +
+         // ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tdOKEvLDRj_gkosnD3FGQWC&si=nbIBmK4cO2zqQpXp)",
         inline: false,
       }
       // {
@@ -389,11 +390,11 @@ async function SendSingleDailyEmbed(
       //  value: "\u200B",
       // }
     )
-    .setImage(
-      "https://cdn.discordapp.com/attachments/998517698881400843/1362350834406527016/Untitled78_20250416225429.png?ex=68021396&is=6800c216&hm=fe929cecae3c018bd5572b9c60d572ad2a5e659de31dfbd7819acc335047e6f5&"
-    )
+    //.setImage(
+    //  "https://cdn.discordapp.com/attachments/998517698881400843/1362350834406527016/Untitled78_20250416225429.png?ex=68021396&is=6800c216&hm=fe929cecae3c018bd5572b9c60d572ad2a5e659de31dfbd7819acc335047e6f5&"
+    //)
     .setFooter({
-      text: "Image submitted by Kind Lady Adrian Vlad Helsing(fox)\nPlease listen to both tracks before voting for your favourite.",
+      text: "< Please listen to both tracks before voting for your favourite.",
       iconURL:
         "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
     })
@@ -453,7 +454,7 @@ async function SendSingleDailyEmbed(
     //channel.send(welcomeString);
   }
   await sleep(1500);
-  /*channel.send({ embeds: embedsToSend }).then((embedMessage) => {
+  channel.send({ embeds: embedsToSend }).then((embedMessage) => {
     var buttonVotes = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
@@ -470,7 +471,7 @@ async function SendSingleDailyEmbed(
     embedMessage.edit({
       components: [buttonVotes],
     });
-  }); */
+  }); 
   //const sheetUrl =
   //  "https://docs.google.com/spreadsheets/d/14R4XTkML8aoDx8ENPPWPyaWE_hhUPDlzYX6mqsytoX4/";
   //if round 1, we need to fill in the days match
@@ -554,6 +555,7 @@ async function AddSingleWinnerToNextRound(firstPlaceEntrant) {
     name: firstPlaceEntrant.name,
     title: firstPlaceEntrant.title,
     link: firstPlaceEntrant.link,
+    type: firstPlaceEntrant.type,
     match: parseInt(nextMatchNum),
   };
 
