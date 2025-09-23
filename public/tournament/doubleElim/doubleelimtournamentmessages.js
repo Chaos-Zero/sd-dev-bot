@@ -106,8 +106,8 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
   var links = [];
   let imgName = "";
   let embedImg = "";
-  let imagesFolder = "/app/public/commands/gif/input";
-  let dstPath = "/app/public/commands/gif/jpg";
+  let imagesFolder = "/public/commands/gif/input";
+  let dstPath = "/public/commands/gif/jpg";
 
   var prevWinner = "";
 
