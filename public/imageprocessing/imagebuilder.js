@@ -42,8 +42,8 @@ async function downloadImages(urls, singleImage = false) {
     } else {
       const youtubeImages = await GetYtThumb(urls);
 
-      let inputPath = "/dev/public/commands/gif/input/";
-      let endImgPath = "/dev/public/commands/gif/jpg/";
+      let inputPath = "public/commands/gif/input/";
+      let endImgPath = "public/commands/gif/jpg/";
       console.log(inputPath);
 
       if (!singleImage) {

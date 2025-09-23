@@ -109,8 +109,8 @@ async function SendPreviousSingleDayResultsEmbeds(
   var links = [];
   let imgName = "";
   let embedImg = "";
-  let imagesFolder = "/dev/public/commands/gif/input";
-  let dstPath = "/dev/public/commands/gif/jpg";
+  let imagesFolder = "public/commands/gif/input";
+  let dstPath = "public/commands/gif/jpg";
     
   var welcomeString = "Hello all and <@&1326256775262896290>\nFollow along with this contest here: https://challonge.com/Technology_vs_Nature";
 

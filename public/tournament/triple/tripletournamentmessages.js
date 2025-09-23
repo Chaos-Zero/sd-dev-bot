@@ -104,8 +104,8 @@ async function SendPreviousTripleDayResultsEmbeds(
   var links = [];
   let imgName = "";
   let embedImg = "";
-  let imagesFolder = "/dev/public/commands/gif/input";
-  let dstPath = "/dev/public/commands/gif/jpg";
+  let imagesFolder = "public/commands/gif/input";
+  let dstPath = "public/commands/gif/jpg";
 
   var prevWinner = "";
 

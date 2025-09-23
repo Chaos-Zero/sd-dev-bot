@@ -7,7 +7,7 @@ const {
 } = require("discord.js");
 const fs = require("fs");
 eval(fs.readFileSync("./public/api/vgmdb/vgmdb.js") + "");
-eval(fs.readFileSync("./dev/public/commands/communityCommands/queryvgmdb.js") + "");
+eval(fs.readFileSync("./public/commands/communityCommands/queryvgmdb.js") + "");
 
 const smallLoadingEmbed = new EmbedBuilder().setImage(
   "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo-load-small.gif?v=1679713388809"
