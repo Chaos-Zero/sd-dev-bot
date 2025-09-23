@@ -458,7 +458,7 @@ async function SendTripleDailyEmbed(
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
   const gifPath =
-    "https://major-domo.glitch.me/commands/gif/output/" + gifName + ".gif";
+    "http://91.99.239.6/dev_files/output/" + gifName + ".gif";
 
   const d = new Date();
   let day = d.getDay();

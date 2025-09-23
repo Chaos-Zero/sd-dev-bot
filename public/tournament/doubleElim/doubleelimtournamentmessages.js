@@ -233,7 +233,7 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
           //  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-voting-result.gif?v=1681088448448"
           //)
           .setImage(
-            "https://major-domo.glitch.me/commands/gif/output/" +
+            "http://91.99.239.6/dev_files/output/" +
               gifName +
               ".gif"
           )
@@ -284,7 +284,7 @@ async function SendDoubleElimDailyEmbed(
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
   const gifPath =
-    "https://major-domo.glitch.me/commands/gif/output/" + gifName + ".gif";
+    "http://91.99.239.6/dev_files/output/" + gifName + ".gif";
 
   const d = new Date();
   let day = d.getDay();
