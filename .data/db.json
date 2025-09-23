@@ -36791,61 +36791,10 @@
         "tournamentFormat": "Single Elimination",
         "startingMatchCount": 32,
         "nextRoundNextMatch": 33,
-        "matchNumber": 2,
+        "matchNumber": 0,
         "round": 1,
         "roundsPerTurn": 2,
-        "matches": [
-          {
-            "round": "1",
-            "match": 1,
-            "nextRoundNextMatch": "1",
-            "isChallonge": true,
-            "progress": "in-progress",
-            "entrant1": {
-              "name": "Governing Equation",
-              "title": "Astro Boy: Edge of Time",
-              "link": "https://www.youtube.com/watch?v=lCCjz4eZXck",
-              "type": "Technology",
-              "challongeSeed": 1,
-              "voters": [],
-              "points": 0
-            },
-            "entrant2": {
-              "name": "Graze the Roof",
-              "title": "Plants vs. Zombies",
-              "link": "https://youtu.be/u9xSFk1ZDgw",
-              "type": "Nature",
-              "challongeSeed": 2,
-              "voters": [],
-              "points": 0
-            }
-          },
-          {
-            "round": "1",
-            "match": 2,
-            "nextRoundNextMatch": "1",
-            "isChallonge": true,
-            "progress": "in-progress",
-            "entrant1": {
-              "name": "Gravity Man Stage",
-              "title": "Mega Man 5",
-              "link": "https://www.youtube.com/watch?v=nPiKZ4AZR8A",
-              "type": "Technology",
-              "challongeSeed": 3,
-              "voters": [],
-              "points": 0
-            },
-            "entrant2": {
-              "name": "Chalky Woods",
-              "title": "Etrian Mystery Dungeon",
-              "link": "https://youtu.be/7onzGWkBqus",
-              "type": "Nature",
-              "challongeSeed": 4,
-              "voters": [],
-              "points": 0
-            }
-          }
-        ],
+        "matches": [],
         "rounds": {
           "1": [
             {
