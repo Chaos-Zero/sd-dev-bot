@@ -2,7 +2,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const sleep = require("util").promisify(setTimeout);
 const fs = require("fs");
-//eval(fs.readFileSync("./public/commands/queryvgmdb.js") + "");
+//eval(fs.readFileSync("./dev/public/commands/queryvgmdb.js") + "");
 
 const {
   ButtonBuilder,

@@ -438,7 +438,7 @@
           "status": false
         }
       ],
-      "currentTournament": "Best VGM 2024 Awards",
+      "currentTournament": "test Technology vs Nature",
       "Best VGM 2024 Awards": {
         "tournamentFormat": "Single Elimination",
         "startingMatchCount": 64,
@@ -7848,7 +7848,7 @@
             "match": 129,
             "nextRoundNextMatch": "1",
             "isChallonge": true,
-            "progress": "in-progress",
+            "progress": "tie",
             "entrant1": {
               "name": "Tokyo",
               "title": "The Hokkaido Serial Murder Case The Okhotsk Disappearance ~Memories in Ice, Tearful Figurine~",
@@ -36780,6 +36780,585 @@
               "title": "It's Dangerous to Go Alone",
               "link": "https://www.youtube.com/watch?v=D7pG8JzsTAE",
               "match": 65
+            }
+          ]
+        },
+        "eliminated": [],
+        "final": [],
+        "isChallonge": true
+      },
+      "test Technology vs Nature": {
+        "tournamentFormat": "Single Elimination",
+        "startingMatchCount": 32,
+        "nextRoundNextMatch": 33,
+        "matchNumber": 2,
+        "round": 1,
+        "roundsPerTurn": 2,
+        "matches": [
+          {
+            "round": "1",
+            "match": 1,
+            "nextRoundNextMatch": "1",
+            "isChallonge": true,
+            "progress": "in-progress",
+            "entrant1": {
+              "name": "Governing Equation",
+              "title": "Astro Boy: Edge of Time",
+              "link": "https://www.youtube.com/watch?v=lCCjz4eZXck",
+              "type": "Technology",
+              "challongeSeed": 1,
+              "voters": [],
+              "points": 0
+            },
+            "entrant2": {
+              "name": "Graze the Roof",
+              "title": "Plants vs. Zombies",
+              "link": "https://youtu.be/u9xSFk1ZDgw",
+              "type": "Nature",
+              "challongeSeed": 2,
+              "voters": [],
+              "points": 0
+            }
+          },
+          {
+            "round": "1",
+            "match": 2,
+            "nextRoundNextMatch": "1",
+            "isChallonge": true,
+            "progress": "in-progress",
+            "entrant1": {
+              "name": "Gravity Man Stage",
+              "title": "Mega Man 5",
+              "link": "https://www.youtube.com/watch?v=nPiKZ4AZR8A",
+              "type": "Technology",
+              "challongeSeed": 3,
+              "voters": [],
+              "points": 0
+            },
+            "entrant2": {
+              "name": "Chalky Woods",
+              "title": "Etrian Mystery Dungeon",
+              "link": "https://youtu.be/7onzGWkBqus",
+              "type": "Nature",
+              "challongeSeed": 4,
+              "voters": [],
+              "points": 0
+            }
+          }
+        ],
+        "rounds": {
+          "1": [
+            {
+              "name": "Governing Equation",
+              "title": "Astro Boy: Edge of Time",
+              "link": "https://www.youtube.com/watch?v=lCCjz4eZXck",
+              "type": "Technology",
+              "match": 1,
+              "challongeSeed": 1
+            },
+            {
+              "name": "Graze the Roof",
+              "title": "Plants vs. Zombies",
+              "link": "https://youtu.be/u9xSFk1ZDgw",
+              "type": "Nature",
+              "match": 1,
+              "challongeSeed": 2
+            },
+            {
+              "name": "Gravity Man Stage",
+              "title": "Mega Man 5",
+              "link": "https://www.youtube.com/watch?v=nPiKZ4AZR8A",
+              "type": "Technology",
+              "match": 2,
+              "challongeSeed": 3
+            },
+            {
+              "name": "Chalky Woods",
+              "title": "Etrian Mystery Dungeon",
+              "link": "https://youtu.be/7onzGWkBqus",
+              "type": "Nature",
+              "match": 2,
+              "challongeSeed": 4
+            },
+            {
+              "name": "Magitek Research Facility",
+              "title": "Final Fantasy VI",
+              "link": "https://youtu.be/Ys-oKc88tXY?si=1RPQ9NzL1u41tNEw",
+              "type": "Technology",
+              "match": 3,
+              "challongeSeed": 5
+            },
+            {
+              "name": "Gens d'Armes",
+              "title": "Ys 8: Lacrimosa of DANA",
+              "link": "https://youtu.be/EDllGOPr-Vg?si=oRy26C18-NrETF6t",
+              "type": "Nature",
+              "match": 3,
+              "challongeSeed": 6
+            },
+            {
+              "name": "Death by Glamour",
+              "title": "Undertale",
+              "link": "https://www.youtube.com/watch?v=Q9kDr4na0ls",
+              "type": "Technology",
+              "match": 4,
+              "challongeSeed": 7
+            },
+            {
+              "name": "Waterfall II",
+              "title": "RuneScape",
+              "link": "https://youtu.be/kLs_TfAb6vI",
+              "type": "Nature",
+              "match": 4,
+              "challongeSeed": 8
+            },
+            {
+              "name": "Final Boss",
+              "title": "Spark the Electric Jester",
+              "link": "https://youtu.be/_vRvNJNa-Bc",
+              "type": "Technology",
+              "match": 5,
+              "challongeSeed": 9
+            },
+            {
+              "name": "Jurassic Beach",
+              "title": "Ecco the Dolphin",
+              "link": "https://youtu.be/ej6nF0Qk7Sg",
+              "type": "Nature",
+              "match": 5,
+              "challongeSeed": 10
+            },
+            {
+              "name": "Boundless Network",
+              "title": "Mega Man Battle Network",
+              "link": "https://youtu.be/jWKzCOKNBSQ?si=yBiw6M_EDrAAgIVE",
+              "type": "Technology",
+              "match": 6,
+              "challongeSeed": 11
+            },
+            {
+              "name": "Haggstrom",
+              "title": "Minecraft",
+              "link": "https://www.youtube.com/watch?v=JZNy6eHw3FA",
+              "type": "Nature",
+              "match": 6,
+              "challongeSeed": 12
+            },
+            {
+              "name": "ElectriCITY",
+              "title": "SimCity 4",
+              "link": "https://www.youtube.com/watch?v=LLzpIj30xvE",
+              "type": "Technology",
+              "match": 7,
+              "challongeSeed": 13
+            },
+            {
+              "name": "Red Planet Nocturne",
+              "title": "Offworld Trading Company",
+              "link": "https://www.youtube.com/watch?v=qwmYXylxA3g",
+              "type": "Nature",
+              "match": 7,
+              "challongeSeed": 14
+            },
+            {
+              "name": "NAMCO Circuit",
+              "title": "Mario Kart Arcade GP DX",
+              "link": "https://youtu.be/evbDbaG6OB0",
+              "type": "Technology",
+              "match": 8,
+              "challongeSeed": 15
+            },
+            {
+              "name": "Snowy Peaks",
+              "title": "Monster Sanctuary",
+              "link": "https://youtu.be/PULC-H7WK44?si=bbqt_rVFVgE3VFkP",
+              "type": "Nature",
+              "match": 8,
+              "challongeSeed": 16
+            },
+            {
+              "name": "The Kalos Power Plant",
+              "title": "Pokemon X/Y",
+              "link": "https://www.youtube.com/watch?v=ztz2u94I5Ks",
+              "type": "Technology",
+              "match": 9,
+              "challongeSeed": 17
+            },
+            {
+              "name": "Lakes and Waterfall",
+              "title": "Ecco: Defender of the Future",
+              "link": "https://youtu.be/fuQPWgAhGIs",
+              "type": "Nature",
+              "match": 9,
+              "challongeSeed": 18
+            },
+            {
+              "name": "Metallic Madness (B Mix)",
+              "title": "Sonic The Hedgehog CD",
+              "link": "https://youtu.be/Z8xmH3KvAlE?si=sFZNX21GTZo5C9Az",
+              "type": "Technology",
+              "match": 10,
+              "challongeSeed": 19
+            },
+            {
+              "name": "Thermal Base 2",
+              "title": "Freedom Planet",
+              "link": "https://youtu.be/qciIZ71fLBk?feature=shared",
+              "type": "Technology",
+              "match": 10,
+              "challongeSeed": 20
+            },
+            {
+              "name": "Imbrium",
+              "title": "Neotokyo",
+              "link": "https://www.youtube.com/watch?v=ssMT_Sp2mBw",
+              "type": "Technology",
+              "match": 11,
+              "challongeSeed": 21
+            },
+            {
+              "name": "Area 5 - Forest",
+              "title": "Xeno Crisis",
+              "link": "https://youtu.be/xB-uCkjgv14",
+              "type": "Nature",
+              "match": 11,
+              "challongeSeed": 22
+            },
+            {
+              "name": "Big Blue",
+              "title": "Mario Kart 8 Deluxe",
+              "link": "https://m.youtube.com/watch?v=ETLNilxpvhY&pp=ygUIYmlnIGJsdWXSBwkJsgkBhyohjO8%3D",
+              "type": "Technology",
+              "match": 12,
+              "challongeSeed": 23
+            },
+            {
+              "name": "Balijhet Mountains",
+              "title": "Castlevania: Curse of Darkness",
+              "link": "https://www.youtube.com/watch?v=Ctfei6MHrOc",
+              "type": "Nature",
+              "match": 12,
+              "challongeSeed": 24
+            },
+            {
+              "name": "Colored Engine",
+              "title": "FAR: Lone Sails",
+              "link": "https://youtu.be/6L6MoWzAx1M?si=5_kVw8X_K18M79vZ",
+              "type": "Technology",
+              "match": 13,
+              "challongeSeed": 25
+            },
+            {
+              "name": "New Jerusalem",
+              "title": "The Talos Principal II",
+              "link": "https://www.youtube.com/watch?v=ecRO5uOWOuI",
+              "type": "Nature",
+              "match": 13,
+              "challongeSeed": 26
+            },
+            {
+              "name": "Big Arms",
+              "title": "Sonic Generations",
+              "link": "https://www.youtube.com/watch?v=MVQjrIcwyEg",
+              "type": "Technology",
+              "match": 14,
+              "challongeSeed": 27
+            },
+            {
+              "name": "Valley of Avalar",
+              "title": "The Legend of Spyro: Dawn of the Dragon",
+              "link": "https://youtu.be/w1SZRR4KwAo",
+              "type": "Nature",
+              "match": 14,
+              "challongeSeed": 28
+            },
+            {
+              "name": "Reverse Babel",
+              "title": "Dolls Nest",
+              "link": "https://www.youtube.com/watch?v=L-uPdckw5kA",
+              "type": "Technology",
+              "match": 15,
+              "challongeSeed": 29
+            },
+            {
+              "name": "Spinning Dandelion (Jungle Sector)",
+              "title": "Environmental Station Alpha",
+              "link": "https://www.youtube.com/watch?v=nJzEnCJrk_E",
+              "type": "Nature",
+              "match": 15,
+              "challongeSeed": 30
+            },
+            {
+              "name": "Rocket Rider",
+              "title": "Super Meat Boy",
+              "link": "https://www.youtube.com/watch?v=80T4zKU_tpQ",
+              "type": "Technology",
+              "match": 16,
+              "challongeSeed": 31
+            },
+            {
+              "name": "Evergreen",
+              "title": "DUEL MASTER'S PLAYS",
+              "link": "https://www.youtube.com/watch?v=zuixxNADd0Y",
+              "type": "Nature",
+              "match": 16,
+              "challongeSeed": 32
+            },
+            {
+              "name": "Splatter",
+              "title": "Nirvana Pilot Yume",
+              "link": "https://youtu.be/g_53hNkG0oY",
+              "type": "Technology",
+              "match": 17,
+              "challongeSeed": 33
+            },
+            {
+              "name": "Stones",
+              "title": "Pippa Funnell 2",
+              "link": "https://www.youtube.com/watch?v=gYiCA2Z1q2M",
+              "type": "Nature",
+              "match": 17,
+              "challongeSeed": 34
+            },
+            {
+              "name": "Rush Hour",
+              "title": "A Hat in Time",
+              "link": "https://youtu.be/OXBcBugpHZg?si=FilISSkvHtx1ZDpi",
+              "type": "Technology",
+              "match": 18,
+              "challongeSeed": 35
+            },
+            {
+              "name": "Redwood Colonnade",
+              "title": "TUNIC",
+              "link": "https://youtu.be/GYQyo3CaIZ4",
+              "type": "Nature",
+              "match": 18,
+              "challongeSeed": 36
+            },
+            {
+              "name": "City Ruins - Rays of Light",
+              "title": "NieR:Automata",
+              "link": "https://youtu.be/LC5HsZt4oNc",
+              "type": "Technology",
+              "match": 19,
+              "challongeSeed": 37
+            },
+            {
+              "name": "Rhymes of Vales",
+              "title": "Genshin Impact",
+              "link": "https://m.youtube.com/watch?v=EXaKoH2zZSQ&pp=ygUOcmh5bWUgb2YgdmFsZXM%3D",
+              "type": "Nature",
+              "match": 19,
+              "challongeSeed": 38
+            },
+            {
+              "name": "[ai]",
+              "title": "Xenosaga Freaks",
+              "link": "https://youtu.be/pgpnOsBf5U0",
+              "type": "Technology",
+              "match": 20,
+              "challongeSeed": 39
+            },
+            {
+              "name": "Alpine Skyline at Night",
+              "title": "A Hat in Time",
+              "link": "https://youtu.be/O1zm_9Moftw?feature=shared",
+              "type": "Nature",
+              "match": 20,
+              "challongeSeed": 40
+            },
+            {
+              "name": "Mechanical Rhythm",
+              "title": "Xenoblade Chronicles DE",
+              "link": "https://youtu.be/A_i9_TDeoPE",
+              "type": "Technology",
+              "match": 21,
+              "challongeSeed": 41
+            },
+            {
+              "name": "Sunshine Coastline",
+              "title": "Ys 8: Lacrimosa of DANA",
+              "link": "https://www.youtube.com/watch?v=HvBla5NUlvk",
+              "type": "Nature",
+              "match": 21,
+              "challongeSeed": 42
+            },
+            {
+              "name": "Class::EXSPHERE_NOSURGE;",
+              "title": "Ar Nosurge: Ode to an Unborn Star",
+              "link": "https://www.youtube.com/watch?v=0E6Ljowl_vk",
+              "type": "Technology",
+              "match": 22,
+              "challongeSeed": 43
+            },
+            {
+              "name": "Yellow Furry Mushroom Tune",
+              "title": "Samorost 3",
+              "link": "https://youtu.be/n-_ChJv7gbo?si=NbMdU-ITd5Ub6McU",
+              "type": "Nature",
+              "match": 22,
+              "challongeSeed": 44
+            },
+            {
+              "name": "Shard",
+              "title": "Mirror's Edge",
+              "link": "https://www.youtube.com/watch?v=sQeupYRYPck",
+              "type": "Technology",
+              "match": 23,
+              "challongeSeed": 45
+            },
+            {
+              "name": "Blossom Haze (Press Garden Zone Act 2)",
+              "title": "Sonic Mania",
+              "link": "https://www.youtube.com/watch?v=63Jmd0yX6AI",
+              "type": "Nature",
+              "match": 23,
+              "challongeSeed": 46
+            },
+            {
+              "name": "The Blue Valley",
+              "title": "Uplink",
+              "link": "https://youtu.be/bhTkQ_-vq_I",
+              "type": "Technology",
+              "match": 24,
+              "challongeSeed": 47
+            },
+            {
+              "name": "Paternal Horn",
+              "title": "NiGHTS into Dreams",
+              "link": "https://www.youtube.com/watch?v=OLmf2DxZVOY",
+              "type": "Nature",
+              "match": 24,
+              "challongeSeed": 48
+            },
+            {
+              "name": "Daredevil",
+              "title": "Ace Combat 7",
+              "link": "https://youtu.be/_h6QFqGla7E",
+              "type": "Technology",
+              "match": 25,
+              "challongeSeed": 49
+            },
+            {
+              "name": "Four-Limbed Titan/Gormott",
+              "title": "Xenoblade Chronicles 2: Torna",
+              "link": "https://www.youtube.com/watch?v=ufk0ypyRtLE",
+              "type": "Nature",
+              "match": 25,
+              "challongeSeed": 50
+            },
+            {
+              "name": "Day Dawns",
+              "title": "Phantasy Star Online Episode I & II",
+              "link": "https://www.youtube.com/watch?v=tesxpYfwfRE",
+              "type": "Technology",
+              "match": 26,
+              "challongeSeed": 51
+            },
+            {
+              "name": "The Sunlands",
+              "title": "Octopath Traveler",
+              "link": "https://www.youtube.com/watch?v=NQlYkuFycrw",
+              "type": "Nature",
+              "match": 26,
+              "challongeSeed": 52
+            },
+            {
+              "name": "Nuclear Plant Zeta",
+              "title": "Pokemon Uranium",
+              "link": "https://youtu.be/pzMExGZjcFU",
+              "type": "Technology",
+              "match": 27,
+              "challongeSeed": 53
+            },
+            {
+              "name": "Invitation Flower Autumn",
+              "title": "Atelier Ayesha",
+              "link": "https://www.youtube.com/watch?v=xMx_0t5m2eA",
+              "type": "Nature",
+              "match": 27,
+              "challongeSeed": 54
+            },
+            {
+              "name": "Evergreen",
+              "title": "beatmania IIDX 15 DJ TROOPERS",
+              "link": "https://www.youtube.com/watch?v=-97jCyko0dk",
+              "type": "Technology",
+              "match": 28,
+              "challongeSeed": 55
+            },
+            {
+              "name": "Holoska (Night)",
+              "title": "Sonic Unleashed",
+              "link": "https://www.youtube.com/watch?v=dGQtKmWJhMQ",
+              "type": "Nature",
+              "match": 28,
+              "challongeSeed": 56
+            },
+            {
+              "name": "Battlerock Galaxy",
+              "title": "Super Mario Galaxy",
+              "link": "https://www.youtube.com/watch?v=XSClAmbZPBo",
+              "type": "Technology",
+              "match": 29,
+              "challongeSeed": 57
+            },
+            {
+              "name": "Shore of Dreams (Another World)",
+              "title": "Chrono Cross",
+              "link": "https://youtu.be/rVNkROZ0k2Y?si=k7GZs2SN1nLJkEPl",
+              "type": "Nature",
+              "match": 29,
+              "challongeSeed": 58
+            },
+            {
+              "name": "Infrastructure",
+              "title": "SimCity 3000",
+              "link": "https://youtu.be/TToTvQb0I4Q",
+              "type": "Technology",
+              "match": 30,
+              "challongeSeed": 59
+            },
+            {
+              "name": "Night",
+              "title": "Bugdom",
+              "link": "https://youtu.be/YrIIH1861aI?si=0ve3XMB-7SIfQ5wG",
+              "type": "Nature",
+              "match": 30,
+              "challongeSeed": 60
+            },
+            {
+              "name": "The Soil Shall Claim Us (feat. Mw.)",
+              "title": "BOKURA",
+              "link": "https://www.youtube.com/watch?v=PRrcbXil1Xc",
+              "type": "Technology",
+              "match": 31,
+              "challongeSeed": 61
+            },
+            {
+              "name": "Gentle Wind",
+              "title": "Baten Kaitos",
+              "link": "https://youtu.be/94LPzMdib0k?si=wbGhOYjxOsSAJTKB",
+              "type": "Nature",
+              "match": 31,
+              "challongeSeed": 62
+            },
+            {
+              "name": "Wrecking Storm",
+              "title": "GODDESS OF VICTORY: NIKKE",
+              "link": "https://youtu.be/7qZRa1G2di0",
+              "type": "Technology",
+              "match": 32,
+              "challongeSeed": 63
+            },
+            {
+              "name": "Into the Thick of it",
+              "title": "Secret of Mana",
+              "link": "https://www.youtube.com/watch?v=K2gQjvxeWh0",
+              "type": "Nature",
+              "match": 32,
+              "challongeSeed": 64
             }
           ]
         },

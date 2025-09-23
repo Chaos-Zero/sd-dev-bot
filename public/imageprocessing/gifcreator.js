@@ -18,16 +18,16 @@ eval(readFileSync("./public/imageprocessing/imagebuilder.js") + "");
 var Stream = require("stream").Transform;
 
 const readdirAsync = promisify(readdir);
-let imagesFolder = "/public/commands/gif/input";
-let imagesOutputFolder = "/public/commands/gif/jpg/";
+let imagesFolder = "/dev/public/commands/gif/input/";
+let imagesOutputFolder = "/dev/public/commands/gif/jpg/";
 
-let dstPath = "/public/commands/gif/output";
+let dstPath = "/dev/public/commands/gif/output";
 
 async function createGif(algorithm, gifName) {
   return new Promise(async (resolve) => {
     try {
       const dstPath = path.join(
-        "/public/commands/gif/output/",
+        "/dev/public/commands/gif/output/",
         gifName + ".gif"
       );
       const files = await readdirAsync(imagesFolder);
