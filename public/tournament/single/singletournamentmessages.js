@@ -109,8 +109,8 @@ async function SendPreviousSingleDayResultsEmbeds(
   var links = [];
   let imgName = "";
   let embedImg = "";
-  let imagesFolder = "/app/public/commands/gif/input";
-  let dstPath = "/app/public/commands/gif/jpg";
+  let imagesFolder = "public/commands/gif/input";
+  let dstPath = "public/commands/gif/jpg";
     
   var welcomeString = "Hello all and <@&1326256775262896290>\nFollow along with this contest here: https://challonge.com/Technology_vs_Nature";
 
@@ -158,7 +158,7 @@ async function SendPreviousSingleDayResultsEmbeds(
 
       var secondPlaceText =
         //"**2nd Place:" +
-        "Runner-up: " +
+        "**Runner-up: " +
         previousMatches[0][i].secondPlace.name +
         " - " +
         previousMatches[0][i].secondPlace.title + "**";
@@ -167,7 +167,7 @@ async function SendPreviousSingleDayResultsEmbeds(
       prevEmbed
         .setTitle(
           //"Winner: 1st Place:" +
-          previousMatches[0][i].firstPlace.type + " wins!" + 
+          previousMatches[0][i].firstPlace.type + " wins!\n" + 
           //"Match Winner: " +
           //  "1st Place:" +
             previousMatches[0][i].firstPlace.name +
@@ -249,7 +249,7 @@ async function SendPreviousSingleDayResultsEmbeds(
         //  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-voting-result.gif?v=1681088448448"
         //)
         .setImage(
-          "https://major-domo.glitch.me/commands/gif/output/" + gifName + ".gif"
+          "http://91.99.239.6/files/output/" + gifName + ".gif"
         )
 
         .addFields(
@@ -332,7 +332,7 @@ async function SendSingleDailyEmbed(
   const currentChallongeUrl =
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
-    "https://major-domo.glitch.me/commands/gif/output/" + gifName + ".gif";
+    "http://91.99.239.6/files/output/" + gifName + ".gif";
 
   const d = new Date();
   let day = d.getDay();
@@ -381,7 +381,7 @@ async function SendSingleDailyEmbed(
         name: "------------------------------------\nTournament Links",
         value:
           "[Tournament Bracket](" +
-          currentChallongeUrl,// +
+          currentChallongeUrl + ")",// +
          // ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tdOKEvLDRj_gkosnD3FGQWC&si=nbIBmK4cO2zqQpXp)",
         inline: false,
       }

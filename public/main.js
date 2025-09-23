@@ -94,7 +94,7 @@ function CreateBot() {
     // Set check chron here
   });
   botAccess = bot;
-  //sendDailyEmbed.start();
+  sendDailyEmbed.start();
   //sendAprilFools.start();
   //checkTournamentBattleReactions.start();
   //checkTournamentBattleReactions2.start();
@@ -110,7 +110,7 @@ let sendAprilFools = new cron.CronJob("00 00 19 * * 1-5", async () => {
   //await StartMatch("", GetBot(), true);
 });
 
-let sendDailyEmbed = new cron.CronJob("30 17 20 * * 1-5", async () => {
+let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
   var previousMatches = "";
   let guildObject = await bot.guilds.cache.get(process.env.GUILD_ID);
   previousMatches = await EndMatches();
@@ -140,8 +140,8 @@ let sendDailyEmbed = new cron.CronJob("30 17 20 * * 1-5", async () => {
   //await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, []);
   await StartMatch("", GetBot(), false, previousMatches);
   // 30 Seconds to be safe
-  //await sleep(30000);
-  //await StartMatch("", GetBot(), true);
+  await sleep(30000);
+  await StartMatch("", GetBot(), true);
 });
 
 function SetupEvents(bot) {

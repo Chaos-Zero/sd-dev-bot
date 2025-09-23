@@ -1,9 +1,14 @@
-//FFMPG imports fop package.json
+// server.js
+// where your node app starts
+
+//FFMPG imports fop package.json (not using currently)
 
     //"fluent-ffmpeg": "^2.1.2",
     //"ffmpeg-static": "^5.2.0",
 
-require('dotenv').config({ path: '/home/botuser/bots/live/.env' });
+// we've started you off with Express (https://expressjs.com/)
+// but feel free to use whatever libraries or frameworks you'd like through `package.json`.
+require('dotenv').config()
 const express = require("express");
 const session = require("express-session");
 const { google } = require("googleapis");
@@ -54,7 +59,7 @@ var count = 10;
 
 // Goolge auth //////////////////////
 
-const oauth2Client = new OAuth2(
+const oauth2Client = new OAuth2( 
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_SECRET,
   process.env.REDIRECT_URI // Redirect URL you set in Google Cloud Console

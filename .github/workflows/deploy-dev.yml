@@ -1,0 +1,54 @@
+name: Deploy Dev Bot to Hetzner
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch: {}
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: true
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            echo "[1/6] Go to dev app dir"
+            cd /home/botuser/bots/dev || exit 1
+
+            echo "[2/6] Ensure repo present on dev branch"
+            if [ ! -d .git ]; then
+              echo "Repo not found; cloning fresh..."
+              rm -rf /home/botuser/bots/dev
+              git clone https://github.com/Chaos-Zero/sd-dev-bot.git /home/botuser/bots/dev
+              cd /home/botuser/bots/dev
+            fi
+            git fetch --all --prune
+            git checkout dev || git checkout -b dev
+            git reset --hard origin/dev
+
+            echo "[3/6] Install dependencies"
+            if [ -f package-lock.json ]; then
+              npm ci --omit=dev
+            else
+              npm i --omit=dev
+            fi
+            
+            echo "[5/6] Reload PM2 process"
+            pm2 reload bot-dev || pm2 start /home/botuser/ecosystem.config.js --only bot-dev --update-env
+            pm2 save
+
+            echo "[6/6] Show PM2 status"
+            pm2 list
