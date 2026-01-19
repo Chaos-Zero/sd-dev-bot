@@ -309,7 +309,10 @@ function buildAggregateTournament(tournaments, tournamentFormat) {
   const matches = [];
   for (const tournament of tournaments) {
     if (Array.isArray(tournament.data.matches)) {
-      matches.push(...tournament.data.matches);
+      const filteredMatches = tournament.data.matches.filter((match) =>
+        isValidMatchForFormat(match, tournamentFormat)
+      );
+      matches.push(...filteredMatches);
     }
   }
   if (matches.length < 1) {
@@ -319,6 +322,27 @@ function buildAggregateTournament(tournaments, tournamentFormat) {
     tournamentFormat,
     matches,
   };
+}
+
+function isValidMatchForFormat(match, tournamentFormat) {
+  if (!match || !match.entrant1 || !match.entrant2) {
+    return false;
+  }
+  if (tournamentFormat == "3v3 Ranked") {
+    return (
+      match.entrant3 &&
+      Array.isArray(match.entrant1?.voters?.first) &&
+      Array.isArray(match.entrant1?.voters?.second) &&
+      Array.isArray(match.entrant2?.voters?.first) &&
+      Array.isArray(match.entrant2?.voters?.second) &&
+      Array.isArray(match.entrant3?.voters?.first) &&
+      Array.isArray(match.entrant3?.voters?.second)
+    );
+  }
+  return (
+    Array.isArray(match.entrant1?.voters) &&
+    Array.isArray(match.entrant2?.voters)
+  );
 }
 
 function mergeCompatibilityResults(existingResults, nextResults) {
@@ -356,55 +380,38 @@ function GetAllVoters(currentTournament) {
   }
   if (currentTournament.tournamentFormat == "3v3 Ranked") {
     outer: for (const match of currentTournament.matches) {
-      for (const voter of match.entrant1.voters.first) {
-        if (!voters.includes(voter)) {
-          voters.push(voter);
-        }
+      if (!isValidMatchForFormat(match, "3v3 Ranked")) {
+        continue;
       }
-      for (const voter of match.entrant2.voters.second) {
-        if (!voters.includes(voter)) {
-          voters.push(voter);
-        }
-      }
-
-      for (const voter of match.entrant2.voters.first) {
-        if (!voters.includes(voter)) {
-          voters.push(voter);
-        }
-      }
-      for (const voter of match.entrant2.voters.second) {
-        if (!voters.includes(voter)) {
-          voters.push(voter);
-        }
-      }
-
-      for (const voter of match.entrant3.voters.first) {
-        if (!voters.includes(voter)) {
-          voters.push(voter);
-        }
-      }
-      for (const voter of match.entrant3.voters.second) {
-        if (!voters.includes(voter)) {
-          voters.push(voter);
-        }
-      }
+      addUniqueVoters(voters, match.entrant1.voters.first);
+      addUniqueVoters(voters, match.entrant1.voters.second);
+      addUniqueVoters(voters, match.entrant2.voters.first);
+      addUniqueVoters(voters, match.entrant2.voters.second);
+      addUniqueVoters(voters, match.entrant3.voters.first);
+      addUniqueVoters(voters, match.entrant3.voters.second);
     }
   } else {
     outer: for (const match of currentTournament.matches) {
-      for (const voter of match.entrant1.voters) {
-        if (!voters.includes(voter)) {
-          voters.push(voter);
-        }
+      if (!isValidMatchForFormat(match, "Single Elimination")) {
+        continue;
       }
-      for (const voter of match.entrant2.voters) {
-        if (!voters.includes(voter)) {
-          voters.push(voter);
-        }
-      }
+      addUniqueVoters(voters, match.entrant1.voters);
+      addUniqueVoters(voters, match.entrant2.voters);
     }
   }
 
   return voters;
+}
+
+function addUniqueVoters(voters, list) {
+  if (!Array.isArray(list)) {
+    return;
+  }
+  for (const voter of list) {
+    if (!voters.includes(voter)) {
+      voters.push(voter);
+    }
+  }
 }
 
 async function getUserInfoFromId(guild, userId) {

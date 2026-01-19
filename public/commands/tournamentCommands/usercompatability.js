@@ -241,7 +241,10 @@ function buildAggregateTournament(tournaments, tournamentFormat) {
   const matches = [];
   for (const tournament of tournaments) {
     if (Array.isArray(tournament.data.matches)) {
-      matches.push(...tournament.data.matches);
+      const filteredMatches = tournament.data.matches.filter((match) =>
+        isValidMatchForFormat(match, tournamentFormat)
+      );
+      matches.push(...filteredMatches);
     }
   }
   if (matches.length < 1) {
@@ -251,6 +254,27 @@ function buildAggregateTournament(tournaments, tournamentFormat) {
     tournamentFormat,
     matches,
   };
+}
+
+function isValidMatchForFormat(match, tournamentFormat) {
+  if (!match || !match.entrant1 || !match.entrant2) {
+    return false;
+  }
+  if (tournamentFormat == "3v3 Ranked") {
+    return (
+      match.entrant3 &&
+      Array.isArray(match.entrant1?.voters?.first) &&
+      Array.isArray(match.entrant1?.voters?.second) &&
+      Array.isArray(match.entrant2?.voters?.first) &&
+      Array.isArray(match.entrant2?.voters?.second) &&
+      Array.isArray(match.entrant3?.voters?.first) &&
+      Array.isArray(match.entrant3?.voters?.second)
+    );
+  }
+  return (
+    Array.isArray(match.entrant1?.voters) &&
+    Array.isArray(match.entrant2?.voters)
+  );
 }
 
 function buildCompatibilityEmbedForAggregate(
