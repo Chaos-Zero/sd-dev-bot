@@ -221,16 +221,9 @@ async function SendPreviousSingleDayResultsEmbeds(
       );
       prevEmbed
         .setTitle(
-<<<<<<< HEAD
-          //"Winner: 1st Place:" +
-          previousMatches[0][i].firstPlace.type + " wins!\n" + 
-          //"Match Winner: " +
-          //  "1st Place:" +
-=======
           (roundLabel ? roundLabel + " - " : "") +
             previousMatches[0][i].firstPlace.type +
             " wins!\n" +
->>>>>>> origin/dev
             previousMatches[0][i].firstPlace.name +
             " - " +
             previousMatches[0][i].firstPlace.title +
