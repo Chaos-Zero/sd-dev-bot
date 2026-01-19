@@ -31,6 +31,12 @@ module.exports = {
         .setName("make-public")
         .setDescription("Make the response viewable to the server.")
         .setRequired(false)
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName("search-all-tournaments")
+        .setDescription("Include all tournaments when calculating compatibility.")
+        .setRequired(false)
     ),
   async execute(interaction) {
     var db = GetDb();
@@ -44,6 +50,8 @@ module.exports = {
     const checkingUser = interaction.user.id;
     const userToCompare = interaction.options.getString("other-member");
     const isPublic = interaction.options.getBoolean("make-public") || false;
+    const searchAll =
+      interaction.options.getBoolean("search-all-tournaments") || false;
 
     if (!userToCompare.includes("<@")) {
       return interaction.reply({
@@ -58,7 +66,7 @@ module.exports = {
     //await interaction.reply({
     //  content: "Testing in the backend",
     //});
-    if (tournamentDb.matches.length < 5) {
+    if (!searchAll && tournamentDb.matches.length < 5) {
       return interaction
         .reply({
           content:
@@ -69,102 +77,239 @@ module.exports = {
         .catch((_) => null);
     }
 
-    var userResults = "";
+    const embeds = [];
+    const userInfo = await getUserInfoFromId(interaction.guild, userId);
+    if (!userInfo) {
+      return interaction.reply({
+        content: "Unable to fetch user info for the specified member.",
+        ephemeral: true,
+      });
+    }
 
-    if (tournamentDb.tournamentFormat == "3v3 Ranked") {
-      userResults = compareTripleUsers(
-        interaction,
-        tournamentDb,
-        checkingUser,
-        userId
+    if (searchAll) {
+      const allTournaments = getAllTournamentEntries(tournamentDetails);
+      const tripleAggregate = buildAggregateTournament(
+        allTournaments.filter(
+          (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
+        ),
+        "3v3 Ranked"
       );
-    }
-
-    if (tournamentDb.tournamentFormat == "Single Elimination") {
-      userResults = compareDoubleUsers(
-        interaction,
-        tournamentDb,
-        checkingUser,
-        userId
+      const nonTripleAggregate = buildAggregateTournament(
+        allTournaments.filter(
+          (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
+        ),
+        "Single/Double Elimination"
       );
-    }
 
-    if (userResults == "") {
-      return interaction
-        .reply({
-          content:
-            "It appears the current tournament format is not supported by this command.",
-          ephemeral: true,
-        })
-        .then(() => console.log("Reply sent."))
-        .catch((_) => null);
-    }
-
-    if (userResults.matchCount < 1) {
-      return interaction
-        .reply({
-          content:
-            "It appears one of the members in the comparison did not take part in the tournament.",
-          ephemeral: true,
-        })
-        .then(() => console.log("Reply sent."))
-        .catch((_) => null);
-    }
-    var partialMatchWeight =
-      userResults?.partialMatch !== undefined
-        ? parseInt(userResults.partialMatch) / 2
-        : 0;
-    var weightMinusDisagreements =
-      parseInt(userResults.totalWeight) -
-      parseInt(userResults.disagreementWeight);
-
-    weightMinusDisagreements += partialMatchWeight;
-
-    var userCompatPercent = Math.ceil(
-      (parseInt(weightMinusDisagreements) / parseInt(userResults.maxWeight)) *
-        100
-    );
-
-    let colour = 0x0047ab;
-    if (userCompatPercent >= 90) {
-      colour = 0xff69b4;
-    } else if (userCompatPercent > 74 && userCompatPercent < 90) {
-      colour = 0xffd700;
-    } else if (userCompatPercent > 49 && userCompatPercent < 75) {
-      colour = 0xc0c0c0;
-    }
-
-    console.log(colour);
-    getUserInfoFromId(interaction.guild, userId).then((userInfo) => {
-      var embed = CreateCompatibilityEmbed(
-        userResults,
+      const tripleEmbed = buildCompatibilityEmbedForAggregate(
+        interaction,
+        tripleAggregate,
+        checkingUser,
+        userId,
         userInfo,
-        userCompatPercent,
-        colour,
-        tournamentName,
-        tournamentDb.tournamentFormat
+        "All Tournaments - 3v3 Ranked",
+        "3v3 Ranked"
       );
-      if (!isPublic) {
+      if (tripleEmbed) {
+        embeds.push(tripleEmbed);
+      }
+
+      const nonTripleEmbed = buildCompatibilityEmbedForAggregate(
+        interaction,
+        nonTripleAggregate,
+        checkingUser,
+        userId,
+        userInfo,
+        "All Tournaments - Single/Double Elimination",
+        "Single/Double Elimination"
+      );
+      if (nonTripleEmbed) {
+        embeds.push(nonTripleEmbed);
+      }
+
+      if (embeds.length < 1) {
         return interaction
           .reply({
-            //content: "Score attained: " + userResults.totalWeight  + "\nMax Score possible: " + userResults.maxScore + "\nTracks checked: " + userResults.iterations,
-            embeds: [embed],
+            content:
+              "It appears there has not been enough data in past tournaments to run this command.",
             ephemeral: true,
           })
           .then(() => console.log("Reply sent."))
           .catch((_) => null);
-      } else {
+      }
+    } else {
+      let userResults = "";
+
+      if (tournamentDb.tournamentFormat == "3v3 Ranked") {
+        userResults = compareTripleUsers(
+          interaction,
+          tournamentDb,
+          checkingUser,
+          userId
+        );
+      } else if (tournamentDb.tournamentFormat == "Single Elimination") {
+        userResults = compareDoubleUsers(
+          interaction,
+          tournamentDb,
+          checkingUser,
+          userId
+        );
+      }
+
+      if (userResults == "") {
         return interaction
           .reply({
-            //content: "Score attained: " + userResults.totalWeight  + "\nMax Score possible: " + userResults.maxScore + "\nTracks checked: " + userResults.iterations,
-            embeds: [embed],
+            content:
+              "It appears the current tournament format is not supported by this command.",
+            ephemeral: true,
           })
           .then(() => console.log("Reply sent."))
           .catch((_) => null);
       }
-    });
+
+      if (userResults.matchCount < 1) {
+        return interaction
+          .reply({
+            content:
+              "It appears one of the members in the comparison did not take part in the tournament.",
+            ephemeral: true,
+          })
+          .then(() => console.log("Reply sent."))
+          .catch((_) => null);
+      }
+
+      const embed = buildCompatibilityEmbedFromResult(
+        userResults,
+        userInfo,
+        tournamentName,
+        tournamentDb.tournamentFormat
+      );
+      if (embed) {
+        embeds.push(embed);
+      }
+    }
+
+    if (!isPublic) {
+      return interaction
+        .reply({
+          embeds: embeds,
+          ephemeral: true,
+        })
+        .then(() => console.log("Reply sent."))
+        .catch((_) => null);
+    }
+    return interaction
+      .reply({
+        embeds: embeds,
+      })
+      .then(() => console.log("Reply sent."))
+      .catch((_) => null);
   },
 };
+
+function getAllTournamentEntries(tournamentDetails) {
+  const excludedKeys = new Set(["admin", "currentTournament", "receiptUsers"]);
+  return Object.entries(tournamentDetails)
+    .filter(([key, value]) => !excludedKeys.has(key) && value)
+    .map(([key, value]) => ({ name: key, data: value }));
+}
+
+function buildAggregateTournament(tournaments, tournamentFormat) {
+  const matches = [];
+  for (const tournament of tournaments) {
+    if (Array.isArray(tournament.data.matches)) {
+      matches.push(...tournament.data.matches);
+    }
+  }
+  if (matches.length < 1) {
+    return null;
+  }
+  return {
+    tournamentFormat,
+    matches,
+  };
+}
+
+function buildCompatibilityEmbedForAggregate(
+  interaction,
+  aggregateTournament,
+  checkingUser,
+  userId,
+  userInfo,
+  tournamentName,
+  tournamentType
+) {
+  if (!aggregateTournament || aggregateTournament.matches.length < 5) {
+    return null;
+  }
+
+  let userResults = "";
+  if (aggregateTournament.tournamentFormat == "3v3 Ranked") {
+    userResults = compareTripleUsers(
+      interaction,
+      aggregateTournament,
+      checkingUser,
+      userId
+    );
+  } else {
+    userResults = compareDoubleUsers(
+      interaction,
+      aggregateTournament,
+      checkingUser,
+      userId
+    );
+  }
+
+  if (userResults == "" || userResults.matchCount < 1) {
+    return null;
+  }
+
+  return buildCompatibilityEmbedFromResult(
+    userResults,
+    userInfo,
+    tournamentName,
+    tournamentType
+  );
+}
+
+function buildCompatibilityEmbedFromResult(
+  userResults,
+  userInfo,
+  tournamentName,
+  tournamentType
+) {
+  var partialMatchWeight =
+    userResults?.partialMatch !== undefined
+      ? parseInt(userResults.partialMatch) / 2
+      : 0;
+  var weightMinusDisagreements =
+    parseInt(userResults.totalWeight) -
+    parseInt(userResults.disagreementWeight);
+
+  weightMinusDisagreements += partialMatchWeight;
+
+  var userCompatPercent = Math.ceil(
+    (parseInt(weightMinusDisagreements) / parseInt(userResults.maxWeight)) * 100
+  );
+
+  let colour = 0x0047ab;
+  if (userCompatPercent >= 90) {
+    colour = 0xff69b4;
+  } else if (userCompatPercent > 74 && userCompatPercent < 90) {
+    colour = 0xffd700;
+  } else if (userCompatPercent > 49 && userCompatPercent < 75) {
+    colour = 0xc0c0c0;
+  }
+
+  return CreateCompatibilityEmbed(
+    userResults,
+    userInfo,
+    userCompatPercent,
+    colour,
+    tournamentName,
+    tournamentType
+  );
+}
 
 async function getUserInfoFromId(guild, userId) {
   try {
