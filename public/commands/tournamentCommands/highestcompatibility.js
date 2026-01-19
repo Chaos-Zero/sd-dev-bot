@@ -36,6 +36,12 @@ module.exports = {
           "Allows users to specify minimum percent of engagement in the same battles. Default: 25%"
         )
         .setRequired(false)
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName("search-all-tournaments")
+        .setDescription("Include all tournaments when calculating compatibility.")
+        .setRequired(false)
     ),
 
   async execute(interaction) {
@@ -47,12 +53,14 @@ module.exports = {
       .get("tournaments[0].currentTournament")
       .value();
     let tournamentDb = await tournamentDetails[tournamentName];
+    const searchAll =
+      interaction.options.getBoolean("search-all-tournaments") || false;
 
     const isPublic = interaction.options.getBoolean("make-public") || false;
     const userPercent =
       interaction.options.getNumber("specify-participation-percentage") || 25;
 
-    if (tournamentDb.matches.length < 5) {
+    if (!searchAll && tournamentDb.matches.length < 5) {
       return interaction
         .reply({
           content:
@@ -92,33 +100,85 @@ module.exports = {
     var guildUsers = await guild.members.cache;
 
     //console.log(guildUsers);
-    var voters = GetAllVoters(tournamentDb);
-
-    console.log(voters);
-
+    var voters = [];
     var userResults = [];
 
-    if (tournamentDb.tournamentFormat == "3v3 Ranked") {
-      console.log("In Triple Results");
-      userResults = compareTripleUsersAndReturnMostCompatible(
-        interaction,
-        tournamentDb,
-        interaction.user.id,
-        guildUsers,
-        voters,
-        userPercent
+    if (searchAll) {
+      tournamentName = "All Tournaments";
+      const allTournaments = getAllTournamentEntries(tournamentDetails);
+      const tripleAggregate = buildAggregateTournament(
+        allTournaments.filter(
+          (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
+        ),
+        "3v3 Ranked"
       );
-    }
+      const nonTripleAggregate = buildAggregateTournament(
+        allTournaments.filter(
+          (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
+        ),
+        "Single Elimination"
+      );
 
-    if (tournamentDb.tournamentFormat == "Single Elimination") {
-      userResults = compareDoubleUsersAndReturnMostCompatible(
-        interaction,
-        tournamentDb,
-        interaction.user.id,
-        guildUsers,
-        voters,
-        userPercent
-      );
+      if (
+        nonTripleAggregate &&
+        Array.isArray(nonTripleAggregate.matches) &&
+        nonTripleAggregate.matches.length >= 5
+      ) {
+        voters = GetAllVoters(nonTripleAggregate);
+        userResults = mergeCompatibilityResults(
+          userResults,
+          compareDoubleUsersAndReturnMostCompatible(
+            interaction,
+            nonTripleAggregate,
+            interaction.user.id,
+            guildUsers,
+            voters,
+            userPercent
+          )
+        );
+      }
+
+      if (
+        tripleAggregate &&
+        Array.isArray(tripleAggregate.matches) &&
+        tripleAggregate.matches.length >= 5
+      ) {
+        voters = GetAllVoters(tripleAggregate);
+        userResults = mergeCompatibilityResults(
+          userResults,
+          compareTripleUsersAndReturnMostCompatible(
+            interaction,
+            tripleAggregate,
+            interaction.user.id,
+            guildUsers,
+            voters,
+            userPercent
+          )
+        );
+      }
+    } else {
+      voters = GetAllVoters(tournamentDb);
+
+      if (tournamentDb.tournamentFormat == "3v3 Ranked") {
+        console.log("In Triple Results");
+        userResults = compareTripleUsersAndReturnMostCompatible(
+          interaction,
+          tournamentDb,
+          interaction.user.id,
+          guildUsers,
+          voters,
+          userPercent
+        );
+      } else {
+        userResults = compareDoubleUsersAndReturnMostCompatible(
+          interaction,
+          tournamentDb,
+          interaction.user.id,
+          guildUsers,
+          voters,
+          userPercent
+        );
+      }
     }
 
     if (userResults.length < 1) {
@@ -212,6 +272,57 @@ async function PopulateEmbedData(
       resolve(embed);
     });
   });
+}
+
+function getAllTournamentEntries(tournamentDetails) {
+  const excludedKeys = new Set(["admin", "currentTournament", "receiptUsers"]);
+  return Object.entries(tournamentDetails)
+    .filter(([key, value]) => !excludedKeys.has(key) && value)
+    .map(([key, value]) => ({ name: key, data: value }));
+}
+
+function buildAggregateTournament(tournaments, tournamentFormat) {
+  const matches = [];
+  for (const tournament of tournaments) {
+    if (Array.isArray(tournament.data.matches)) {
+      matches.push(...tournament.data.matches);
+    }
+  }
+  if (matches.length < 1) {
+    return null;
+  }
+  return {
+    tournamentFormat,
+    matches,
+  };
+}
+
+function mergeCompatibilityResults(existingResults, nextResults) {
+  if (!Array.isArray(nextResults) || nextResults.length < 1) {
+    return existingResults;
+  }
+  const byVoter = new Map();
+  for (const result of existingResults) {
+    byVoter.set(result.voter, result);
+  }
+  for (const result of nextResults) {
+    const current = byVoter.get(result.voter);
+    if (!current) {
+      byVoter.set(result.voter, result);
+      continue;
+    }
+    if (result.userCompatPercent > current.userCompatPercent) {
+      byVoter.set(result.voter, result);
+    } else if (
+      result.userCompatPercent === current.userCompatPercent &&
+      result.iterations > current.iterations
+    ) {
+      byVoter.set(result.voter, result);
+    }
+  }
+  return Array.from(byVoter.values()).sort(
+    (a, b) => b.userCompatPercent - a.userCompatPercent
+  );
 }
 
 function GetAllVoters(currentTournament) {
