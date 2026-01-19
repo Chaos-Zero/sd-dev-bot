@@ -2,11 +2,8 @@ const fs = require("fs");
 const path = require("path");
 
 function getCompatibilityDbPath() {
-  const dataDbPath = path.join(path.sep, "data", "db.json");
-  if (fs.existsSync(dataDbPath)) {
-    return path.join(path.dirname(dataDbPath), "compatibility.json");
-  }
-  return path.join(__dirname, "..", "..", "compatibility.json");
+  const dataDir = path.join(__dirname, "..", "..", ".data");
+  return path.join(dataDir, "compatibility.json");
 }
 
 function getDefaultCompatibilityDb() {

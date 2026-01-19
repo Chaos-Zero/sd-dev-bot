@@ -141,12 +141,34 @@ module.exports = {
           )
         );
       }
+      if (userResults.length < 1) {
+        const userSingleMatches =
+          globalSingle?.userMatchCounts?.[interaction.user.id] || 0;
+        const userTripleMatches =
+          globalTriple?.userMatchCounts?.[interaction.user.id] || 0;
+        const totalUserMatches = userSingleMatches + userTripleMatches;
+        return interaction.editReply({
+          content:
+            totalUserMatches > 0
+              ? "There does not seem to be anyone who meets the set requirements.\nPlease reduce the percentage of matches played together."
+              : "No compatibility data found for your votes yet.",
+          embeds: [],
+        });
+      }
     } else {
-      const tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
+      let tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
+      if (!tournamentCompat) {
+        const latestTournament = getLatestTournamentEntry(tournamentDetails);
+        if (latestTournament) {
+          tournamentName = latestTournament.name;
+          tournamentDb = latestTournament.data;
+          tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
+        }
+      }
       if (!tournamentCompat) {
         return interaction.editReply({
           content:
-            "Compatibility data isn't available for this tournament yet. Run the backfill to generate it.",
+            "Compatibility data isn't available yet. Run the backfill to generate it.",
           embeds: [],
         });
       }
@@ -167,6 +189,17 @@ module.exports = {
         tournamentCompat.format || tournamentDb.tournamentFormat,
         tournamentCompat.totalMatches || 0
       );
+      if (userResults.length < 1) {
+        const userMatchCount =
+          tournamentCompat.userMatchCounts?.[interaction.user.id] || 0;
+        return interaction.editReply({
+          content:
+            userMatchCount > 0
+              ? "There does not seem to be anyone who meets the set requirements.\nPlease reduce the percentage of matches played together."
+              : "No compatibility data found for your votes yet.",
+          embeds: [],
+        });
+      }
     }
 
     if (userResults.length < 1) {

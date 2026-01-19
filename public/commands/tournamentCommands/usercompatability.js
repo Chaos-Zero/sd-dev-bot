@@ -132,7 +132,15 @@ module.exports = {
           .catch((_) => null);
       }
     } else {
-      const tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
+      let tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
+      if (!tournamentCompat) {
+        const latestTournament = getLatestTournamentEntry(tournamentDetails);
+        if (latestTournament) {
+          tournamentName = latestTournament.name;
+          tournamentDb = latestTournament.data;
+          tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
+        }
+      }
       if (!tournamentCompat) {
         return interaction
           .reply({
