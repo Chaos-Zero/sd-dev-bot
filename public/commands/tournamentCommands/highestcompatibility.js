@@ -15,7 +15,7 @@ eval(
 );
 
 const loadingEmbed = new EmbedBuilder().setImage(
-  "http://91.99.239.6/assets/domo/Domo_load.gif"
+  "http://91.99.239.6/dev_files/assets/Domo_load.gif"
 );
 
 module.exports = {
