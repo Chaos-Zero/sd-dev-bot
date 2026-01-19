@@ -8,6 +8,7 @@ const sleep = require("util").promisify(setTimeout);
 eval(fs.readFileSync("./public/database/read.js") + "");
 eval(fs.readFileSync("./public/database/write.js") + "");
 eval(fs.readFileSync("./public/tournament/tournamentutils.js") + "");
+eval(fs.readFileSync("./public/utils/compatibilityStore.js") + "");
 eval(fs.readFileSync("./public/tournament/challonge/challongeClient.js") + "");
 eval(
   fs.readFileSync("./public/tournament/single/singletournamentmessages.js") + ""
@@ -21,6 +22,42 @@ const db = low(adapter);
 
 async function getCurrentTournament(db) {
   return db.get("tournaments[0].currentTournament").value();
+}
+
+function getSingleTotalRounds(startingMatchCount) {
+  let matchesThisRound = parseInt(startingMatchCount);
+  if (isNaN(matchesThisRound) || matchesThisRound < 1) {
+    return 0;
+  }
+  let rounds = 0;
+  while (matchesThisRound >= 1) {
+    rounds += 1;
+    if (matchesThisRound === 1) {
+      break;
+    }
+    matchesThisRound = Math.ceil(matchesThisRound / 2);
+  }
+  return rounds;
+}
+
+function getThirdPlaceMatchNumber(startingMatchCount, hasThirdPlaceMatch) {
+  if (!hasThirdPlaceMatch) {
+    return null;
+  }
+  const baseFinalMatchNumber = parseInt(startingMatchCount) * 2 - 1;
+  if (isNaN(baseFinalMatchNumber) || baseFinalMatchNumber < 1) {
+    return null;
+  }
+  return baseFinalMatchNumber;
+}
+
+function ensureThirdPlaceState(single) {
+  if (single.hasThirdPlaceMatch === undefined) {
+    single.hasThirdPlaceMatch = true;
+  }
+  if (!Array.isArray(single.thirdPlaceEntrants)) {
+    single.thirdPlaceEntrants = [];
+  }
 }
 
 // Neeed Round, Match Number, Names, Game, Links, Status
@@ -52,11 +89,16 @@ async function StartSingleMatch(
   }
 
   let single = tournamentDetails[currentTournamentName];
+  ensureThirdPlaceState(single);
 
   var matchesPerDay = single.roundsPerTurn;
 
   let previousMatch = single.matches.length;
   let matchNumber = single.matches.length + 1;
+  const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
+    single.startingMatchCount,
+    single.hasThirdPlaceMatch
+  );
 
   var thisRound = 0;
 
@@ -88,6 +130,7 @@ async function StartSingleMatch(
     match: matchNumber,
     nextRoundNextMatch: "1",
     isChallonge: single.isChallonge,
+    isThirdPlace: matchNumber === thirdPlaceMatchNumber,
     progress: "in-progress",
     entrant1: {
       name: foundEntries[0].name,
@@ -160,12 +203,19 @@ async function EndSingleMatches(interaction = "") {
   }
 
   let single = tournamentDetails[currentTournamentName];
+  ensureThirdPlaceState(single);
   var matchesPerDay = single.roundsPerTurn;
+  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
+  const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
+    single.startingMatchCount,
+    single.hasThirdPlaceMatch
+  );
 
   var tiedMatches = [];
 
   var inProgressMatches = [];
   var matchesForEmbed = [];
+  var completedMatchesForCompat = [];
 
   for (var match of single.matches) {
     if (match.progress !== "complete") {
@@ -306,6 +356,29 @@ async function EndSingleMatches(interaction = "") {
         (dbMatch) => dbMatch.match == match.match
       );
       matchObj = match;
+      completedMatchesForCompat.push(match);
+
+      if (
+        single.hasThirdPlaceMatch &&
+        thirdPlaceMatchNumber &&
+        totalRounds > 0 &&
+        parseInt(match.round) === totalRounds - 1
+      ) {
+        const alreadyTracked = single.thirdPlaceEntrants.some(
+          (entrant) => entrant.fromMatch == match.match
+        );
+        if (!alreadyTracked) {
+          single.thirdPlaceEntrants.push({
+            name: secondPlace.name,
+            title: secondPlace.title,
+            link: secondPlace.link,
+            type: secondPlace.type,
+            challongeSeed: secondPlace.challongeSeed,
+            match: thirdPlaceMatchNumber,
+            fromMatch: match.match,
+          });
+        }
+      }
 
       if (single.isChallonge) {
         const challongeResults =
@@ -332,6 +405,7 @@ async function EndSingleMatches(interaction = "") {
     var embedDetails = {
       round: match.round,
       match: originalMatch,
+      isThirdPlace: match.isThirdPlace,
       firstPlace: {
         name: firstPlace.name,
         title: firstPlace.title,
@@ -363,6 +437,38 @@ async function EndSingleMatches(interaction = "") {
     //}
   }
 
+  if (
+    single.hasThirdPlaceMatch &&
+    thirdPlaceMatchNumber &&
+    totalRounds > 0 &&
+    single.thirdPlaceEntrants.length === 2
+  ) {
+    if (!single.rounds[totalRounds]) {
+      single.rounds[totalRounds] = [];
+    }
+    const existingThirdPlaceEntries = single.rounds[totalRounds].filter(
+      (entry) => entry.match == thirdPlaceMatchNumber
+    );
+    if (existingThirdPlaceEntries.length < 2) {
+      const existingNames = new Set(
+        existingThirdPlaceEntries.map((entry) => entry.name)
+      );
+      for (const entrant of single.thirdPlaceEntrants) {
+        if (existingNames.has(entrant.name)) {
+          continue;
+        }
+        single.rounds[totalRounds].push({
+          name: entrant.name,
+          title: entrant.title,
+          link: entrant.link,
+          type: entrant.type,
+          challongeSeed: entrant.challongeSeed,
+          match: thirdPlaceMatchNumber,
+        });
+      }
+    }
+  }
+
   await db
     .get("tournaments")
     .nth(0)
@@ -370,6 +476,12 @@ async function EndSingleMatches(interaction = "") {
       [currentTournamentName]: single,
     })
     .write();
+
+  UpdateCompatibilityForMatches(
+    currentTournamentName,
+    "Single Elimination",
+    completedMatchesForCompat
+  );
   if (interaction !== "") {
     await interaction.editReply({
       content: "Looks good.",

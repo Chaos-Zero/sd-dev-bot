@@ -1,3 +1,4 @@
+//HAS CHANGED
 const { Client, ButtonBuilder, EmbedBuilder } = require("discord.js");
 const { ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const fs = require("fs");
@@ -20,6 +21,54 @@ const lightGold = { red: 1, green: 0.9, blue: 0.5, alpha: 0.2 };
 const lightBlue = { red: 0.7, green: 0.85, blue: 1, alpha: 0.2 };
 
 const challongeBaseUrl = "https://challonge.com/";
+
+function getSingleTotalRounds(startingMatchCount) {
+  let matchesThisRound = parseInt(startingMatchCount);
+  if (isNaN(matchesThisRound) || matchesThisRound < 1) {
+    return 0;
+  }
+  let rounds = 0;
+  while (matchesThisRound >= 1) {
+    rounds += 1;
+    if (matchesThisRound === 1) {
+      break;
+    }
+    matchesThisRound = Math.ceil(matchesThisRound / 2);
+  }
+  return rounds;
+}
+
+function getSingleBaseFinalMatchNumber(startingMatchCount) {
+  const baseFinalMatchNumber = parseInt(startingMatchCount) * 2 - 1;
+  if (isNaN(baseFinalMatchNumber) || baseFinalMatchNumber < 1) {
+    return 0;
+  }
+  return baseFinalMatchNumber;
+}
+
+function getThirdPlaceMatchNumber(single) {
+  if (single.hasThirdPlaceMatch === false) {
+    return null;
+  }
+  return getSingleBaseFinalMatchNumber(single.startingMatchCount);
+}
+
+function getSingleRoundLabel(single, roundNum, isThirdPlace) {
+  if (isThirdPlace) {
+    return "Match for Third Place";
+  }
+  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
+  if (!totalRounds || isNaN(roundNum)) {
+    return "";
+  }
+  if (roundNum === totalRounds) {
+    return "Final";
+  }
+  if (roundNum === totalRounds - 1) {
+    return "Semifinal";
+  }
+  return "";
+}
 
 async function SendSingleBattleMessage(
   interaction,
@@ -103,6 +152,7 @@ async function SendPreviousSingleDayResultsEmbeds(
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
     currentTournamentName
   );
+  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
 
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
@@ -164,12 +214,23 @@ async function SendPreviousSingleDayResultsEmbeds(
         previousMatches[0][i].secondPlace.title + "**";
 
       var nextRound = 6;
+      const roundLabel = getSingleRoundLabel(
+        single,
+        parseInt(previousMatches[0][i].round),
+        previousMatches[0][i].isThirdPlace
+      );
       prevEmbed
         .setTitle(
+<<<<<<< HEAD
           //"Winner: 1st Place:" +
           previousMatches[0][i].firstPlace.type + " wins!\n" + 
           //"Match Winner: " +
           //  "1st Place:" +
+=======
+          (roundLabel ? roundLabel + " - " : "") +
+            previousMatches[0][i].firstPlace.type +
+            " wins!\n" +
+>>>>>>> origin/dev
             previousMatches[0][i].firstPlace.name +
             " - " +
             previousMatches[0][i].firstPlace.title +
@@ -220,10 +281,11 @@ async function SendPreviousSingleDayResultsEmbeds(
       resultLogEmbed
         .setColor(0x097969)
         .setTitle(
-          "Round " +
+          (roundLabel ? roundLabel + " - " : "") +
+            "Round " +
             previousMatches[0][i].round +
             " -  Match: " +
-            previousMatches[0][i].match 
+            previousMatches[0][i].match
         )
         .setAuthor({
           name: "Technology Vs Nature",
@@ -286,7 +348,11 @@ async function SendPreviousSingleDayResultsEmbeds(
       ) {
         await logsEmbedsToSend.push(resultLogEmbed);
       }
-      await AddSingleWinnerToNextRound(previousMatches[0][i].firstPlace);
+      await AddSingleWinnerToNextRound(
+        previousMatches[0][i].firstPlace,
+        previousMatches[0][i].round,
+        previousMatches[0][i].isThirdPlace
+      );
       //resultLogEmbed;
     }
   }
@@ -304,6 +370,32 @@ async function SendPreviousSingleDayResultsEmbeds(
   for (var i = 0; i < logsEmbedsToSend.length; i++) {
     await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
     await sleep(250);
+  }
+
+  const tournamentIsOver =
+    totalRounds > 0 &&
+    previousMatches[1].length === 0 &&
+    previousMatches[0].some(
+      (match) =>
+        parseInt(match.round) === totalRounds && match.isThirdPlace !== true
+    );
+  if (tournamentIsOver) {
+    const thankYouEmbed = new EmbedBuilder()
+      .setDescription("Thank you for participating!")
+      .setColor(0x4dc399)
+      .setFooter({
+        text: "Supradarky's VGM Club",
+        iconURL:
+          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+      });
+    await channel.send({ embeds: [thankYouEmbed] });
+    await db
+      .get("tournaments")
+      .nth(0)
+      .assign({
+        currentTournament: "N/A",
+      })
+      .write();
   }
 }
 
@@ -329,6 +421,11 @@ async function SendSingleDailyEmbed(
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
     currentTournamentName
   );
+  const roundLabel = getSingleRoundLabel(
+    single,
+    parseInt(matchData.round),
+    matchData.isThirdPlace
+  );
   const currentChallongeUrl =
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
@@ -353,7 +450,13 @@ async function SendSingleDailyEmbed(
 
   var embed = new EmbedBuilder();
   embed
-    .setTitle("Round " + matchData.round + " - Match " + matchData.match)
+    .setTitle(
+      (roundLabel ? roundLabel + " - " : "") +
+        "Round " +
+        matchData.round +
+        " - Match " +
+        matchData.match
+    )
     .setAuthor({
       name: currentTournamentName,
       iconURL:
@@ -540,7 +643,28 @@ async function SendSingleDailyEmbed(
   //  });
 }
 
-async function AddSingleWinnerToNextRound(firstPlaceEntrant) {
+function getRoundStartMatchNumber(startingMatchCount, roundNum) {
+  let start = 1;
+  let matchesThisRound = startingMatchCount;
+  for (let r = 1; r < roundNum; r++) {
+    start += matchesThisRound;
+    matchesThisRound = Math.ceil(matchesThisRound / 2);
+  }
+  return start;
+}
+
+function getNextRoundMatchNumber(startingMatchCount, roundNum, matchNum) {
+  const roundStart = getRoundStartMatchNumber(startingMatchCount, roundNum);
+  const nextRoundStart = getRoundStartMatchNumber(startingMatchCount, roundNum + 1);
+  const position = matchNum - roundStart;
+  return nextRoundStart + Math.floor(position / 2);
+}
+
+async function AddSingleWinnerToNextRound(
+  firstPlaceEntrant,
+  matchRound,
+  isThirdPlace
+) {
   var db = GetDb();
   await db.read();
   console.log("Ending single Matches");
@@ -548,8 +672,40 @@ async function AddSingleWinnerToNextRound(firstPlaceEntrant) {
 
   let tournamentDetails = await db.get("tournaments").nth(0).value();
   let single = tournamentDetails[currentTournamentName];
-  var nextRoundNum = (parseInt(single.round) + 1).toString();
+  if (isThirdPlace) {
+    return;
+  }
+  if (single.hasThirdPlaceMatch === undefined) {
+    single.hasThirdPlaceMatch = true;
+  }
+  var roundNum = parseInt(matchRound);
+  if (isNaN(roundNum)) {
+    roundNum = parseInt(single.round);
+  }
+  var nextRoundNum = (roundNum + 1).toString();
   var nextMatchNum = single.nextRoundNextMatch;
+  var startingMatchCount = parseInt(single.startingMatchCount);
+  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
+  const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(single);
+  if (
+    !isNaN(startingMatchCount) &&
+    !isNaN(roundNum) &&
+    !isNaN(parseInt(firstPlaceEntrant.match))
+  ) {
+    nextMatchNum = getNextRoundMatchNumber(
+      startingMatchCount,
+      roundNum,
+      parseInt(firstPlaceEntrant.match)
+    );
+  }
+  if (
+    single.hasThirdPlaceMatch &&
+    thirdPlaceMatchNumber &&
+    totalRounds > 0 &&
+    roundNum === totalRounds - 1
+  ) {
+    nextMatchNum = parseInt(thirdPlaceMatchNumber) + 1;
+  }
 
   var entrantForNextRound = {
     name: firstPlaceEntrant.name,
@@ -565,10 +721,10 @@ async function AddSingleWinnerToNextRound(firstPlaceEntrant) {
   single.rounds[nextRoundNum].push(entrantForNextRound);
 
   const matchingEntries = single.rounds[nextRoundNum].filter(
-    (entry) => entry.match === nextMatchNum
+    (entry) => parseInt(entry.match) === parseInt(nextMatchNum)
   );
-  if (matchingEntries.length % 2 == 0) {
-    single.nextRoundNextMatch = nextMatchNum + 1;
+  if (roundNum === parseInt(single.round) && matchingEntries.length % 2 == 0) {
+    single.nextRoundNextMatch = parseInt(nextMatchNum) + 1;
   }
 
   db.get("tournaments")

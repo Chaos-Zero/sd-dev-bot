@@ -8,6 +8,7 @@ const sleep = require("util").promisify(setTimeout);
 eval(fs.readFileSync("./public/database/read.js") + "");
 eval(fs.readFileSync("./public/database/write.js") + "");
 eval(fs.readFileSync("./public/tournament/tournamentutils.js") + "");
+eval(fs.readFileSync("./public/utils/compatibilityStore.js") + "");
 eval(fs.readFileSync("./public/tournament/challonge/challongeClient.js") + "");
 eval(fs.readFileSync("./public/tournament/doubleElim/doubleelimtournamentmessages.js") + "");
 
@@ -155,6 +156,7 @@ async function EndDoubleElimMatches(interaction = "") {
 
   var inProgressMatches = [];
   var matchesForEmbed = [];
+  var completedMatchesForCompat = [];
 
   for (var match of doubleElimination.matches) {
     if (match.progress !== "complete") {
@@ -269,6 +271,7 @@ async function EndDoubleElimMatches(interaction = "") {
         (dbMatch) => dbMatch.match == match.match
       );
       matchObj = match;
+      completedMatchesForCompat.push(match);
     }
 
     //  winnerMatchNumber += baseNum;
@@ -346,6 +349,12 @@ async function EndDoubleElimMatches(interaction = "") {
       [currentTournamentName]: doubleElimination,
     })
     .write();
+
+  UpdateCompatibilityForMatches(
+    currentTournamentName,
+    "Double Elimination",
+    completedMatchesForCompat
+  );
 
   if (interaction !== "") {
     await interaction.editReply({
