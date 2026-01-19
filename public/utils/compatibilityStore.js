@@ -2,14 +2,19 @@ const fs = require("fs");
 const path = require("path");
 
 function getCompatibilityDbPath() {
-  const dataDbPath = path.join(path.sep, "data", "db.json");
-  if (fs.existsSync(dataDbPath)) {
-    const dataCompatPath = path.join(path.dirname(dataDbPath), "compatibility.json");
-    if (fs.existsSync(dataCompatPath)) {
-      return dataCompatPath;
-    }
+  const cwdPath = path.join(process.cwd(), ".data", "compatibility.json");
+  if (fs.existsSync(cwdPath)) {
+    return cwdPath;
   }
-  return path.join(__dirname, "..", "..", "compatibility.json");
+  return path.join(
+    path.sep,
+    "home",
+    "botuser",
+    "bots",
+    "live",
+    ".data",
+    "compatibility.json"
+  );
 }
 
 function getDefaultCompatibilityDb() {
