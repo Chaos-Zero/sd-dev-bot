@@ -35,12 +35,27 @@ module.exports = {
     var db = GetDb();
     db.read();
 
-    let tournamentDetails = db.get("tournaments").nth(0).value();
+    let tournamentDetails = db.get("tournaments").nth(0).value() || {};
     let doubleEliminationName = await db
       .get("tournaments[0].currentTournament")
       .value();
     console.log(doubleEliminationName);
-    let tournamentDb = await tournamentDetails[doubleEliminationName];
+    let tournamentDb = tournamentDetails[doubleEliminationName];
+    if (!doubleEliminationName || doubleEliminationName === "N/A" || !tournamentDb) {
+      const latestTournament = getLatestTournamentEntry(tournamentDetails);
+      if (latestTournament) {
+        doubleEliminationName = latestTournament.name;
+        tournamentDb = latestTournament.data;
+      } else {
+        return interaction
+          .reply({
+            content: "There are no tournaments available to check.",
+            ephemeral: true,
+          })
+          .then(() => console.log("Reply sent."))
+          .catch((_) => null);
+      }
+    }
     const isPublic = interaction.options.getBoolean("make-public") || false;
     const isAllowedLessThan50Percent =
       interaction.options.getBoolean("include-low-participation") || false;
@@ -239,6 +254,18 @@ function compareUsersAndReturnTasteMakers(
     }
   }
   return tasteMakers;
+}
+
+function getLatestTournamentEntry(tournamentDetails) {
+  const excludedKeys = new Set(["admin", "currentTournament", "receiptUsers"]);
+  const entries = Object.entries(tournamentDetails).filter(
+    ([key, value]) => !excludedKeys.has(key) && value
+  );
+  if (entries.length < 1) {
+    return null;
+  }
+  const [name, data] = entries[entries.length - 1];
+  return { name, data };
 }
 
 async function getUserInfoFromId(guild, userId) {
