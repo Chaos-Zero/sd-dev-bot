@@ -146,6 +146,8 @@ async function registerTournament(
                 roundsPerTurn: roundsPerTurn,
                 matches: [],
                 rounds: { 1: participants },
+                hasThirdPlaceMatch: true,
+                thirdPlaceEntrants: [],
                 eliminated: [],
                 final: [],
                 isChallonge: isChallonge,

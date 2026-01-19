@@ -37,7 +37,25 @@ function getSingleTotalRounds(startingMatchCount) {
   return rounds;
 }
 
-function getSingleRoundLabel(single, roundNum) {
+function getSingleBaseFinalMatchNumber(startingMatchCount) {
+  const baseFinalMatchNumber = parseInt(startingMatchCount) * 2 - 1;
+  if (isNaN(baseFinalMatchNumber) || baseFinalMatchNumber < 1) {
+    return 0;
+  }
+  return baseFinalMatchNumber;
+}
+
+function getThirdPlaceMatchNumber(single) {
+  if (single.hasThirdPlaceMatch === false) {
+    return null;
+  }
+  return getSingleBaseFinalMatchNumber(single.startingMatchCount);
+}
+
+function getSingleRoundLabel(single, roundNum, isThirdPlace) {
+  if (isThirdPlace) {
+    return "Match for Third Place";
+  }
   const totalRounds = getSingleTotalRounds(single.startingMatchCount);
   if (!totalRounds || isNaN(roundNum)) {
     return "";
@@ -197,7 +215,8 @@ async function SendPreviousSingleDayResultsEmbeds(
       var nextRound = 6;
       const roundLabel = getSingleRoundLabel(
         single,
-        parseInt(previousMatches[0][i].round)
+        parseInt(previousMatches[0][i].round),
+        previousMatches[0][i].isThirdPlace
       );
       prevEmbed
         .setTitle(
@@ -348,7 +367,8 @@ async function SendPreviousSingleDayResultsEmbeds(
     totalRounds > 0 &&
     previousMatches[1].length === 0 &&
     previousMatches[0].some(
-      (match) => parseInt(match.round) === totalRounds
+      (match) =>
+        parseInt(match.round) === totalRounds && match.isThirdPlace !== true
     );
   if (tournamentIsOver) {
     const thankYouEmbed = new EmbedBuilder()
@@ -392,7 +412,11 @@ async function SendSingleDailyEmbed(
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
     currentTournamentName
   );
-  const roundLabel = getSingleRoundLabel(single, parseInt(matchData.round));
+  const roundLabel = getSingleRoundLabel(
+    single,
+    parseInt(matchData.round),
+    matchData.isThirdPlace
+  );
   const currentChallongeUrl =
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
@@ -635,6 +659,9 @@ async function AddSingleWinnerToNextRound(firstPlaceEntrant, matchRound) {
 
   let tournamentDetails = await db.get("tournaments").nth(0).value();
   let single = tournamentDetails[currentTournamentName];
+  if (single.hasThirdPlaceMatch === undefined) {
+    single.hasThirdPlaceMatch = true;
+  }
   var roundNum = parseInt(matchRound);
   if (isNaN(roundNum)) {
     roundNum = parseInt(single.round);
@@ -642,6 +669,8 @@ async function AddSingleWinnerToNextRound(firstPlaceEntrant, matchRound) {
   var nextRoundNum = (roundNum + 1).toString();
   var nextMatchNum = single.nextRoundNextMatch;
   var startingMatchCount = parseInt(single.startingMatchCount);
+  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
+  const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(single);
   if (
     !isNaN(startingMatchCount) &&
     !isNaN(roundNum) &&
@@ -652,6 +681,14 @@ async function AddSingleWinnerToNextRound(firstPlaceEntrant, matchRound) {
       roundNum,
       parseInt(firstPlaceEntrant.match)
     );
+  }
+  if (
+    single.hasThirdPlaceMatch &&
+    thirdPlaceMatchNumber &&
+    totalRounds > 0 &&
+    roundNum === totalRounds - 1
+  ) {
+    nextMatchNum = parseInt(thirdPlaceMatchNumber) + 1;
   }
 
   var entrantForNextRound = {

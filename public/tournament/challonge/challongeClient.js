@@ -653,7 +653,7 @@ async function endMatchByNumber(tournamentName, matchNumber, scoresCsv) {
 async function startMatchByNumber(tournamentName, matchNumber) {
   try {
     // Get the match ID based on the match number
-    const matchId = await getMatchIdByNumber(tournamentName, 63);
+    const matchId = await getMatchIdByNumber(tournamentName, matchNumber);
 
     if (!matchId) {
       console.error(`Could not find a match with number ${matchNumber}`);
@@ -667,5 +667,4 @@ async function startMatchByNumber(tournamentName, matchNumber) {
     console.error("Failed to start match by number:", error);
   }
 }
-
 
