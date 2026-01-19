@@ -14,7 +14,7 @@ eval(
 );
 
 const loadingEmbed = new EmbedBuilder().setImage(
-  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo-load.gif?v=1679712312250"
+  "/home/botuser/bots/assets/domo/Domo_load.gif"
 );
 
 module.exports = {
