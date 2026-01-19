@@ -53,6 +53,10 @@ function getThirdPlaceMatchNumber(single) {
   return getSingleBaseFinalMatchNumber(single.startingMatchCount);
 }
 
+function getEntrantTypePrefix(type) {
+  return type ? type + " wins!\n" : "";
+}
+
 function getSingleRoundLabel(single, roundNum, isThirdPlace) {
   if (isThirdPlace) {
     return "Match for Third Place";
@@ -222,8 +226,7 @@ async function SendPreviousSingleDayResultsEmbeds(
       prevEmbed
         .setTitle(
           (roundLabel ? roundLabel + " - " : "") +
-            previousMatches[0][i].firstPlace.type +
-            " wins!\n" +
+            getEntrantTypePrefix(previousMatches[0][i].firstPlace.type) +
             previousMatches[0][i].firstPlace.name +
             " - " +
             previousMatches[0][i].firstPlace.title +
@@ -466,12 +469,18 @@ async function SendSingleDailyEmbed(
       {
         name:
           `A. ` + matchData.entrant1.name + ` - ` + matchData.entrant1.title,
-        value: "Faction: " + matchData.entrant1.type + "\n" + matchData.entrant1.link,
+        value:
+          (matchData.entrant1.type
+            ? "Faction: " + matchData.entrant1.type + "\n"
+            : "") + matchData.entrant1.link,
       },
       {
         name:
           `B. ` + matchData.entrant2.name + ` - ` + matchData.entrant2.title,
-        value: "Faction: " + matchData.entrant2.type + "\n" + matchData.entrant2.link,
+        value:
+          (matchData.entrant2.type
+            ? "Faction: " + matchData.entrant2.type + "\n"
+            : "") + matchData.entrant2.link,
       },
       {
         name: "------------------------------------\nTournament Links",
