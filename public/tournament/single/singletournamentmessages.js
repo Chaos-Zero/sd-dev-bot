@@ -342,7 +342,8 @@ async function SendPreviousSingleDayResultsEmbeds(
       }
       await AddSingleWinnerToNextRound(
         previousMatches[0][i].firstPlace,
-        previousMatches[0][i].round
+        previousMatches[0][i].round,
+        previousMatches[0][i].isThirdPlace
       );
       //resultLogEmbed;
     }
@@ -651,7 +652,11 @@ function getNextRoundMatchNumber(startingMatchCount, roundNum, matchNum) {
   return nextRoundStart + Math.floor(position / 2);
 }
 
-async function AddSingleWinnerToNextRound(firstPlaceEntrant, matchRound) {
+async function AddSingleWinnerToNextRound(
+  firstPlaceEntrant,
+  matchRound,
+  isThirdPlace
+) {
   var db = GetDb();
   await db.read();
   console.log("Ending single Matches");
@@ -659,6 +664,9 @@ async function AddSingleWinnerToNextRound(firstPlaceEntrant, matchRound) {
 
   let tournamentDetails = await db.get("tournaments").nth(0).value();
   let single = tournamentDetails[currentTournamentName];
+  if (isThirdPlace) {
+    return;
+  }
   if (single.hasThirdPlaceMatch === undefined) {
     single.hasThirdPlaceMatch = true;
   }
