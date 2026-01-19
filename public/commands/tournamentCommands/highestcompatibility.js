@@ -60,11 +60,27 @@ module.exports = {
     const userPercent =
       interaction.options.getNumber("specify-participation-percentage") || 25;
 
-    if (!searchAll && tournamentDb.matches.length < 5) {
+    if (!searchAll && (!tournamentName || tournamentName === "N/A" || !tournamentDb)) {
+      const latestTournament = getLatestTournamentEntry(tournamentDetails);
+      if (latestTournament) {
+        tournamentName = latestTournament.name;
+        tournamentDb = latestTournament.data;
+      } else {
+        return interaction
+          .reply({
+            content: "There are no tournaments available to check.",
+            ephemeral: true,
+          })
+          .then(() => console.log("Reply sent."))
+          .catch((_) => null);
+      }
+    }
+
+    if (!searchAll && tournamentDb.matches.length < 10) {
       return interaction
         .reply({
           content:
-            "It appears there has not been enough rounds in this tournament to run this command.",
+            "It appears there have not been enough matches in this tournament to run this command.",
           ephemeral: true,
         })
         .then(() => console.log("Reply sent."))
@@ -122,7 +138,7 @@ module.exports = {
       if (
         nonTripleAggregate &&
         Array.isArray(nonTripleAggregate.matches) &&
-        nonTripleAggregate.matches.length >= 5
+        nonTripleAggregate.matches.length >= 10
       ) {
         voters = GetAllVoters(nonTripleAggregate);
         userResults = mergeCompatibilityResults(
@@ -141,7 +157,7 @@ module.exports = {
       if (
         tripleAggregate &&
         Array.isArray(tripleAggregate.matches) &&
-        tripleAggregate.matches.length >= 5
+        tripleAggregate.matches.length >= 10
       ) {
         voters = GetAllVoters(tripleAggregate);
         userResults = mergeCompatibilityResults(
@@ -279,6 +295,14 @@ function getAllTournamentEntries(tournamentDetails) {
   return Object.entries(tournamentDetails)
     .filter(([key, value]) => !excludedKeys.has(key) && value)
     .map(([key, value]) => ({ name: key, data: value }));
+}
+
+function getLatestTournamentEntry(tournamentDetails) {
+  const allTournaments = getAllTournamentEntries(tournamentDetails);
+  if (allTournaments.length < 1) {
+    return null;
+  }
+  return allTournaments[allTournaments.length - 1];
 }
 
 function buildAggregateTournament(tournaments, tournamentFormat) {
