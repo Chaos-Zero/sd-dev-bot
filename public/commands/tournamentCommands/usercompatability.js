@@ -4,6 +4,7 @@ const Discord = require("discord.js");
 
 eval(fs.readFileSync("./public/database/read.js") + "");
 eval(fs.readFileSync("./public/main.js") + "");
+eval(fs.readFileSync("./public/utils/compatibilityStore.js") + "");
 eval(
   fs.readFileSync("./public/tournament/triple/slashCommandFunctions.js") + ""
 );
@@ -81,16 +82,7 @@ module.exports = {
           .catch((_) => null);
       }
     }
-    if (!searchAll && tournamentDb.matches.length < 10) {
-      return interaction
-        .reply({
-          content:
-            "It appears there have not been enough matches in this tournament to run this command.",
-          ephemeral: true,
-        })
-        .then(() => console.log("Reply sent."))
-        .catch((_) => null);
-    }
+    const compatibilityDb = LoadCompatibilityDb();
 
     const embeds = [];
     const userInfo = await getUserInfoFromId(interaction.guild, userId);
@@ -102,23 +94,11 @@ module.exports = {
     }
 
     if (searchAll) {
-      const allTournaments = getAllTournamentEntries(tournamentDetails);
-      const tripleAggregate = buildAggregateTournament(
-        allTournaments.filter(
-          (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
-        ),
-        "3v3 Ranked"
-      );
-      const nonTripleAggregate = buildAggregateTournament(
-        allTournaments.filter(
-          (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
-        ),
-        "Single/Double Elimination"
-      );
+      const globalSingle = compatibilityDb.global?.singleDouble;
+      const globalTriple = compatibilityDb.global?.triple;
 
-      const tripleEmbed = buildCompatibilityEmbedForAggregate(
-        interaction,
-        tripleAggregate,
+      const tripleEmbed = buildCompatibilityEmbedFromStore(
+        globalTriple,
         checkingUser,
         userId,
         userInfo,
@@ -129,9 +109,8 @@ module.exports = {
         embeds.push(tripleEmbed);
       }
 
-      const nonTripleEmbed = buildCompatibilityEmbedForAggregate(
-        interaction,
-        nonTripleAggregate,
+      const nonTripleEmbed = buildCompatibilityEmbedFromStore(
+        globalSingle,
         checkingUser,
         userId,
         userInfo,
@@ -153,36 +132,38 @@ module.exports = {
           .catch((_) => null);
       }
     } else {
-      let userResults = "";
-
-      if (tournamentDb.tournamentFormat == "3v3 Ranked") {
-        userResults = compareTripleUsers(
-          interaction,
-          tournamentDb,
-          checkingUser,
-          userId
-        );
-      } else if (tournamentDb.tournamentFormat == "Single Elimination") {
-        userResults = compareDoubleUsers(
-          interaction,
-          tournamentDb,
-          checkingUser,
-          userId
-        );
-      }
-
-      if (userResults == "") {
+      const tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
+      if (!tournamentCompat) {
         return interaction
           .reply({
             content:
-              "It appears the current tournament format is not supported by this command.",
+              "Compatibility data isn't available for this tournament yet. Run the backfill to generate it.",
             ephemeral: true,
           })
           .then(() => console.log("Reply sent."))
           .catch((_) => null);
       }
 
-      if (userResults.matchCount < 1) {
+      if ((tournamentCompat.totalMatches || 0) < 10) {
+        return interaction
+          .reply({
+            content:
+              "It appears there have not been enough matches in this tournament to run this command.",
+            ephemeral: true,
+          })
+          .then(() => console.log("Reply sent."))
+          .catch((_) => null);
+      }
+
+      const embed = buildCompatibilityEmbedFromStore(
+        tournamentCompat,
+        checkingUser,
+        userId,
+        userInfo,
+        tournamentName,
+        tournamentCompat.format || tournamentDb.tournamentFormat
+      );
+      if (!embed) {
         return interaction
           .reply({
             content:
@@ -192,16 +173,7 @@ module.exports = {
           .then(() => console.log("Reply sent."))
           .catch((_) => null);
       }
-
-      const embed = buildCompatibilityEmbedFromResult(
-        userResults,
-        userInfo,
-        tournamentName,
-        tournamentDb.tournamentFormat
-      );
-      if (embed) {
-        embeds.push(embed);
-      }
+      embeds.push(embed);
     }
 
     if (!isPublic) {
@@ -235,6 +207,99 @@ function getLatestTournamentEntry(tournamentDetails) {
     return null;
   }
   return allTournaments[allTournaments.length - 1];
+}
+
+function buildCompatibilityEmbedFromStore(
+  store,
+  checkingUser,
+  userId,
+  userInfo,
+  tournamentName,
+  tournamentType
+) {
+  if (!store || !store.users) {
+    return null;
+  }
+  const totalMatches = store.totalMatches || 0;
+  if (totalMatches < 10) {
+    return null;
+  }
+  const stats = store.users?.[checkingUser]?.[userId];
+  if (!stats) {
+    return null;
+  }
+
+  let userResults = {};
+  if (tournamentType == "3v3 Ranked") {
+    userResults = {
+      totalWeight: stats.totalWeight || 0,
+      firstWeight: stats.firstWeight || 0,
+      secondWeight: stats.secondWeight || 0,
+      partialMatch: stats.partialMatch || 0,
+      maxWeight: stats.maxWeight || 0,
+      iterations: totalMatches,
+      disagreementWeight: stats.disagreementWeight || 0,
+      matchCount: stats.matchCount || 0,
+    };
+  } else {
+    const iterations = stats.iterations || 0;
+    userResults = {
+      totalWeight: stats.matched || 0,
+      maxWeight: totalMatches,
+      iterations,
+      disagreementWeight: 0,
+      matchCount: iterations,
+    };
+  }
+
+  return buildCompatibilityEmbedFromResult(
+    userResults,
+    userInfo,
+    tournamentName,
+    tournamentType
+  );
+}
+
+function buildTournamentSignature(tournaments) {
+  return tournaments
+    .map((tournament) => {
+      const matchCount = Array.isArray(tournament.data.matches)
+        ? tournament.data.matches.length
+        : 0;
+      const format = tournament.data.tournamentFormat || "unknown";
+      return `${tournament.name}:${format}:${matchCount}`;
+    })
+    .join("|");
+}
+
+function getAggregateTournamentFromCache(tournamentDetails, formatKey) {
+  const allTournaments = getAllTournamentEntries(tournamentDetails);
+  const signature = buildTournamentSignature(allTournaments);
+  if (aggregateCache.signature !== signature) {
+    aggregateCache.signature = signature;
+    aggregateCache.byFormat = {};
+  }
+
+  if (aggregateCache.byFormat[formatKey]) {
+    return aggregateCache.byFormat[formatKey];
+  }
+
+  let tournaments = [];
+  let tournamentFormat = "Single/Double Elimination";
+  if (formatKey == "3v3 Ranked") {
+    tournaments = allTournaments.filter(
+      (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
+    );
+    tournamentFormat = "3v3 Ranked";
+  } else {
+    tournaments = allTournaments.filter(
+      (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
+    );
+  }
+
+  const aggregate = buildAggregateTournament(tournaments, tournamentFormat);
+  aggregateCache.byFormat[formatKey] = aggregate;
+  return aggregate;
 }
 
 function buildAggregateTournament(tournaments, tournamentFormat) {

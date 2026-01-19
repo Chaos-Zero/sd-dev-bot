@@ -5,6 +5,7 @@ const sleep = require("util").promisify(setTimeout);
 
 eval(fs.readFileSync("./public/database/read.js") + "");
 eval(fs.readFileSync("./public/main.js") + "");
+eval(fs.readFileSync("./public/utils/compatibilityStore.js") + "");
 eval(
   fs.readFileSync("./public/tournament/triple/slashCommandFunctions.js") + ""
 );
@@ -76,16 +77,7 @@ module.exports = {
       }
     }
 
-    if (!searchAll && tournamentDb.matches.length < 10) {
-      return interaction
-        .reply({
-          content:
-            "It appears there have not been enough matches in this tournament to run this command.",
-          ephemeral: true,
-        })
-        .then(() => console.log("Reply sent."))
-        .catch((_) => null);
-    }
+    const compatibilityDb = LoadCompatibilityDb();
 
     if (
       userPercent > 100 ||
@@ -115,86 +107,66 @@ module.exports = {
     var guild = interaction.member.guild;
     var guildUsers = await guild.members.cache;
 
-    //console.log(guildUsers);
-    var voters = [];
     var userResults = [];
 
     if (searchAll) {
       tournamentName = "All Tournaments";
-      const allTournaments = getAllTournamentEntries(tournamentDetails);
-      const tripleAggregate = buildAggregateTournament(
-        allTournaments.filter(
-          (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
-        ),
-        "3v3 Ranked"
-      );
-      const nonTripleAggregate = buildAggregateTournament(
-        allTournaments.filter(
-          (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
-        ),
-        "Single Elimination"
-      );
+      const globalSingle = compatibilityDb.global?.singleDouble;
+      const globalTriple = compatibilityDb.global?.triple;
 
-      if (
-        nonTripleAggregate &&
-        Array.isArray(nonTripleAggregate.matches) &&
-        nonTripleAggregate.matches.length >= 10
-      ) {
-        voters = GetAllVoters(nonTripleAggregate);
+      if (globalSingle?.totalMatches >= 10) {
         userResults = mergeCompatibilityResults(
           userResults,
-          compareDoubleUsersAndReturnMostCompatible(
-            interaction,
-            nonTripleAggregate,
+          getTopCompatibilityFromStore(
+            globalSingle,
             interaction.user.id,
             guildUsers,
-            voters,
-            userPercent
+            userPercent,
+            "Single Elimination",
+            globalSingle.totalMatches
           )
         );
       }
 
-      if (
-        tripleAggregate &&
-        Array.isArray(tripleAggregate.matches) &&
-        tripleAggregate.matches.length >= 10
-      ) {
-        voters = GetAllVoters(tripleAggregate);
+      if (globalTriple?.totalMatches >= 10) {
         userResults = mergeCompatibilityResults(
           userResults,
-          compareTripleUsersAndReturnMostCompatible(
-            interaction,
-            tripleAggregate,
+          getTopCompatibilityFromStore(
+            globalTriple,
             interaction.user.id,
             guildUsers,
-            voters,
-            userPercent
+            userPercent,
+            "3v3 Ranked",
+            globalTriple.totalMatches
           )
         );
       }
     } else {
-      voters = GetAllVoters(tournamentDb);
-
-      if (tournamentDb.tournamentFormat == "3v3 Ranked") {
-        console.log("In Triple Results");
-        userResults = compareTripleUsersAndReturnMostCompatible(
-          interaction,
-          tournamentDb,
-          interaction.user.id,
-          guildUsers,
-          voters,
-          userPercent
-        );
-      } else {
-        userResults = compareDoubleUsersAndReturnMostCompatible(
-          interaction,
-          tournamentDb,
-          interaction.user.id,
-          guildUsers,
-          voters,
-          userPercent
-        );
+      const tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
+      if (!tournamentCompat) {
+        return interaction.editReply({
+          content:
+            "Compatibility data isn't available for this tournament yet. Run the backfill to generate it.",
+          embeds: [],
+        });
       }
+
+      if ((tournamentCompat.totalMatches || 0) < 10) {
+        return interaction.editReply({
+          content:
+            "It appears there have not been enough matches in this tournament to run this command.",
+          embeds: [],
+        });
+      }
+
+      userResults = getTopCompatibilityFromStore(
+        tournamentCompat,
+        interaction.user.id,
+        guildUsers,
+        userPercent,
+        tournamentCompat.format || tournamentDb.tournamentFormat,
+        tournamentCompat.totalMatches || 0
+      );
     }
 
     if (userResults.length < 1) {
@@ -270,7 +242,11 @@ async function PopulateEmbedData(
   return new Promise((resolve) => {
     getUserInfoFromId(interaction.guild, result.voter).then((userInfo) => {
       var embed = "";
-      if (tournamentDb.tournamentFormat == "3v3 Ranked") {
+      const format =
+        result.tournamentFormat ||
+        tournamentDb?.tournamentFormat ||
+        "Single Elimination";
+      if (format == "3v3 Ranked") {
         embed = CreateTripleHighestCompatDiscordEmbed(
           result,
           userInfo,
@@ -303,6 +279,52 @@ function getLatestTournamentEntry(tournamentDetails) {
     return null;
   }
   return allTournaments[allTournaments.length - 1];
+}
+
+function buildTournamentSignature(tournaments) {
+  return tournaments
+    .map((tournament) => {
+      const matchCount = Array.isArray(tournament.data.matches)
+        ? tournament.data.matches.length
+        : 0;
+      const format = tournament.data.tournamentFormat || "unknown";
+      return `${tournament.name}:${format}:${matchCount}`;
+    })
+    .join("|");
+}
+
+function getAggregateTournamentFromCache(tournamentDetails, formatKey) {
+  const allTournaments = getAllTournamentEntries(tournamentDetails);
+  const signature = buildTournamentSignature(allTournaments);
+  if (aggregateCache.signature !== signature) {
+    aggregateCache.signature = signature;
+    aggregateCache.byFormat = {};
+  }
+
+  if (aggregateCache.byFormat[formatKey]) {
+    return aggregateCache.byFormat[formatKey];
+  }
+
+  let tournaments = [];
+  let tournamentFormat = "Single Elimination";
+  if (formatKey == "3v3 Ranked") {
+    tournaments = allTournaments.filter(
+      (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
+    );
+    tournamentFormat = "3v3 Ranked";
+  } else {
+    tournaments = allTournaments.filter(
+      (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
+    );
+  }
+
+  const aggregate = buildAggregateTournament(tournaments, tournamentFormat);
+  if (aggregate) {
+    aggregate.voters = GetAllVoters(aggregate);
+  }
+
+  aggregateCache.byFormat[formatKey] = aggregate;
+  return aggregate;
 }
 
 function buildAggregateTournament(tournaments, tournamentFormat) {
@@ -371,6 +393,104 @@ function mergeCompatibilityResults(existingResults, nextResults) {
   return Array.from(byVoter.values()).sort(
     (a, b) => b.userCompatPercent - a.userCompatPercent
   );
+}
+
+function getTopCompatibilityFromStore(
+  store,
+  userId,
+  guildUsers,
+  userPercent,
+  tournamentFormat,
+  totalMatches
+) {
+  if (!store || !store.users) {
+    return [];
+  }
+
+  const userPairs = store.users[userId] || {};
+  const userMatchCount = store.userMatchCounts?.[userId] || 0;
+  let highestValue = 0;
+  let topCompatibility = [];
+
+  for (const [otherId, stats] of Object.entries(userPairs)) {
+    if (otherId === userId) {
+      continue;
+    }
+    if (!guildUsers.has(otherId)) {
+      continue;
+    }
+
+    if (tournamentFormat == "3v3 Ranked") {
+      const matchCount = stats.matchCount || 0;
+      if (
+        userMatchCount > 0 &&
+        (matchCount / userMatchCount) * 100 < Math.ceil(userPercent)
+      ) {
+        continue;
+      }
+
+      const totalWeight = stats.totalWeight || 0;
+      const partialMatch = stats.partialMatch || 0;
+      const disagreementWeight = stats.disagreementWeight || 0;
+      const maxWeight = stats.maxWeight || 0;
+      const weightMinusDisagreements =
+        totalWeight - disagreementWeight + partialMatch / 2;
+      const userCompatPercent =
+        maxWeight > 0
+          ? Math.ceil((weightMinusDisagreements / maxWeight) * 100)
+          : 0;
+
+      const result = {
+        voter: otherId,
+        totalWeight,
+        firstWeight: stats.firstWeight || 0,
+        secondWeight: stats.secondWeight || 0,
+        partialMatch,
+        maxWeight,
+        iterations: totalMatches || 0,
+        disagreementWeight,
+        matchCount,
+        userCompatPercent,
+        tournamentFormat: "3v3 Ranked",
+      };
+
+      if (userCompatPercent > highestValue) {
+        highestValue = userCompatPercent;
+        topCompatibility = [result];
+      } else if (userCompatPercent === highestValue) {
+        topCompatibility.push(result);
+      }
+      continue;
+    }
+
+    const iterations = stats.iterations || 0;
+    if (
+      userMatchCount > 0 &&
+      (iterations / userMatchCount) * 100 < Math.ceil(userPercent)
+    ) {
+      continue;
+    }
+    const matched = stats.matched || 0;
+    const userCompatPercent =
+      iterations > 0 ? Math.ceil((matched / iterations) * 100) : 0;
+    const result = {
+      voter: otherId,
+      totalWeight: matched,
+      maxWeight: totalMatches || 0,
+      iterations,
+      userCompatPercent,
+      tournamentFormat,
+    };
+
+    if (userCompatPercent > highestValue) {
+      highestValue = userCompatPercent;
+      topCompatibility = [result];
+    } else if (userCompatPercent === highestValue) {
+      topCompatibility.push(result);
+    }
+  }
+
+  return topCompatibility;
 }
 
 function GetAllVoters(currentTournament) {

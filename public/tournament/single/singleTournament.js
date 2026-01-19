@@ -8,6 +8,7 @@ const sleep = require("util").promisify(setTimeout);
 eval(fs.readFileSync("./public/database/read.js") + "");
 eval(fs.readFileSync("./public/database/write.js") + "");
 eval(fs.readFileSync("./public/tournament/tournamentutils.js") + "");
+eval(fs.readFileSync("./public/utils/compatibilityStore.js") + "");
 eval(fs.readFileSync("./public/tournament/challonge/challongeClient.js") + "");
 eval(
   fs.readFileSync("./public/tournament/single/singletournamentmessages.js") + ""
@@ -214,6 +215,7 @@ async function EndSingleMatches(interaction = "") {
 
   var inProgressMatches = [];
   var matchesForEmbed = [];
+  var completedMatchesForCompat = [];
 
   for (var match of single.matches) {
     if (match.progress !== "complete") {
@@ -354,6 +356,7 @@ async function EndSingleMatches(interaction = "") {
         (dbMatch) => dbMatch.match == match.match
       );
       matchObj = match;
+      completedMatchesForCompat.push(match);
 
       if (
         single.hasThirdPlaceMatch &&
@@ -473,6 +476,12 @@ async function EndSingleMatches(interaction = "") {
       [currentTournamentName]: single,
     })
     .write();
+
+  UpdateCompatibilityForMatches(
+    currentTournamentName,
+    "Single Elimination",
+    completedMatchesForCompat
+  );
   if (interaction !== "") {
     await interaction.editReply({
       content: "Looks good.",
