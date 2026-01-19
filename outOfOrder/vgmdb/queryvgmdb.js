@@ -16,7 +16,7 @@ const smallLoadingEmbed = new EmbedBuilder().setImage(
 );
 
 const loadingEmbed = new EmbedBuilder().setImage(
-  "http://91.99.239.6/dev_files/assets/Domo_load.gif"
+  "http://91.99.239.6/files/assets/Domo_load.gif"
 );
 
 const noResultsEmbed = new EmbedBuilder().setImage(
