@@ -31,11 +31,8 @@ function buildTieRoundsToCheck(matches, roundThreshold) {
       match.progress === "tie" &&
       parseInt(match.round) < roundThreshold
     ) {
-      const entrant1Name = match.entrant1?.name;
-      const entrant2Name = match.entrant2?.name;
-      if (!entrant1Name || !entrant2Name) {
-        continue;
-      }
+      const entrant1Name = match?.entrant1?.name || "TBD";
+      const entrant2Name = match?.entrant2?.name || "TBD";
       roundsToCheck +=
         "\n**Match " +
         match.match +
@@ -149,11 +146,19 @@ async function StartSingleMatch(
 
   var stringRound = thisRound.toString();
   const nextRoundNumber = parseInt(stringRound);
-  const hasBlockingTie = single.matches.some(
+  const blockingTies = single.matches.filter(
     (match) =>
-      match.progress === "tie" &&
-      parseInt(match.round) < nextRoundNumber
+      match.progress === "tie" && parseInt(match.round) < nextRoundNumber
   );
+  console.log(
+    "Round gate check: currentRound=" +
+      stringRound +
+      " nextRoundNumber=" +
+      nextRoundNumber +
+      " blockingTieMatches=" +
+      blockingTies.map((match) => match.match).join(",")
+  );
+  const hasBlockingTie = blockingTies.length > 0;
   if (hasBlockingTie) {
     const roundsToCheck = buildTieRoundsToCheck(
       single.matches,
