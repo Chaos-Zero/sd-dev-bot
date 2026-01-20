@@ -170,6 +170,20 @@ async function StartSingleMatch(
       match.progress === "tie" && parseInt(match.round) < nextRoundNumber
   );
   console.log(
+    "Blocking tie payloads:",
+    JSON.stringify(
+      blockingTies.map((match) => ({
+        match: match?.match,
+        round: match?.round,
+        progress: match?.progress,
+        entrant1: match?.entrant1,
+        entrant2: match?.entrant2,
+      })),
+      null,
+      2
+    )
+  );
+  console.log(
     "Round gate check: currentRound=" +
       stringRound +
       " nextRoundNumber=" +
@@ -180,10 +194,16 @@ async function StartSingleMatch(
   const hasBlockingTie = blockingTies.length > 0;
   if (hasBlockingTie) {
     let roundsToCheck = "";
-    try {
-      roundsToCheck = buildTieRoundsToCheck(single.matches, nextRoundNumber);
-    } catch (error) {
-      console.log("Failed to build tie summary:", error);
+    for (const match of blockingTies) {
+      const entrant1Name = match?.entrant1?.name || "TBD";
+      const entrant2Name = match?.entrant2?.name || "TBD";
+      roundsToCheck +=
+        "\n**Match " +
+        match.match +
+        "**: " +
+        entrant2Name +
+        " vs " +
+        entrant1Name;
     }
     let message =
       "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
