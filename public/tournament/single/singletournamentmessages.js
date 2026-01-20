@@ -170,21 +170,20 @@ async function SendPreviousSingleDayResultsEmbeds(
   let dstPath = "public/commands/gif/jpg";
     
   var welcomeString = "Hello all and <@&1326256775262896290>";
-    var roundsToCheck = "";
-    for (var entry of previousMatches[1]) {
-      roundsToCheck +=
-        "\n**Match " +
-        entry.match +
-        "**: " +
-        entry.entrant2.name +
-        " vs " +
-        entry.entrant1.name +
-        "";
-    }
-    welcomeString +=
-      "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
-      roundsToCheck;
+  var roundsToCheck = "";
+  for (var entry of previousMatches[1]) {
+    roundsToCheck +=
+      "\n**Match " +
+      entry.match +
+      "**: " +
+      entry.entrant2.name +
+      " vs " +
+      entry.entrant1.name +
+      "";
   }
+  welcomeString +=
+    "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
+    roundsToCheck;
 
   var prevWinner = "";
 
