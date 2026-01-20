@@ -31,6 +31,9 @@ function buildTieRoundsToCheck(matches, roundThreshold) {
       match.progress === "tie" &&
       parseInt(match.round) < roundThreshold
     ) {
+      if (!match.entrant1 || !match.entrant2) {
+        continue;
+      }
       roundsToCheck +=
         "\n**Match " +
         match.match +
