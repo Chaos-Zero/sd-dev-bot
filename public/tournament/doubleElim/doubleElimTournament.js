@@ -22,6 +22,25 @@ async function getCurrentTournament(db) {
   return db.get("tournaments[0].currentTournament").value();
 }
 
+function buildTieRoundsToCheck(matches, roundThreshold) {
+  let roundsToCheck = "";
+  for (const match of matches) {
+    if (
+      match.progress === "tie" &&
+      parseInt(match.round) < roundThreshold
+    ) {
+      roundsToCheck +=
+        "\n**Match " +
+        match.match +
+        "**: " +
+        match.entrant1.name +
+        " vs " +
+        match.entrant2.name;
+    }
+  }
+  return roundsToCheck;
+}
+
 // Neeed Round, Match Number, Names, Game, Links, Status
 async function StartDoubleElimMatch(
   interaction,
@@ -69,6 +88,31 @@ async function StartDoubleElimMatch(
   }
 
   var stringRound = thisRound.toString();
+  const nextRoundNumber = parseInt(stringRound);
+  const hasBlockingTie = doubleElimination.matches.some(
+    (match) =>
+      match.progress === "tie" &&
+      parseInt(match.round) < nextRoundNumber
+  );
+  if (hasBlockingTie) {
+    const roundsToCheck = buildTieRoundsToCheck(
+      doubleElimination.matches,
+      nextRoundNumber
+    );
+    let message =
+      "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
+    if (roundsToCheck) {
+      message += roundsToCheck;
+    }
+    if (interaction !== "") {
+      await interaction.editReply({
+        content: message,
+        ephemeral: true,
+      });
+    }
+    console.log(message);
+    return;
+  }
 
   console.log("Double Elimination  obejct: " + doubleElimination);
   var matchData = {

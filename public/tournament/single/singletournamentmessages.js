@@ -572,8 +572,8 @@ async function SendSingleDailyEmbed(
       roundsToCheck;
   }
 
-  if (!secondOfDay) {
-    //channel.send(welcomeString);
+  if (!secondOfDay && previousMatches.length > 0 && previousMatches[1].length > 0) {
+    channel.send(welcomeString);
   }
   await sleep(1500);
   channel.send({ embeds: embedsToSend }).then((embedMessage) => {
