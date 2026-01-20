@@ -133,10 +133,7 @@ async function SendPreviousSingleDayResultsEmbeds(
   matchData
 ) {
   console.log("We're in previous day stuff");
-  if (
-    previousMatches.length < 1 ||
-    (previousMatches[0].length < 1 && previousMatches[1].length < 1)
-  ) {
+  if (previousMatches.length < 1 || previousMatches[0].length < 1) {
     return 0;
   }
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
@@ -169,22 +166,7 @@ async function SendPreviousSingleDayResultsEmbeds(
   let imagesFolder = "public/commands/gif/input";
   let dstPath = "public/commands/gif/jpg";
     
-  var welcomeString = "Hello all and <@&1326256775262896290>";
-    var roundsToCheck = "";
-    for (var entry of previousMatches[1]) {
-      roundsToCheck +=
-        "\n**Match " +
-        entry.match +
-        "**: " +
-        entry.entrant2.name +
-        " vs " +
-        entry.entrant1.name +
-        "";
-    }
-    welcomeString +=
-      "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
-      roundsToCheck;
-  }
+  var welcomeString = "Hello all and <@&1326256775262896290>\nFollow along with this contest here: https://challonge.com/Technology_vs_Nature";
 
   var prevWinner = "";
 
