@@ -216,7 +216,6 @@ async function StartMatch(
   }
 
   let tournament = tournamentDetails[currentTournamentName];
-
   switch (tournament.tournamentFormat) {
     case "Single Elimination":
       console.log("Starting Single Match");
