@@ -31,16 +31,18 @@ function buildTieRoundsToCheck(matches, roundThreshold) {
       match.progress === "tie" &&
       parseInt(match.round) < roundThreshold
     ) {
-      if (!match.entrant1 || !match.entrant2) {
+      const entrant1Name = match.entrant1?.name;
+      const entrant2Name = match.entrant2?.name;
+      if (!entrant1Name || !entrant2Name) {
         continue;
       }
       roundsToCheck +=
         "\n**Match " +
         match.match +
         "**: " +
-        match.entrant2.name +
+        entrant2Name +
         " vs " +
-        match.entrant1.name;
+        entrant1Name;
     }
   }
   return roundsToCheck;
