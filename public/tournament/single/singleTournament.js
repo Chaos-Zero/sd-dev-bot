@@ -24,25 +24,6 @@ async function getCurrentTournament(db) {
   return db.get("tournaments[0].currentTournament").value();
 }
 
-function buildTieRoundsToCheck(matches, roundThreshold) {
-  let roundsToCheck = "";
-  for (const match of matches) {
-    if (
-      match.progress === "tie" &&
-      parseInt(match.round) < roundThreshold
-    ) {
-      roundsToCheck +=
-        "\n**Match " +
-        match.match +
-        "**: " +
-        match.entrant2.name +
-        " vs " +
-        match.entrant1.name;
-    }
-  }
-  return roundsToCheck;
-}
-
 function getSingleTotalRounds(startingMatchCount) {
   let matchesThisRound = parseInt(startingMatchCount);
   if (isNaN(matchesThisRound) || matchesThisRound < 1) {
@@ -143,31 +124,6 @@ async function StartSingleMatch(
   }
 
   var stringRound = thisRound.toString();
-  const nextRoundNumber = parseInt(stringRound);
-  const hasBlockingTie = single.matches.some(
-    (match) =>
-      match.progress === "tie" &&
-      parseInt(match.round) < nextRoundNumber
-  );
-  if (hasBlockingTie) {
-    const roundsToCheck = buildTieRoundsToCheck(
-      single.matches,
-      nextRoundNumber
-    );
-    let message =
-      "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
-    if (roundsToCheck) {
-      message += roundsToCheck;
-    }
-    if (interaction !== "") {
-      await interaction.editReply({
-        content: message,
-        ephemeral: true,
-      });
-    }
-    console.log(message);
-    return;
-  }
 
   var matchData = {
     round: stringRound,
