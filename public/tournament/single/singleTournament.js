@@ -169,6 +169,9 @@ async function StartSingleMatch(
     (match) =>
       match.progress === "tie" && parseInt(match.round) < nextRoundNumber
   );
+  const malformedBlockingTies = blockingTies.filter(
+    (match) => !match?.entrant1?.name || !match?.entrant2?.name
+  );
   console.log(
     "Blocking tie payloads:",
     JSON.stringify(
@@ -191,6 +194,22 @@ async function StartSingleMatch(
       " blockingTieMatches=" +
       blockingTies.map((match) => match.match).join(",")
   );
+  if (malformedBlockingTies.length > 0) {
+    console.log(
+      "Malformed tie entries (missing entrant names):",
+      JSON.stringify(
+        malformedBlockingTies.map((match) => ({
+          match: match?.match,
+          round: match?.round,
+          progress: match?.progress,
+          entrant1: match?.entrant1,
+          entrant2: match?.entrant2,
+        })),
+        null,
+        2
+      )
+    );
+  }
   const hasBlockingTie = blockingTies.length > 0;
   if (hasBlockingTie) {
     let roundsToCheck = "";
@@ -217,6 +236,15 @@ async function StartSingleMatch(
       });
     }
     console.log(message);
+    if (!secondOfDay && previousMatches && previousMatches.length > 0) {
+      const guildObject =
+        interaction == "" && bot !== ""
+          ? await bot.guilds.cache.get(process.env.GUILD_ID)
+          : interaction.guild;
+      await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, {
+        round: stringRound,
+      });
+    }
     return;
   }
 
