@@ -538,7 +538,7 @@ async function SendSingleDailyEmbed(
 
   var embedsToSend = [embed];
   var welcomeString = "Hello all and <@&1326256775262896290>";
-  if (previousMatches[1].length > 0) {
+  if (Array.isArray(previousMatches) && Array.isArray(previousMatches[1]) && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {
       roundsToCheck +=
@@ -555,7 +555,7 @@ async function SendSingleDailyEmbed(
         roundsToCheck;
   }
 
-  if (!secondOfDay && previousMatches.length > 0 && previousMatches[1].length > 0) {
+  if (!secondOfDay && Array.isArray(previousMatches) && Array.isArray(previousMatches[1]) && previousMatches[1].length > 0) {
     channel.send(welcomeString);
   }
   await sleep(1500);
