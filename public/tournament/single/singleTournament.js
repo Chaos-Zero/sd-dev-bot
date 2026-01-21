@@ -155,7 +155,10 @@ async function StartSingleMatch(
 
   if (foundEntries.length < 1 && thisRound == 0) {
     var nextRound = parseInt(single.round) + 1;
-    for (var entry of single.rounds[nextRound]) {
+    const nextRoundEntries = Array.isArray(single.rounds[nextRound])
+      ? single.rounds[nextRound]
+      : [];
+    for (var entry of nextRoundEntries) {
       if (entry.match == matchNumber) {
         foundEntries.push(entry);
         thisRound = nextRound;
