@@ -130,7 +130,8 @@ async function SendSingleBattleMessage(
 async function SendPreviousSingleDayResultsEmbeds(
   guild,
   previousMatches,
-  matchData
+  matchData,
+  includeTieWarning = true
 ) {
   console.log("We're in previous day stuff");
   if (
@@ -170,20 +171,22 @@ async function SendPreviousSingleDayResultsEmbeds(
   let dstPath = "public/commands/gif/jpg";
     
   var welcomeString = "Hello all and <@&1326256775262896290>";
-  var roundsToCheck = "";
-  for (var entry of previousMatches[1]) {
-    roundsToCheck +=
-      "\n**Match " +
-      entry.match +
-      "**: " +
-      entry.entrant2.name +
-      " vs " +
-      entry.entrant1.name +
-      "";
+  if (includeTieWarning) {
+    var roundsToCheck = "";
+    for (var entry of previousMatches[1]) {
+      roundsToCheck +=
+        "\n**Match " +
+        entry.match +
+        "**: " +
+        entry.entrant2.name +
+        " vs " +
+        entry.entrant1.name +
+        "";
+    }
+    welcomeString +=
+      "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
+      roundsToCheck;
   }
-  welcomeString +=
-    "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
-    roundsToCheck;
 
   var prevWinner = "";
 
@@ -364,7 +367,8 @@ async function SendPreviousSingleDayResultsEmbeds(
       await AddSingleWinnerToNextRound(
         previousMatches[0][i].firstPlace,
         previousMatches[0][i].round,
-        previousMatches[0][i].isThirdPlace
+        previousMatches[0][i].isThirdPlace,
+        previousMatches[0][i].match
       );
       //resultLogEmbed;
     }
@@ -682,7 +686,8 @@ function getNextRoundMatchNumber(startingMatchCount, roundNum, matchNum) {
 async function AddSingleWinnerToNextRound(
   firstPlaceEntrant,
   matchRound,
-  isThirdPlace
+  isThirdPlace,
+  matchNumber
 ) {
   var db = GetDb();
   await db.read();
@@ -706,15 +711,18 @@ async function AddSingleWinnerToNextRound(
   var startingMatchCount = parseInt(single.startingMatchCount);
   const totalRounds = getSingleTotalRounds(single.startingMatchCount);
   const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(single);
+  const resolvedMatchNumber = !isNaN(parseInt(matchNumber))
+    ? parseInt(matchNumber)
+    : parseInt(firstPlaceEntrant.match);
   if (
     !isNaN(startingMatchCount) &&
     !isNaN(roundNum) &&
-    !isNaN(parseInt(firstPlaceEntrant.match))
+    !isNaN(resolvedMatchNumber)
   ) {
     nextMatchNum = getNextRoundMatchNumber(
       startingMatchCount,
       roundNum,
-      parseInt(firstPlaceEntrant.match)
+      resolvedMatchNumber
     );
   }
   if (

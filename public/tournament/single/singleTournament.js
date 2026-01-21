@@ -241,9 +241,12 @@ async function StartSingleMatch(
         interaction == "" && bot !== ""
           ? await bot.guilds.cache.get(process.env.GUILD_ID)
           : interaction.guild;
-      await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, {
-        round: stringRound,
-      });
+      await SendPreviousSingleDayResultsEmbeds(
+        guildObject,
+        previousMatches,
+        { round: stringRound },
+        false
+      );
     }
     return;
   }
