@@ -169,24 +169,6 @@ async function SendPreviousSingleDayResultsEmbeds(
   let embedImg = "";
   let imagesFolder = "public/commands/gif/input";
   let dstPath = "public/commands/gif/jpg";
-    
-  var welcomeString = "Hello all and <@&1326256775262896290>";
-  if (includeTieWarning && previousMatches[1].length > 0) {
-    var roundsToCheck = "";
-    for (var entry of previousMatches[1]) {
-      roundsToCheck +=
-        "\n**Match " +
-        entry.match +
-        "**: " +
-        entry.entrant2.name +
-        " vs " +
-        entry.entrant1.name +
-        "";
-    }
-    welcomeString +=
-      "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
-      roundsToCheck;
-  }
 
   var prevWinner = "";
 
@@ -374,9 +356,7 @@ async function SendPreviousSingleDayResultsEmbeds(
     }
   }
 
-  console.log("Sending previous day stuff");
-    channel.send(welcomeString);
-  
+  console.log("Sending previous day stuff");  
   await sleep(500);
     
   for (var i = 0; i < previousEmbedsToSend.length; i++) {
@@ -558,8 +538,7 @@ async function SendSingleDailyEmbed(
 
   var embedsToSend = [embed];
   var welcomeString = "Hello all and <@&1326256775262896290>";
-  //  var welcomeString = "Thank you, all and <@&828707504363274261>, for participating.\nSee you in the next tournament!";
-  if (previousMatches.length > 0 && previousMatches[1].length > 0) {
+  if (includeTieWarning && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {
       roundsToCheck +=
@@ -571,9 +550,11 @@ async function SendSingleDailyEmbed(
         entry.entrant1.name +
         "";
     }
-    welcomeString +=
-      "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
-      roundsToCheck;
+    if (previousMatches.length > 0 ) {
+      welcomeString +=
+        "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
+        roundsToCheck;
+    }
   }
 
   if (!secondOfDay && previousMatches.length > 0 && previousMatches[1].length > 0) {
