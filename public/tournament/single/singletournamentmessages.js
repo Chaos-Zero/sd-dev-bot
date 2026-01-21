@@ -117,7 +117,7 @@ async function SendSingleBattleMessage(
   //  await createGif("neuquant", gifName).then(async () => {
   await createGif("neuquant", gifName);
 
-  SendSingleDailyEmbed(
+  await SendSingleDailyEmbed(
     guildObject,
     matchData,
     gifName,
@@ -683,6 +683,34 @@ function getNextRoundMatchNumber(startingMatchCount, roundNum, matchNum) {
   return nextRoundStart + Math.floor(position / 2);
 }
 
+function dedupeRoundEntries(single) {
+  if (!single || !single.rounds) {
+    return;
+  }
+  for (const roundNum of Object.keys(single.rounds)) {
+    const entries = single.rounds[roundNum];
+    if (!Array.isArray(entries)) {
+      continue;
+    }
+    const seen = new Set();
+    const deduped = [];
+    for (const entry of entries) {
+      const key = [
+        roundNum,
+        entry?.match,
+        entry?.name,
+        entry?.fromMatch,
+      ].join("|");
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      deduped.push(entry);
+    }
+    single.rounds[roundNum] = deduped;
+  }
+}
+
 async function AddSingleWinnerToNextRound(
   firstPlaceEntrant,
   matchRound,
@@ -696,6 +724,7 @@ async function AddSingleWinnerToNextRound(
 
   let tournamentDetails = await db.get("tournaments").nth(0).value();
   let single = tournamentDetails[currentTournamentName];
+  dedupeRoundEntries(single);
   if (isThirdPlace) {
     return;
   }
@@ -740,10 +769,20 @@ async function AddSingleWinnerToNextRound(
     link: firstPlaceEntrant.link,
     type: firstPlaceEntrant.type,
     match: parseInt(nextMatchNum),
+    fromMatch: resolvedMatchNumber,
   };
 
   if (!single.rounds[nextRoundNum]) {
     single.rounds[nextRoundNum] = [];
+  }
+  const existingNextRoundEntry = single.rounds[nextRoundNum].some(
+    (entry) =>
+      parseInt(entry.match) === parseInt(nextMatchNum) &&
+      (entry.fromMatch === resolvedMatchNumber ||
+        entry.name === firstPlaceEntrant.name)
+  );
+  if (existingNextRoundEntry) {
+    return;
   }
   single.rounds[nextRoundNum].push(entrantForNextRound);
 

@@ -295,7 +295,7 @@ async function StartSingleMatch(
     });
   }
 
-  SendSingleBattleMessage(
+  await SendSingleBattleMessage(
     interaction,
     matchData,
     bot,
