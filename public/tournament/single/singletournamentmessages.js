@@ -550,11 +550,9 @@ async function SendSingleDailyEmbed(
         entry.entrant1.name +
         "";
     }
-    if (previousMatches.length > 0 ) {
       welcomeString +=
         "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
         roundsToCheck;
-    }
   }
 
   if (!secondOfDay && previousMatches.length > 0 && previousMatches[1].length > 0) {
