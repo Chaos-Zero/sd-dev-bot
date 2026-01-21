@@ -538,7 +538,7 @@ async function SendSingleDailyEmbed(
 
   var embedsToSend = [embed];
   var welcomeString = "Hello all and <@&1326256775262896290>";
-  if (includeTieWarning && previousMatches[1].length > 0) {
+  if (previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {
       roundsToCheck +=
