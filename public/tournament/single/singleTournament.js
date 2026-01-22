@@ -166,7 +166,10 @@ async function StartSingleMatch(
     }
   }
 
-  if (foundEntries.length < 2) {
+  const hasPlaceholderEntrant = foundEntries.some(
+    (entry) => entry?.isPlaceholder === true || entry?.name === "TBD"
+  );
+  if (foundEntries.length < 2 || hasPlaceholderEntrant) {
     console.log(
       "There are not enough entrants available for the next match yet."
     );
@@ -658,6 +661,26 @@ async function EndSingleMatches(interaction = "") {
         round: baseRounds,
       });
     }
+    if (!single.rounds[baseRounds]) {
+      single.rounds[baseRounds] = [];
+    }
+    if (single.thirdPlaceEntrants.length === 1) {
+      const placeholderExists = single.rounds[baseRounds].some(
+        (entry) =>
+          entry.match == thirdPlaceMatchNumber && entry.isPlaceholder === true
+      );
+      if (!placeholderExists) {
+        single.rounds[baseRounds].push({
+          name: "TBD",
+          title: "TBD",
+          link: "",
+          type: "",
+          challongeSeed: "",
+          match: thirdPlaceMatchNumber,
+          isPlaceholder: true,
+        });
+      }
+    }
   }
 
   if (
@@ -680,6 +703,9 @@ async function EndSingleMatches(interaction = "") {
         if (existingNames.has(entrant.name)) {
           continue;
         }
+        single.rounds[baseRounds] = single.rounds[baseRounds].filter(
+          (entry) => entry.isPlaceholder !== true
+        );
         single.rounds[baseRounds].push({
           name: entrant.name,
           title: entrant.title,
