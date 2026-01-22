@@ -338,7 +338,7 @@ async function SendPreviousSingleDayResultsEmbeds(
         //  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-voting-result.gif?v=1681088448448"
         //)
         .setImage(
-          "http://91.99.239.6/files/output/" + gifName + ".gif"
+          "http://91.99.239.6/dev_files/output/" + gifName + ".gif"
         )
 
         .addFields(
@@ -455,7 +455,7 @@ async function SendSingleDailyEmbed(
   const currentChallongeUrl =
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
-    "http://91.99.239.6/files/output/" + gifName + ".gif";
+    "http://91.99.239.6/dev_files/output/" + gifName + ".gif";
 
   const d = new Date();
   let day = d.getDay();
