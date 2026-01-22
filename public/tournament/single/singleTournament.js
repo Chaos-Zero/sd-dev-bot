@@ -167,9 +167,53 @@ async function StartSingleMatch(
   }
 
   if (foundEntries.length < 2) {
-    const message =
-      "There are not enough entrants available for the next match yet.";
+    console.log(
+      "There are not enough entrants available for the next match yet."
+    );
+    const roundNumberForOutstanding = thisRound || parseInt(single.round);
+    let roundsToCheck = "";
+    if (!isNaN(roundNumberForOutstanding)) {
+      for (const match of single.matches) {
+        if (
+          parseInt(match.round) === parseInt(roundNumberForOutstanding) &&
+          match.progress !== "complete"
+        ) {
+          const entrant1Name = match?.entrant1?.name || "TBD";
+          const entrant2Name = match?.entrant2?.name || "TBD";
+          roundsToCheck +=
+            "\n**Match " +
+            match.match +
+            "**: " +
+            entrant2Name +
+            " vs " +
+            entrant1Name;
+        }
+      }
+    }
+    let message =
+      "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
+    if (roundsToCheck) {
+      message += roundsToCheck;
+    }
+    if (interaction !== "") {
+      await interaction.editReply({
+        content: message,
+        ephemeral: true,
+      });
+    }
     console.log(message);
+    if (!secondOfDay && previousMatches && previousMatches.length > 0) {
+      const guildObject =
+        interaction == "" && bot !== ""
+          ? await bot.guilds.cache.get(process.env.GUILD_ID)
+          : interaction.guild;
+      await SendPreviousSingleDayResultsEmbeds(
+        guildObject,
+        previousMatches,
+        { round: roundNumberForOutstanding?.toString() || "" },
+        false
+      );
+    }
     return { blocked: true, stopForDay: true, reason: "insufficient_entrants" };
   }
 
