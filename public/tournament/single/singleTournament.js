@@ -390,7 +390,10 @@ async function EndSingleMatches(interaction = "") {
   let single = tournamentDetails[currentTournamentName];
   ensureThirdPlaceState(single);
   var matchesPerDay = single.roundsPerTurn;
-  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const finalRoundNumber = single.hasThirdPlaceMatch
+    ? baseRounds + 1
+    : baseRounds;
   const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
     single.startingMatchCount,
     single.hasThirdPlaceMatch
@@ -543,27 +546,28 @@ async function EndSingleMatches(interaction = "") {
       matchObj = match;
       completedMatchesForCompat.push(match);
 
-      if (
-        single.hasThirdPlaceMatch &&
-        thirdPlaceMatchNumber &&
-        totalRounds > 0 &&
-        parseInt(match.round) === totalRounds - 1
-      ) {
-        const alreadyTracked = single.thirdPlaceEntrants.some(
-          (entrant) => entrant.fromMatch == match.match
-        );
-        if (!alreadyTracked) {
-          single.thirdPlaceEntrants.push({
-            name: secondPlace.name,
-            title: secondPlace.title,
-            link: secondPlace.link,
-            type: secondPlace.type,
-            challongeSeed: secondPlace.challongeSeed,
-            match: thirdPlaceMatchNumber,
-            fromMatch: match.match,
-          });
-        }
+    if (
+      single.hasThirdPlaceMatch &&
+      thirdPlaceMatchNumber &&
+      baseRounds > 0 &&
+      parseInt(match.round) === baseRounds - 1
+    ) {
+      const alreadyTracked = single.thirdPlaceEntrants.some(
+        (entrant) => entrant.fromMatch == match.match
+      );
+      if (!alreadyTracked) {
+        single.thirdPlaceEntrants.push({
+          name: secondPlace.name,
+          title: secondPlace.title,
+          link: secondPlace.link,
+          type: secondPlace.type,
+          challongeSeed: secondPlace.challongeSeed,
+          match: thirdPlaceMatchNumber,
+          fromMatch: match.match,
+          round: baseRounds,
+        });
       }
+    }
 
       if (single.isChallonge) {
         const challongeResults =
@@ -625,13 +629,13 @@ async function EndSingleMatches(interaction = "") {
   if (
     single.hasThirdPlaceMatch &&
     thirdPlaceMatchNumber &&
-    totalRounds > 0 &&
+    baseRounds > 0 &&
     single.thirdPlaceEntrants.length === 2
   ) {
-    if (!single.rounds[totalRounds]) {
-      single.rounds[totalRounds] = [];
+    if (!single.rounds[baseRounds]) {
+      single.rounds[baseRounds] = [];
     }
-    const existingThirdPlaceEntries = single.rounds[totalRounds].filter(
+    const existingThirdPlaceEntries = single.rounds[baseRounds].filter(
       (entry) => entry.match == thirdPlaceMatchNumber
     );
     if (existingThirdPlaceEntries.length < 2) {
@@ -642,13 +646,14 @@ async function EndSingleMatches(interaction = "") {
         if (existingNames.has(entrant.name)) {
           continue;
         }
-        single.rounds[totalRounds].push({
+        single.rounds[baseRounds].push({
           name: entrant.name,
           title: entrant.title,
           link: entrant.link,
           type: entrant.type,
           challongeSeed: entrant.challongeSeed,
           match: thirdPlaceMatchNumber,
+          fromMatch: entrant.fromMatch,
         });
       }
     }

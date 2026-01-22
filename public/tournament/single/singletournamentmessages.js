@@ -38,6 +38,14 @@ function getSingleTotalRounds(startingMatchCount) {
   return rounds;
 }
 
+function getSingleFinalRoundNumber(single) {
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  if (!baseRounds) {
+    return 0;
+  }
+  return single.hasThirdPlaceMatch ? baseRounds + 1 : baseRounds;
+}
+
 function getSingleBaseFinalMatchNumber(startingMatchCount) {
   const baseFinalMatchNumber = parseInt(startingMatchCount) * 2 - 1;
   if (isNaN(baseFinalMatchNumber) || baseFinalMatchNumber < 1) {
@@ -61,14 +69,15 @@ function getSingleRoundLabel(single, roundNum, isThirdPlace) {
   if (isThirdPlace) {
     return "Match for Third Place";
   }
-  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
-  if (!totalRounds || isNaN(roundNum)) {
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const finalRoundNumber = getSingleFinalRoundNumber(single);
+  if (!baseRounds || isNaN(roundNum)) {
     return "";
   }
-  if (roundNum === totalRounds) {
+  if (roundNum === finalRoundNumber) {
     return "Final";
   }
-  if (roundNum === totalRounds - 1) {
+  if (roundNum === baseRounds - 1) {
     return "Semifinal";
   }
   return "";
@@ -165,7 +174,8 @@ async function SendPreviousSingleDayResultsEmbeds(
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
     currentTournamentName
   );
-  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const finalRoundNumber = getSingleFinalRoundNumber(single);
 
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
@@ -389,11 +399,11 @@ async function SendPreviousSingleDayResultsEmbeds(
   }
 
   const tournamentIsOver =
-    totalRounds > 0 &&
+    finalRoundNumber > 0 &&
     previousMatches[1].length === 0 &&
     previousMatches[0].some(
       (match) =>
-        parseInt(match.round) === totalRounds && match.isThirdPlace !== true
+        parseInt(match.round) === finalRoundNumber && match.isThirdPlace !== true
     );
   if (tournamentIsOver) {
     const thankYouEmbed = new EmbedBuilder()
@@ -736,7 +746,9 @@ async function AddSingleWinnerToNextRound(
   var nextRoundNum = (roundNum + 1).toString();
   var nextMatchNum = single.nextRoundNextMatch;
   var startingMatchCount = parseInt(single.startingMatchCount);
-  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const finalRoundNumber = getSingleFinalRoundNumber(single);
+  const thirdPlaceRoundNumber = baseRounds;
   const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(single);
   const resolvedMatchNumber = !isNaN(parseInt(matchNumber))
     ? parseInt(matchNumber)
@@ -755,10 +767,11 @@ async function AddSingleWinnerToNextRound(
   if (
     single.hasThirdPlaceMatch &&
     thirdPlaceMatchNumber &&
-    totalRounds > 0 &&
-    roundNum === totalRounds - 1
+    baseRounds > 0 &&
+    roundNum === baseRounds - 1
   ) {
     nextMatchNum = parseInt(thirdPlaceMatchNumber) + 1;
+    nextRoundNum = finalRoundNumber.toString();
   }
 
   var entrantForNextRound = {
