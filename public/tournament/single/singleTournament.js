@@ -644,6 +644,13 @@ async function EndSingleMatches(interaction = "") {
     );
     const thirdPlaceEntrants = [];
 
+    console.log(
+      "Third place sync:",
+      "baseRounds=" + baseRounds,
+      "semifinalMatches=" + semifinalMatches.map((match) => match.match).join(","),
+      "round3Entries=" + (single.rounds[baseRounds]?.length || 0)
+    );
+
     for (const match of semifinalMatches) {
       const entrant1Points = parseInt(match.entrant1.points);
       const entrant2Points = parseInt(match.entrant2.points);
