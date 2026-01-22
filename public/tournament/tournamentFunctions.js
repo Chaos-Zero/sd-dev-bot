@@ -219,14 +219,11 @@ async function StartMatch(
   switch (tournament.tournamentFormat) {
     case "Single Elimination":
       console.log("Starting Single Match");
-      StartSingleMatch(interaction, bot, secondOfDay, previousMatches);
-      break;
+      return await StartSingleMatch(interaction, bot, secondOfDay, previousMatches);
     case "Double Elimination":
-      StartDoubleElimMatch(interaction, bot, secondOfDay, previousMatches);
-      break;
+      return await StartDoubleElimMatch(interaction, bot, secondOfDay, previousMatches);
     case "3v3 Ranked":
-      StartTripleMatch(interaction, bot, secondOfDay, previousMatches);
-      break;
+      return await StartTripleMatch(interaction, bot, secondOfDay, previousMatches);
   }
 }
 

@@ -26,7 +26,15 @@ module.exports = {
     const matchesPerDay = tournamentDb?.roundsPerTurn || 1;
 
     for (let i = 0; i < matchesPerDay; i++) {
-      await StartMatch(interaction, "", i > 0, i === 0 ? previousMatches : []);
+      const result = await StartMatch(
+        interaction,
+        "",
+        i > 0,
+        i === 0 ? previousMatches : []
+      );
+      if (result?.blocked) {
+        break;
+      }
       if (i < matchesPerDay - 1) {
         await sleep(15000);
       }

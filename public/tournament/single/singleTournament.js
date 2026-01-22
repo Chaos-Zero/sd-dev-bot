@@ -125,7 +125,7 @@ async function StartSingleMatch(
     console.log(
       "There doesn't appear to be a tournament running at this time."
     );
-    return;
+    return { blocked: true };
   }
 
   let single = tournamentDetails[currentTournamentName];
@@ -251,7 +251,7 @@ async function StartSingleMatch(
         false
       );
     }
-    return;
+    return { blocked: true };
   }
 
   var matchData = {
@@ -306,6 +306,7 @@ async function StartSingleMatch(
     secondOfDay,
     previousMatches
   );
+  return { blocked: false };
 }
 
 // Digusting method: needs split down. Far too large.

@@ -139,9 +139,19 @@ let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
   console.log("Finished with previous Matches");
   //await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, []);
   const matchesPerDay = tournamentDb?.roundsPerTurn || 1;
-  for (let i = 0; i < matchesPerDay; i++) {
-    await StartMatch("", GetBot(), i > 0, i === 0 ? previousMatches : []);
-    if (i < matchesPerDay - 1) {
+  for (let matchIndex = 0; matchIndex < matchesPerDay; matchIndex++) {
+    const isSecondOfDay = matchIndex > 0;
+    const shouldIncludePreviousMatches = matchIndex === 0;
+    const result = await StartMatch(
+      "",
+      GetBot(),
+      isSecondOfDay,
+      shouldIncludePreviousMatches ? previousMatches : []
+    );
+    if (result?.blocked) {
+      break;
+    }
+    if (matchIndex < matchesPerDay - 1) {
       // 30 Seconds to be safe
       await sleep(30000);
     }
