@@ -659,7 +659,9 @@ async function SendSingleDailyEmbed(
     //);
     //await sleep(1000);
   }
-  await startMatchByNumber(challongeTournamentUrlName, matchData.match);
+  if (single.isChallonge) {
+    await startMatchByNumber(challongeTournamentUrlName, matchData.match);
+  }
 
   //await ColourPreviousMatches(sheetUrl, previousMatches);
   //await sleep(1000);*/
