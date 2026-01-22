@@ -632,91 +632,70 @@ async function EndSingleMatches(interaction = "") {
   if (single.hasThirdPlaceMatch && thirdPlaceMatchNumber && baseRounds > 0) {
     const semifinalMatches = single.matches.filter(
       (match) =>
-        match.progress === "complete" &&
         parseInt(match.round) === baseRounds - 1 &&
         match.isThirdPlace !== true
     );
+    if (!single.rounds[baseRounds]) {
+      single.rounds[baseRounds] = [];
+    }
+
+    const existingByFromMatch = new Map(
+      single.rounds[baseRounds].map((entry) => [entry.fromMatch, entry])
+    );
+    const thirdPlaceEntrants = [];
+
     for (const match of semifinalMatches) {
-      const alreadyTracked = single.thirdPlaceEntrants.some(
-        (entrant) => entrant.fromMatch == match.match
-      );
-      if (alreadyTracked) {
-        continue;
-      }
       const entrant1Points = parseInt(match.entrant1.points);
       const entrant2Points = parseInt(match.entrant2.points);
-      if (entrant1Points === entrant2Points) {
-        continue;
-      }
-      const loser =
-        entrant1Points > entrant2Points ? match.entrant2 : match.entrant1;
-      single.thirdPlaceEntrants.push({
-        name: loser.name,
-        title: loser.title,
-        link: loser.link,
-        type: loser.type,
-        challongeSeed: loser.challongeSeed,
-        match: thirdPlaceMatchNumber,
-        fromMatch: match.match,
-        round: baseRounds,
-      });
-    }
-    if (!single.rounds[baseRounds]) {
-      single.rounds[baseRounds] = [];
-    }
-    if (single.thirdPlaceEntrants.length === 1) {
-      const placeholderExists = single.rounds[baseRounds].some(
-        (entry) =>
-          entry.match == thirdPlaceMatchNumber && entry.isPlaceholder === true
-      );
-      if (!placeholderExists) {
-        single.rounds[baseRounds].push({
-          name: "TBD",
-          title: "TBD",
-          link: "",
-          type: "",
-          challongeSeed: "",
-          match: thirdPlaceMatchNumber,
-          isPlaceholder: true,
-        });
-      }
-    }
-  }
+      const isTie =
+        match.progress === "tie" || entrant1Points === entrant2Points;
+      const loser = isTie
+        ? null
+        : entrant1Points > entrant2Points
+        ? match.entrant2
+        : match.entrant1;
 
-  if (
-    single.hasThirdPlaceMatch &&
-    thirdPlaceMatchNumber &&
-    baseRounds > 0 &&
-    single.thirdPlaceEntrants.length === 2
-  ) {
-    if (!single.rounds[baseRounds]) {
-      single.rounds[baseRounds] = [];
-    }
-    const existingThirdPlaceEntries = single.rounds[baseRounds].filter(
-      (entry) => entry.match == thirdPlaceMatchNumber
-    );
-    if (existingThirdPlaceEntries.length < 2) {
-      const existingNames = new Set(
-        existingThirdPlaceEntries.map((entry) => entry.name)
-      );
-      for (const entrant of single.thirdPlaceEntrants) {
-        if (existingNames.has(entrant.name)) {
-          continue;
-        }
+      const desiredEntry = loser
+        ? {
+            name: loser.name,
+            title: loser.title,
+            link: loser.link,
+            type: loser.type,
+            challongeSeed: loser.challongeSeed,
+            match: thirdPlaceMatchNumber,
+            fromMatch: match.match,
+          }
+        : {
+            name: "TBD",
+            title: "TBD",
+            link: "",
+            type: "",
+            challongeSeed: "",
+            match: thirdPlaceMatchNumber,
+            fromMatch: match.match,
+            isPlaceholder: true,
+          };
+
+      const existing = existingByFromMatch.get(match.match);
+      if (
+        !existing ||
+        (existing.isPlaceholder === true && desiredEntry.isPlaceholder !== true)
+      ) {
         single.rounds[baseRounds] = single.rounds[baseRounds].filter(
-          (entry) => entry.isPlaceholder !== true
+          (entry) => entry.fromMatch !== match.match
         );
-        single.rounds[baseRounds].push({
-          name: entrant.name,
-          title: entrant.title,
-          link: entrant.link,
-          type: entrant.type,
-          challongeSeed: entrant.challongeSeed,
-          match: thirdPlaceMatchNumber,
-          fromMatch: entrant.fromMatch,
+        single.rounds[baseRounds].push(desiredEntry);
+      }
+
+      if (!desiredEntry.isPlaceholder) {
+        thirdPlaceEntrants.push({
+          ...desiredEntry,
+          round: baseRounds,
         });
       }
     }
+
+    single.thirdPlaceEntrants = thirdPlaceEntrants;
   }
 
   await db
