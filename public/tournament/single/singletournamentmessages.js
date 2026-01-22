@@ -54,7 +54,7 @@ function getSingleBaseFinalMatchNumber(startingMatchCount) {
   return baseFinalMatchNumber;
 }
 
-function getThirdPlaceMatchNumber(single) {
+function getSingleThirdPlaceMatchNumber(single) {
   if (single.hasThirdPlaceMatch === false) {
     return null;
   }
@@ -751,7 +751,7 @@ async function AddSingleWinnerToNextRound(
   const baseRounds = getSingleTotalRounds(single.startingMatchCount);
   const finalRoundNumber = getSingleFinalRoundNumber(single);
   const thirdPlaceRoundNumber = baseRounds;
-  const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(single);
+  const thirdPlaceMatchNumber = getSingleThirdPlaceMatchNumber(single);
   const resolvedMatchNumber = !isNaN(parseInt(matchNumber))
     ? parseInt(matchNumber)
     : parseInt(firstPlaceEntrant.match);
