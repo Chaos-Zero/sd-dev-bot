@@ -372,6 +372,7 @@ async function EndSingleMatches(interaction = "") {
   var db = GetDb();
   await db.read();
   console.log("Ending Single Matches");
+  console.log("TP_SYNC: EndSingleMatches entered");
   let currentTournamentName = await getCurrentTournament(db);
 
   let tournamentDetails = await db.get("tournaments").nth(0).value();
@@ -400,6 +401,13 @@ async function EndSingleMatches(interaction = "") {
   const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
     single.startingMatchCount,
     single.hasThirdPlaceMatch
+  );
+  console.log(
+    "TP_SYNC: third place config",
+    "tournament=" + currentTournamentName,
+    "baseRounds=" + baseRounds,
+    "thirdPlaceMatchNumber=" + thirdPlaceMatchNumber,
+    "hasThirdPlaceMatch=" + single.hasThirdPlaceMatch
   );
 
   var tiedMatches = [];
@@ -630,6 +638,7 @@ async function EndSingleMatches(interaction = "") {
   }
 
   if (single.hasThirdPlaceMatch && thirdPlaceMatchNumber && baseRounds > 0) {
+    console.log("TP_SYNC: entering third place sync block");
     const semifinalMatches = single.matches.filter(
       (match) =>
         parseInt(match.round) === baseRounds - 1 &&
