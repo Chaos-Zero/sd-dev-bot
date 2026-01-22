@@ -197,6 +197,7 @@ async function StartMatch(
   previousMatches = []
 ) {
   var db = GetDb();
+  await db.write();
   await db.read();
   let currentTournamentName = await getCurrentTournament(db);
   let tournamentDetails = await db.get("tournaments").nth(0).value();
