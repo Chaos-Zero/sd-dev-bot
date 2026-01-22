@@ -169,12 +169,6 @@ async function StartSingleMatch(
   if (foundEntries.length < 2) {
     const message =
       "There are not enough entrants available for the next match yet.";
-    if (interaction !== "") {
-      await interaction.editReply({
-        content: message,
-        ephemeral: true,
-      });
-    }
     console.log(message);
     return { blocked: true, stopForDay: true, reason: "insufficient_entrants" };
   }
