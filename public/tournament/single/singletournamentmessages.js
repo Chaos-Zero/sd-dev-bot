@@ -146,7 +146,12 @@ async function SendPreviousSingleDayResultsEmbeds(
     process.env.BOT_LOG_CHANEL
   );
 
-  const members = await guild.members.fetch();
+  let members = [];
+  try {
+    members = await guild.members.fetch();
+  } catch (error) {
+    console.log("Failed to fetch guild members for results:", error);
+  }
 
   var db = GetDb();
   db.read();
@@ -569,7 +574,7 @@ async function SendSingleDailyEmbed(
         roundsToCheck;
   }
 
-  if (!secondOfDay && Array.isArray(previousMatches) && Array.isArray(previousMatches[1]) && previousMatches[1].length > 0) {
+  if (!secondOfDay) {
     channel.send(welcomeString);
   }
   await sleep(1500);
