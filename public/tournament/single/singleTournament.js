@@ -91,6 +91,14 @@ function getThirdPlaceMatchNumber(startingMatchCount, hasThirdPlaceMatch) {
   return baseFinalMatchNumber;
 }
 
+function getSingleFinalRoundNumberForTournament(single) {
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  if (!baseRounds) {
+    return 0;
+  }
+  return single.hasThirdPlaceMatch ? baseRounds + 1 : baseRounds;
+}
+
 function ensureThirdPlaceState(single) {
   if (single.hasThirdPlaceMatch === undefined) {
     single.hasThirdPlaceMatch = true;
@@ -174,6 +182,29 @@ async function StartSingleMatch(
       "There are not enough entrants available for the next match yet."
     );
     const roundNumberForOutstanding = thisRound || parseInt(single.round);
+    const finalRoundNumber = getSingleFinalRoundNumberForTournament(single);
+    if (roundNumberForOutstanding === finalRoundNumber) {
+      console.log(
+        "Final round reached; skipping outstanding match notice."
+      );
+      if (!secondOfDay && previousMatches && previousMatches.length > 0) {
+        const guildObject =
+          interaction == "" && bot !== ""
+            ? await bot.guilds.cache.get(process.env.GUILD_ID)
+            : interaction.guild;
+        await SendPreviousSingleDayResultsEmbeds(
+          guildObject,
+          previousMatches,
+          { round: roundNumberForOutstanding?.toString() || "" },
+          false
+        );
+      }
+      return {
+        blocked: true,
+        stopForDay: true,
+        reason: "final_round_complete",
+      };
+    }
     let roundsToCheck = "";
     if (!isNaN(roundNumberForOutstanding)) {
       for (const match of single.matches) {
