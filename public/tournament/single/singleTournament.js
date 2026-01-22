@@ -626,6 +626,40 @@ async function EndSingleMatches(interaction = "") {
     //}
   }
 
+  if (single.hasThirdPlaceMatch && thirdPlaceMatchNumber && baseRounds > 0) {
+    const semifinalMatches = single.matches.filter(
+      (match) =>
+        match.progress === "complete" &&
+        parseInt(match.round) === baseRounds - 1 &&
+        match.isThirdPlace !== true
+    );
+    for (const match of semifinalMatches) {
+      const alreadyTracked = single.thirdPlaceEntrants.some(
+        (entrant) => entrant.fromMatch == match.match
+      );
+      if (alreadyTracked) {
+        continue;
+      }
+      const entrant1Points = parseInt(match.entrant1.points);
+      const entrant2Points = parseInt(match.entrant2.points);
+      if (entrant1Points === entrant2Points) {
+        continue;
+      }
+      const loser =
+        entrant1Points > entrant2Points ? match.entrant2 : match.entrant1;
+      single.thirdPlaceEntrants.push({
+        name: loser.name,
+        title: loser.title,
+        link: loser.link,
+        type: loser.type,
+        challongeSeed: loser.challongeSeed,
+        match: thirdPlaceMatchNumber,
+        fromMatch: match.match,
+        round: baseRounds,
+      });
+    }
+  }
+
   if (
     single.hasThirdPlaceMatch &&
     thirdPlaceMatchNumber &&
