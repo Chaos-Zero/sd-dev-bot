@@ -212,22 +212,36 @@ async function SendPreviousSingleDayResultsEmbeds(
           startCell;
         */
 
-      var secondPlaceText =
-        //"**2nd Place:" +
-        "**Runner-up: " +
-        previousMatches[0][i].secondPlace.name +
-        " - " +
-        previousMatches[0][i].secondPlace.title + "**";
-
       var nextRound = 6;
       const roundLabel = getSingleRoundLabel(
         single,
         parseInt(previousMatches[0][i].round),
         previousMatches[0][i].isThirdPlace
       );
+      const isThirdPlaceMatch = previousMatches[0][i].isThirdPlace === true;
+      const isFinalMatch = roundLabel === "Final" && !isThirdPlaceMatch;
+      const winnerPlaceLabel = isThirdPlaceMatch
+        ? "3rd Place"
+        : isFinalMatch
+        ? "1st Place"
+        : null;
+      const runnerUpLabel = isThirdPlaceMatch
+        ? "4th Place"
+        : isFinalMatch
+        ? "2nd Place"
+        : "Runner-up";
+      var secondPlaceText =
+        "**" +
+        runnerUpLabel +
+        ": " +
+        previousMatches[0][i].secondPlace.name +
+        " - " +
+        previousMatches[0][i].secondPlace.title +
+        "**";
       prevEmbed
         .setTitle(
           (roundLabel ? roundLabel + " - " : "") +
+            (winnerPlaceLabel ? winnerPlaceLabel + ": " : "") +
             getEntrantTypePrefix(previousMatches[0][i].firstPlace.type) +
             previousMatches[0][i].firstPlace.name +
             " - " +

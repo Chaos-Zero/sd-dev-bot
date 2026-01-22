@@ -125,7 +125,7 @@ async function StartSingleMatch(
     console.log(
       "There doesn't appear to be a tournament running at this time."
     );
-    return { blocked: true };
+    return { blocked: true, reason: "no_tournament" };
   }
 
   let single = tournamentDetails[currentTournamentName];
@@ -164,6 +164,19 @@ async function StartSingleMatch(
         thisRound = nextRound;
       }
     }
+  }
+
+  if (foundEntries.length < 2) {
+    const message =
+      "There are not enough entrants available for the next match yet.";
+    if (interaction !== "") {
+      await interaction.editReply({
+        content: message,
+        ephemeral: true,
+      });
+    }
+    console.log(message);
+    return { blocked: true, stopForDay: true, reason: "insufficient_entrants" };
   }
 
   var stringRound = thisRound.toString();
@@ -251,7 +264,7 @@ async function StartSingleMatch(
         false
       );
     }
-    return { blocked: true };
+    return { blocked: true, reason: "tie_block" };
   }
 
   var matchData = {
@@ -306,6 +319,10 @@ async function StartSingleMatch(
     secondOfDay,
     previousMatches
   );
+  if (matchNumber === thirdPlaceMatchNumber) {
+    console.log("Third place match posted; stopping further matches for today.");
+    return { blocked: false, stopForDay: true, reason: "third_place_day" };
+  }
   return { blocked: false };
 }
 

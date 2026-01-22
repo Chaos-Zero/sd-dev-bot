@@ -32,7 +32,10 @@ module.exports = {
         i > 0,
         i === 0 ? previousMatches : []
       );
-      if (result?.blocked) {
+      if (result?.reason) {
+        console.log("StartMatch halted:", result.reason);
+      }
+      if (result?.blocked || result?.stopForDay) {
         break;
       }
       if (i < matchesPerDay - 1) {

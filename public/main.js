@@ -148,7 +148,10 @@ let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
       isSecondOfDay,
       shouldIncludePreviousMatches ? previousMatches : []
     );
-    if (result?.blocked) {
+    if (result?.reason) {
+      console.log("StartMatch halted:", result.reason);
+    }
+    if (result?.blocked || result?.stopForDay) {
       break;
     }
     if (matchIndex < matchesPerDay - 1) {
