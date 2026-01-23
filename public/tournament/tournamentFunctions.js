@@ -44,6 +44,14 @@ async function registerTournament(
     console.log("There is a tournament already running!");
     return;
   }
+  let tournamentDetails = await db.get("tournaments").nth(0).value();
+  if (tournamentDetails?.[tournamentTitle]) {
+    console.log(
+      `Tournament name already exists: ${tournamentTitle}. ` +
+        "Please use a different name."
+    );
+    return;
+  }
 
   let participantNum = tournamentFormat == "3v3 Ranked" ? 3 : 2;
   let participants = [];

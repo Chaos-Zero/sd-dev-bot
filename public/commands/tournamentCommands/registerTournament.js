@@ -71,6 +71,19 @@ module.exports = {
     const isHiddenBracket =
       interaction.options.getBoolean("set-challonge-hidden") || false;
 
+    const dbInstance = GetDb();
+    await dbInstance.read();
+    const tournamentDetails = dbInstance.get("tournaments").nth(0).value();
+    if (tournamentDetails?.[tournamentName]) {
+      await interaction.reply({
+        content:
+          `A tournament named "${tournamentName}" already exists. ` +
+          "Please use a different name.",
+        ephemeral: true,
+      });
+      return;
+    }
+
     // Ask for a CSV file
     await interaction.reply({
       content: "Please upload the CSV file for the tournament.",
@@ -88,7 +101,7 @@ module.exports = {
     const attachment = collected.first().attachments.first().url;
     console.log(attachment);
     if (attachment && attachment.includes(".csv")) {
-      var currentTournament = db
+      var currentTournament = dbInstance
         .get("tournaments[0].currentTournament")
         .value();
 
