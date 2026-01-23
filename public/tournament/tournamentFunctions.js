@@ -165,7 +165,9 @@ async function registerTournament(
         }
 
         // Handle Challonge integration if required
-        const urlName = replaceSpacesWithUnderlines(tournamentTitle);
+        const urlName = replaceSpacesWithUnderlines(
+          tournamentTitle.replace(/-/g, " ")
+        );
         const url = "https://challonge.com/" + urlName;
 
         if (isChallonge) {

@@ -140,7 +140,9 @@ async function StartDoubleElimMatch(
   };
   doubleElimination.matchNumber = matchNumber;
   doubleElimination.matches.push(matchData);
-  const urlName = replaceSpacesWithUnderlines(currentTournamentName);
+  const urlName = replaceSpacesWithUnderlines(
+    currentTournamentName.replace(/-/g, " ")
+  );
 
   var challongeMatchId = matchData.challongeMatchNumber;
   console.log("MatchID = " + challongeMatchId);
@@ -174,7 +176,9 @@ async function EndDoubleElimMatches(interaction = "") {
   await db.read();
   console.log("Ending Double Elimination Matches");
   let currentTournamentName = await getCurrentTournament(db);
-  const urlName = replaceSpacesWithUnderlines(currentTournamentName);
+  const urlName = replaceSpacesWithUnderlines(
+    currentTournamentName.replace(/-/g, " ")
+  );
 
   let tournamentDetails = await db.get("tournaments").nth(0).value();
 

@@ -616,7 +616,7 @@ async function EndSingleMatches(interaction = "") {
           match.entrant1.points + "-" + match.entrant2.points;
 
         endMatchByNumber(
-          replaceSpacesWithUnderlines(currentTournamentName),
+          replaceSpacesWithUnderlines(currentTournamentName.replace(/-/g, " ")),
           match.match,
           challongeResults
         );

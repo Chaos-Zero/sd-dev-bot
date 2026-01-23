@@ -65,7 +65,7 @@ function normalizeTournamentNameForGif(name) {
   if (!name) {
     return "tournament";
   }
-  return replaceSpacesWithUnderlines(name).toLowerCase();
+  return replaceSpacesWithUnderlines(name.replace(/-/g, " ")).toLowerCase();
 }
 
 function buildTournamentGifName(tournamentName, round, match) {
@@ -191,7 +191,7 @@ async function SendPreviousSingleDayResultsEmbeds(
 
   let single = tournamentDetails[currentTournamentName];
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
-    currentTournamentName
+    currentTournamentName.replace(/-/g, " ")
   );
   const baseRounds = getSingleTotalRounds(single.startingMatchCount);
   const finalRoundNumber = getSingleFinalRoundNumber(single);
@@ -464,7 +464,7 @@ async function SendSingleDailyEmbed(
 
   let single = tournamentDetails[currentTournamentName];
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
-    currentTournamentName
+    currentTournamentName.replace(/-/g, " ")
   );
   const roundLabel = getSingleRoundLabel(
     single,

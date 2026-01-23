@@ -15,7 +15,7 @@ function normalizeTournamentNameForGif(name) {
   if (!name) {
     return "tournament";
   }
-  return replaceSpacesWithUnderlines(name).toLowerCase();
+  return replaceSpacesWithUnderlines(name.replace(/-/g, " ")).toLowerCase();
 }
 
 function buildTournamentGifName(tournamentName, round, match) {
