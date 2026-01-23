@@ -61,6 +61,18 @@ function getSingleThirdPlaceMatchNumber(single) {
   return getSingleBaseFinalMatchNumber(single.startingMatchCount);
 }
 
+function normalizeTournamentNameForGif(name) {
+  if (!name) {
+    return "tournament";
+  }
+  return replaceSpacesWithUnderlines(name).toLowerCase();
+}
+
+function buildTournamentGifName(tournamentName, round, match) {
+  const safeName = normalizeTournamentNameForGif(tournamentName);
+  return `${safeName}-round${round}match${match}`;
+}
+
 function getEntrantTypePrefix(type) {
   return type ? type + " wins!\n" : "";
 }
@@ -119,7 +131,14 @@ async function SendSingleBattleMessage(
   //);
 
   const youtubeUrls = [matchData.entrant1.link, matchData.entrant2.link];
-  let gifName = "round" + matchData.round + "match" + matchData.match;
+  const db = GetDb();
+  db.read();
+  const currentTournamentName = await getCurrentTournament(db);
+  let gifName = buildTournamentGifName(
+    currentTournamentName,
+    matchData.round,
+    matchData.match
+  );
 
   await downloadImages(youtubeUrls);
   console.log("Making gif");
@@ -194,11 +213,11 @@ async function SendPreviousSingleDayResultsEmbeds(
 
       var ytLinks = await GetYtThumb(links);
 
-      let gifName =
-        "round" +
-        previousMatches[0][i].round +
-        "match" +
-        previousMatches[0][i].match;
+      let gifName = buildTournamentGifName(
+        currentTournamentName,
+        previousMatches[0][i].round,
+        previousMatches[0][i].match
+      );
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];

@@ -13,6 +13,24 @@ eval(fs.readFileSync("./public/tournament/tournamentutils.js") + "");
 eval(fs.readFileSync("./public/collections/tournamentCells.js") + "");
 eval(fs.readFileSync("./public/api/google/sheetsfunctions.js") + "");
 
+function normalizeTournamentNameForGif(name) {
+  if (!name) {
+    return "tournament";
+  }
+  return replaceSpacesWithUnderlines(name).toLowerCase();
+}
+
+function buildTournamentGifName(tournamentName, round, match) {
+  const safeName = normalizeTournamentNameForGif(tournamentName);
+  return `${safeName}-round${round}match${match}`;
+}
+
+async function getCurrentTournamentNameFromDb() {
+  const db = GetDb();
+  await db.read();
+  return db.get("tournaments[0].currentTournament").value();
+}
+
 //colours for sheets cells:
 const lightGreen = { red: 0.8, green: 1, blue: 0.8, alpha: 0.2 };
 const lightGray = { red: 0.9, green: 0.9, blue: 0.9, alpha: 0.2 };
@@ -57,7 +75,12 @@ async function SendTripleBattleMessage(
     matchData.entrant2.link,
     matchData.entrant3.link,
   ];
-  let gifName = "round" + matchData.round + "match" + matchData.match;
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
+  let gifName = buildTournamentGifName(
+    currentTournamentName,
+    matchData.round,
+    matchData.match
+  );
   downloadImages(youtubeUrls).then(async () => {
     // Discord caches images so we have to change the name each day
     // Just going to use the date
@@ -98,6 +121,7 @@ async function SendPreviousTripleDayResultsEmbeds(
   );
 
   const members = await guild.members.fetch();
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
 
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
@@ -148,8 +172,11 @@ async function SendPreviousTripleDayResultsEmbeds(
 
       var ytLinks = await GetYtThumb(links);
 
-      let gifName =
-        "round3match" + previousMatches[0][i].match;
+      let gifName = buildTournamentGifName(
+        currentTournamentName,
+        matchData.round,
+        previousMatches[0][i].match
+      );
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];
