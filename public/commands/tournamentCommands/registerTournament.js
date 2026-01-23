@@ -106,19 +106,25 @@ module.exports = {
         .value();
 
       if (currentTournament == "N/A") {
-        // Respond that the tournament has started successfully
-        await interaction.editReply(
-          `Tournament "${tournamentName}" of type "${tournamentFormat}" started successfully.`
-        );
-        // Delete the user's last message after the CSV file has been loaded
-        registerTournament(
-           tournamentName,
+        const result = await registerTournament(
+          tournamentName,
           tournamentFormat,
           isRandom,
           isChallonge,
           isHiddenBracket,
           attachment,
           parseInt(matchesPerDay)
+        );
+        if (!result?.ok) {
+          await interaction.editReply(
+            result?.message ||
+              "Tournament setup failed. Please check the CSV and try again."
+          );
+          await collected.first().delete();
+          return;
+        }
+        await interaction.editReply(
+          `Tournament "${tournamentName}" of type "${tournamentFormat}" started successfully.`
         );
         await collected.first().delete();
       } else {

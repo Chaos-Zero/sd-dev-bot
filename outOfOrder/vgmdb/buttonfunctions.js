@@ -10,7 +10,7 @@ eval(fs.readFileSync("./public/api/vgmdb/vgmdb.js") + "");
 eval(fs.readFileSync("./public/commands/communityCommands/queryvgmdb.js") + "");
 
 const smallLoadingEmbed = new EmbedBuilder().setImage(
-  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo-load-small.gif?v=1679713388809"
+  "http://91.99.239.6/files/assets/Domo_load.gif"
 );
 
 async function handleVgmdbButtonPress(interaction) {
@@ -49,7 +49,7 @@ async function handleVgmdbButtonPress(interaction) {
     console.log(imageExtension);
     var formattedImgUrl =
       imageExtension[1] == "gif"
-        ? "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Album%20Art.png?v=1679783448288"
+        ? "http://91.99.239.6/files/assets/album_art.png"
         : imgUrl;
     const newEmbed = createVGMdbEmbed(
       results[newIndex],

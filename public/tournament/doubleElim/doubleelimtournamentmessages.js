@@ -193,7 +193,7 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
           .setAuthor({
             name: "Match " + previousMatches[0][i].match + " Winner",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+              "http://91.99.239.6/files/assets/sd_logo.png",
           })
           .addFields({
             name: loserText,
@@ -239,7 +239,7 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
           .setAuthor({
             name: "Best VGM 2022",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+              "http://91.99.239.6/files/assets/sd_logo.png",
           })
           .setDescription(
             "**------------------------------------**\n**Battle Entries**:\n**A. " +
@@ -282,7 +282,7 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
           .setFooter({
             text: "Supradarky's VGM Club",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+              "http://91.99.239.6/files/assets/sd-img.png",
           });
         logsEmbedsToSend.push(resultLogEmbed);
       });
@@ -335,7 +335,7 @@ async function SendDoubleElimDailyEmbed(
     .setAuthor({
       name: "Best VGM List Cameo Contest",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        "http://91.99.239.6/files/assets/sd_logo.png",
     })
     .setColor(0xffff00)
     .addFields(
@@ -369,7 +369,7 @@ async function SendDoubleElimDailyEmbed(
     .setFooter({
       text: "< Please listen to the tracks in full and then place your vote!",
       iconURL:
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
+        "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
     .setThumbnail(gifPath);

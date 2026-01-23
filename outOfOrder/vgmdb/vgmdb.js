@@ -14,15 +14,15 @@ const {
 const ITEMS_PER_PAGE = 10;
 
 const smallLoadingEmbed = new EmbedBuilder().setImage(
-  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo-load-small.gif?v=1679713388809"
+  "http://91.99.239.6/files/assets/Domo_load.gif"
 );
 
 const oopsEmbed = new EmbedBuilder().setImage(
-  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-sweat-blank-message-broke.gif?v=1679778779710"
+  "http://91.99.239.6/files/assets/domo-sweat-blank-message-broke.gif"
 );
 
 const noResultsEmbed = new EmbedBuilder().setImage(
-  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-sweat-blank-messageno-results.gif?v=1679872181343"
+  "http://91.99.239.6/files/assets/domo-sweat-blank-messageno-results.gif"
 );
 
 async function searchVGMdb(interaction, query, attempts, maxRetries = 5) {
@@ -98,7 +98,7 @@ function createVGMdbEmbed(result, imgUrl, albumRange = 0) {
     .setAuthor({
       name: "VGMdb results",
       iconURL:
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/VGMDB-icon.png?v=1679784801996",
+        "http://91.99.239.6/files/assets/VGMDB-icon.png",
       url: "https://vgmdb.net/",
     })
     .setColor(0xDC143C)
@@ -120,7 +120,7 @@ function createVGMdbEmbed(result, imgUrl, albumRange = 0) {
     .setFooter({
       text: "Page 1 of " + albumRange,
       iconUrl:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+        "http://91.99.239.6/files/assets/sd-img.png",
     });
 
   if (imgUrl !== null) {
@@ -291,7 +291,7 @@ async function handleVgmdbDropdownSelection(interaction) {
       console.log(imageExtension);
       var formattedImgUrl =
         imageExtension[1] == "gif"
-          ? "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Album%20Art.png?v=1679783448288"
+          ? "http://91.99.239.6/files/assets/album_art.png"
           : imgUrl;
       const newEmbed = createVGMdbEmbed(
         results[entryIndex],

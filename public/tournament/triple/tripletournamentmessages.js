@@ -232,7 +232,7 @@ async function SendPreviousTripleDayResultsEmbeds(
               previousMatches[0][i].match +
               " Winner",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+              "http://91.99.239.6/files/assets/sd_logo.png",
           })
           .addFields(
             {
@@ -354,7 +354,7 @@ async function SendPreviousTripleDayResultsEmbeds(
           .setAuthor({
             name: "Best VGM 2023 Awards",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+              "http://91.99.239.6/files/assets/sd_logo.png",
           })
           .setDescription(
             "**------------------------------------**\n**Battle Entries**:\n**A. " +
@@ -451,7 +451,7 @@ async function SendPreviousTripleDayResultsEmbeds(
           .setFooter({
             text: "Supradarky's VGM Club",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+              "http://91.99.239.6/files/assets/sd-img.png",
           });
         await logsEmbedsToSend.push(resultLogEmbed);
         await AddWinnerToNextRound(firstPlaceEntrant);
@@ -509,7 +509,7 @@ async function SendTripleDailyEmbed(
     .setAuthor({
       name: "Best VGM 2023 Awards",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        "http://91.99.239.6/files/assets/sd_logo.png",
     })
     .setColor(0xffff00)
     .addFields(
@@ -548,7 +548,7 @@ async function SendTripleDailyEmbed(
     .setFooter({
       text: "After having listened to all tracks, vote for your ranked order of preference.",
       iconURL:
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
+        "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
     .setThumbnail(gifPath);

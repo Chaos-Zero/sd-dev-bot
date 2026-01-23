@@ -173,7 +173,7 @@ async function CreateAndSendBattleVotesEmbed(
       .setAuthor({
         name: "Best VGM 2022",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+          "http://91.99.239.6/files/assets/sd_logo.png",
       })
       .setDescription(
         "**------------------------------------**\n**Battle Entries**:\n**A. " +
@@ -238,7 +238,7 @@ async function CreateAndSendBattleVotesEmbed(
       .setFooter({
         text: "Supradarky's VGM Club",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+          "http://91.99.239.6/files/assets/sd-img.png",
       });
   } else {
     if (roundEntries) {
@@ -301,7 +301,7 @@ async function CreateAndSendBattleVotesEmbed(
       .setAuthor({
         name: "Best VGM 2022",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+          "http://91.99.239.6/files/assets/sd_logo.png",
       })
       .setDescription(
         "**------------------------------------**\n**Battle Entries**:\n**A. " +
@@ -338,7 +338,7 @@ async function CreateAndSendBattleVotesEmbed(
       .setFooter({
         text: "Supradarky's VGM Club",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+          "http://91.99.239.6/files/assets/sd-img.png",
       });
   }
   if (interaction == "") {
