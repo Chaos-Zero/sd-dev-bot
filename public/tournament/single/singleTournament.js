@@ -159,6 +159,51 @@ function hasStartableSingleMatch(single, minRound = 1) {
   return false;
 }
 
+function findNextStartableSingleMatch(single, minRound = 1) {
+  if (!single || !single.rounds) {
+    return null;
+  }
+  const startedMatches = new Set(single.matches.map((match) => match.match));
+  const rounds = Object.keys(single.rounds)
+    .map((round) => parseInt(round, 10))
+    .filter((round) => !isNaN(round) && round >= minRound)
+    .sort((a, b) => a - b);
+
+  for (const round of rounds) {
+    const entries = Array.isArray(single.rounds[round])
+      ? single.rounds[round]
+      : [];
+    const byMatch = new Map();
+    for (const entry of entries) {
+      if (!entry?.match) {
+        continue;
+      }
+      if (!byMatch.has(entry.match)) {
+        byMatch.set(entry.match, []);
+      }
+      byMatch.get(entry.match).push(entry);
+    }
+    const matchNumbers = Array.from(byMatch.keys()).sort((a, b) => a - b);
+    for (const matchNumber of matchNumbers) {
+      if (startedMatches.has(matchNumber)) {
+        continue;
+      }
+      const matchEntries = byMatch.get(matchNumber) || [];
+      const validEntries = matchEntries.filter(
+        (entry) => entry?.name && entry?.name !== "TBD" && !entry?.isPlaceholder
+      );
+      if (validEntries.length >= 2) {
+        return {
+          round,
+          matchNumber,
+          entries: matchEntries,
+        };
+      }
+    }
+  }
+  return null;
+}
+
 function ensureThirdPlaceState(single) {
   if (single.hasThirdPlaceMatch === undefined) {
     single.hasThirdPlaceMatch = true;
@@ -215,10 +260,19 @@ async function StartSingleMatch(
 
   let foundEntries = [];
 
-  for (var entry of single.rounds[single.round]) {
-    if (entry.match == matchNumber) {
-      foundEntries.push(entry);
-      thisRound = single.round;
+  const nextStartable = findNextStartableSingleMatch(single, single.round);
+  if (nextStartable) {
+    matchNumber = nextStartable.matchNumber;
+    foundEntries = [...nextStartable.entries];
+    thisRound = nextStartable.round;
+  }
+
+  if (foundEntries.length < 1) {
+    for (var entry of single.rounds[single.round]) {
+      if (entry.match == matchNumber) {
+        foundEntries.push(entry);
+        thisRound = single.round;
+      }
     }
   }
 
