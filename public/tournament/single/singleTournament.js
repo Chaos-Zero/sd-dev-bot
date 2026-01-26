@@ -234,6 +234,26 @@ async function StartSingleMatch(
       }
     }
   }
+  if (foundEntries.length < 1) {
+    const allRounds = Object.keys(single.rounds)
+      .map((roundKey) => parseInt(roundKey, 10))
+      .filter((roundKey) => !isNaN(roundKey))
+      .sort((a, b) => a - b);
+    for (const roundKey of allRounds) {
+      const entries = Array.isArray(single.rounds[roundKey])
+        ? single.rounds[roundKey]
+        : [];
+      for (const entry of entries) {
+        if (entry.match == matchNumber) {
+          foundEntries.push(entry);
+          thisRound = roundKey;
+        }
+      }
+      if (foundEntries.length > 0) {
+        break;
+      }
+    }
+  }
 
   const hasPlaceholderEntrant = foundEntries.some(
     (entry) => entry?.isPlaceholder === true || entry?.name === "TBD"
