@@ -218,7 +218,8 @@ async function StartMatch(
   interaction,
   bot = "",
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  hasStartedMatchThisRun = false
 ) {
   var db = GetDb();
   await db.write();
@@ -244,7 +245,13 @@ async function StartMatch(
   switch (tournament.tournamentFormat) {
     case "Single Elimination":
       console.log("Starting Single Match");
-      return await StartSingleMatch(interaction, bot, secondOfDay, previousMatches);
+      return await StartSingleMatch(
+        interaction,
+        bot,
+        secondOfDay,
+        previousMatches,
+        hasStartedMatchThisRun
+      );
     case "Double Elimination":
       return await StartDoubleElimMatch(interaction, bot, secondOfDay, previousMatches);
     case "3v3 Ranked":

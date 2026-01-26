@@ -30,7 +30,8 @@ module.exports = {
         interaction,
         "",
         i > 0,
-        i === 0 ? previousMatches : []
+        i === 0 ? previousMatches : [],
+        i > 0
       );
       if (result?.reason) {
         console.log("StartMatch halted:", result.reason);

@@ -174,7 +174,8 @@ async function StartSingleMatch(
   interaction,
   bot = "",
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  hasStartedMatchThisRun = false
 ) {
   var db = GetDb();
   await db.read();
@@ -284,6 +285,22 @@ async function StartSingleMatch(
         }
       }
     }
+    if (!roundsToCheck) {
+      const tiedMatches = single.matches.filter(
+        (match) => match.progress === "tie"
+      );
+      for (const match of tiedMatches) {
+        const entrant1Name = match?.entrant1?.name || "TBD";
+        const entrant2Name = match?.entrant2?.name || "TBD";
+        roundsToCheck +=
+          "\n**Match " +
+          match.match +
+          "**: " +
+          entrant2Name +
+          " vs " +
+          entrant1Name;
+      }
+    }
     let message =
       "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
     if (roundsToCheck) {
@@ -312,7 +329,7 @@ async function StartSingleMatch(
       single,
       roundNumberForOutstanding || 1
     );
-    if (!hasAnyStartableMatch) {
+    if (!hasAnyStartableMatch && !hasStartedMatchThisRun) {
       const tiedMatchesToResend = single.matches.filter(
         (match) => match.progress === "tie"
       );
@@ -332,6 +349,14 @@ async function StartSingleMatch(
           );
         }
       }
+    } else if (hasStartedMatchThisRun) {
+      console.log(
+        "Skipping tie resend: a match was already started in this run."
+      );
+    } else if (hasAnyStartableMatch) {
+      console.log(
+        "Skipping tie resend: other startable matches exist in the bracket."
+      );
     }
     return { blocked: true, stopForDay: true, reason: "insufficient_entrants" };
   }

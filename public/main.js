@@ -146,7 +146,8 @@ let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
       "",
       GetBot(),
       isSecondOfDay,
-      shouldIncludePreviousMatches ? previousMatches : []
+      shouldIncludePreviousMatches ? previousMatches : [],
+      matchIndex > 0
     );
     if (result?.reason) {
       console.log("StartMatch halted:", result.reason);
