@@ -138,7 +138,7 @@ let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
 
   console.log("Finished with previous Matches");
   //await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, []);
-  const matchesPerDay = tournamentDb?.roundsPerTurn || 1;
+  const matchesPerDay = getAdjustedMatchesPerDay(tournamentDb);
   for (let matchIndex = 0; matchIndex < matchesPerDay; matchIndex++) {
     const isSecondOfDay = matchIndex > 0;
     const shouldIncludePreviousMatches = matchIndex === 0;

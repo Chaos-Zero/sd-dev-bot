@@ -23,7 +23,7 @@ module.exports = {
       );
     }
     const tournamentDb = tournamentDetails[currentTournamentName];
-    const matchesPerDay = tournamentDb?.roundsPerTurn || 1;
+    const matchesPerDay = getAdjustedMatchesPerDay(tournamentDb);
 
     for (let i = 0; i < matchesPerDay; i++) {
       const result = await StartMatch(

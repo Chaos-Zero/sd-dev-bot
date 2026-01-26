@@ -26,6 +26,38 @@ async function getCurrentTournament(db) {
   return db.get("tournaments[0].currentTournament").value();
 }
 
+function getAdjustedMatchesPerDay(tournamentDb) {
+  if (!tournamentDb) {
+    return 1;
+  }
+  const baseMatchesPerDay = parseInt(tournamentDb.roundsPerTurn) || 1;
+  if (baseMatchesPerDay !== 4) {
+    return baseMatchesPerDay;
+  }
+  if (tournamentDb.tournamentFormat !== "Single Elimination") {
+    return baseMatchesPerDay;
+  }
+  const rounds = tournamentDb.rounds || {};
+  let roundKey = parseInt(tournamentDb.round);
+  if (!rounds[roundKey]) {
+    const availableRounds = Object.keys(rounds)
+      .map((key) => parseInt(key, 10))
+      .filter((key) => !isNaN(key))
+      .sort((a, b) => b - a);
+    roundKey = availableRounds[0] ?? roundKey;
+  }
+  const entries = Array.isArray(rounds[roundKey]) ? rounds[roundKey] : [];
+  const uniqueMatches = new Set(entries.map((entry) => entry.match));
+  const matchCount = uniqueMatches.size;
+  if (matchCount > 0 && matchCount % 4 === 0) {
+    return 4;
+  }
+  if (matchCount > 0 && matchCount % 2 === 0) {
+    return 2;
+  }
+  return 1;
+}
+
 async function registerTournament(
   tournamentTitle,
   tournamentFormat,

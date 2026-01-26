@@ -37,7 +37,11 @@ module.exports = {
         .setName("matches-per-day")
         .setDescription("The ammount of matches run at any given time")
         .setRequired(true)
-        .addChoices({ name: "One", value: "1" }, { name: "Two", value: "2" })
+        .addChoices(
+          { name: "One", value: "1" },
+          { name: "Two", value: "2" },
+          { name: "Four", value: "4" }
+        )
     )
     .addBooleanOption((option) =>
       option
