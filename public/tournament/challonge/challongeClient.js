@@ -587,7 +587,7 @@ async function updateParticipantNameBySeed(
   }
 }
 
-async function getMatchIdByNumber(tournamentName, matchNumber) {
+async function getMatchIdByNumber(tournamentName, matchNumber, options = {}) {
   try {
     // Log the request URL
     console.log(`Requesting matches for tournament: ${tournamentName}`);
@@ -601,7 +601,7 @@ async function getMatchIdByNumber(tournamentName, matchNumber) {
       }
     );
 
-    const matches = response.data;
+    const matches = response.data.map((m) => m.match || m);
 
     // Log the matches array to ensure it's not empty
     if (!matches.length) {
@@ -612,9 +612,31 @@ async function getMatchIdByNumber(tournamentName, matchNumber) {
     // Log the match number being searched for
     console.log(`Searching for match number: ${matchNumber}`);
 
-    const match = matches.find(
-      (m) => m.match.suggested_play_order === matchNumber
-    );
+    let match = null;
+    if (options.matchType === "third_place") {
+      match = matches.find((m) => m.is_third_place_match === true);
+    } else if (options.matchType === "final") {
+      const nonThirdPlace = matches.filter(
+        (m) => m.is_third_place_match !== true
+      );
+      match = nonThirdPlace
+        .slice()
+        .sort((a, b) => {
+          const roundA = a.round ?? 0;
+          const roundB = b.round ?? 0;
+          if (roundA !== roundB) {
+            return roundA - roundB;
+          }
+          const orderA = a.suggested_play_order ?? 0;
+          const orderB = b.suggested_play_order ?? 0;
+          return orderA - orderB;
+        })
+        .pop();
+    } else {
+      match = matches.find(
+        (m) => m.suggested_play_order === matchNumber
+      );
+    }
 
     if (!match) {
       console.error(`No match found with match number ${matchNumber}`);
@@ -622,9 +644,9 @@ async function getMatchIdByNumber(tournamentName, matchNumber) {
     }
 
     // Log the found match ID
-    console.log(`Found match ID: ${match.match.id}`);
+    console.log(`Found match ID: ${match.id}`);
 
-    return match.match.id;
+    return match.id;
   } catch (error) {
     console.error("Failed to retrieve matches:", error);
     throw error;
@@ -632,10 +654,19 @@ async function getMatchIdByNumber(tournamentName, matchNumber) {
 }
 
 
-async function endMatchByNumber(tournamentName, matchNumber, scoresCsv) {
+async function endMatchByNumber(
+  tournamentName,
+  matchNumber,
+  scoresCsv,
+  options = {}
+) {
   try {
     // Get the match ID based on the match number
-    const matchId = await getMatchIdByNumber(tournamentName, matchNumber);
+    const matchId = await getMatchIdByNumber(
+      tournamentName,
+      matchNumber,
+      options
+    );
 
     if (!matchId) {
       console.error(`Could not find a match with number ${matchNumber}`);
@@ -650,10 +681,14 @@ async function endMatchByNumber(tournamentName, matchNumber, scoresCsv) {
   }
 }
 
-async function startMatchByNumber(tournamentName, matchNumber) {
+async function startMatchByNumber(tournamentName, matchNumber, options = {}) {
   try {
     // Get the match ID based on the match number
-    const matchId = await getMatchIdByNumber(tournamentName, matchNumber);
+    const matchId = await getMatchIdByNumber(
+      tournamentName,
+      matchNumber,
+      options
+    );
 
     if (!matchId) {
       console.error(`Could not find a match with number ${matchNumber}`);
@@ -667,4 +702,3 @@ async function startMatchByNumber(tournamentName, matchNumber) {
     console.error("Failed to start match by number:", error);
   }
 }
-

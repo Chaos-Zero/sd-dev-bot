@@ -748,15 +748,25 @@ async function EndSingleMatches(interaction = "") {
       if (single.isChallonge) {
         const challongeResults =
           match.entrant1.points + "-" + match.entrant2.points;
+        const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
+          single.startingMatchCount,
+          single.hasThirdPlaceMatch
+        );
+        const finalMatchNumber = thirdPlaceMatchNumber
+          ? thirdPlaceMatchNumber + 1
+          : null;
+        let matchType = null;
+        if (match.isThirdPlace || match.match === thirdPlaceMatchNumber) {
+          matchType = "third_place";
+        } else if (finalMatchNumber && match.match === finalMatchNumber) {
+          matchType = "final";
+        }
 
         endMatchByNumber(
           replaceSpacesWithUnderlines(currentTournamentName.replace(/-/g, " ")),
-          getChallongeMatchNumberForSingle(
-            single,
-            match.match,
-            match.isThirdPlace
-          ),
-          challongeResults
+          match.match,
+          challongeResults,
+          matchType ? { matchType } : {}
         );
       }
     }

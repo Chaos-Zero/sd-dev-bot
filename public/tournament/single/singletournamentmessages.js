@@ -697,13 +697,20 @@ async function SendSingleDailyEmbed(
     //await sleep(1000);
   }
   if (single.isChallonge) {
+    const thirdPlaceMatchNumber = getSingleThirdPlaceMatchNumber(single);
+    const finalMatchNumber = thirdPlaceMatchNumber
+      ? thirdPlaceMatchNumber + 1
+      : null;
+    let matchType = null;
+    if (matchData.isThirdPlace || matchData.match === thirdPlaceMatchNumber) {
+      matchType = "third_place";
+    } else if (finalMatchNumber && matchData.match === finalMatchNumber) {
+      matchType = "final";
+    }
     await startMatchByNumber(
       challongeTournamentUrlName,
-      getChallongeMatchNumberForSingle(
-        single,
-        matchData.match,
-        matchData.isThirdPlace
-      )
+      matchData.match,
+      matchType ? { matchType } : {}
     );
   }
 
