@@ -91,6 +91,27 @@ function getThirdPlaceMatchNumber(startingMatchCount, hasThirdPlaceMatch) {
   return baseFinalMatchNumber;
 }
 
+function getChallongeMatchNumberForSingle(single, matchNumber, isThirdPlace) {
+  if (!single?.isChallonge) {
+    return matchNumber;
+  }
+  const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
+    single.startingMatchCount,
+    single.hasThirdPlaceMatch
+  );
+  if (!thirdPlaceMatchNumber) {
+    return matchNumber;
+  }
+  const finalMatchNumber = thirdPlaceMatchNumber + 1;
+  if (isThirdPlace || matchNumber === thirdPlaceMatchNumber) {
+    return finalMatchNumber;
+  }
+  if (matchNumber === finalMatchNumber) {
+    return thirdPlaceMatchNumber;
+  }
+  return matchNumber;
+}
+
 function getSingleFinalRoundNumberForTournament(single) {
   const baseRounds = getSingleTotalRounds(single.startingMatchCount);
   if (!baseRounds) {
@@ -253,40 +274,20 @@ async function StartSingleMatch(
 
   var stringRound = thisRound.toString();
   const nextRoundNumber = parseInt(stringRound);
-  const blockingTies = single.matches.filter(
-    (match) =>
-      match.progress === "tie" && parseInt(match.round) < nextRoundNumber
-  );
-  const malformedBlockingTies = blockingTies.filter(
-    (match) => !match?.entrant1?.name || !match?.entrant2?.name
-  );
-  console.log(
-    "Blocking tie payloads:",
-    JSON.stringify(
-      blockingTies.map((match) => ({
-        match: match?.match,
-        round: match?.round,
-        progress: match?.progress,
-        entrant1: match?.entrant1,
-        entrant2: match?.entrant2,
-      })),
-      null,
-      2
-    )
-  );
-  console.log(
-    "Round gate check: currentRound=" +
-      stringRound +
-      " nextRoundNumber=" +
-      nextRoundNumber +
-      " blockingTieMatches=" +
-      blockingTies.map((match) => match.match).join(",")
-  );
-  if (malformedBlockingTies.length > 0) {
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const shouldGateForTies = baseRounds > 0 && thisRound >= baseRounds;
+  if (shouldGateForTies) {
+    const blockingTies = single.matches.filter(
+      (match) =>
+        match.progress === "tie" && parseInt(match.round) < nextRoundNumber
+    );
+    const malformedBlockingTies = blockingTies.filter(
+      (match) => !match?.entrant1?.name || !match?.entrant2?.name
+    );
     console.log(
-      "Malformed tie entries (missing entrant names):",
+      "Blocking tie payloads:",
       JSON.stringify(
-        malformedBlockingTies.map((match) => ({
+        blockingTies.map((match) => ({
           match: match?.match,
           round: match?.round,
           progress: match?.progress,
@@ -297,46 +298,70 @@ async function StartSingleMatch(
         2
       )
     );
-  }
-  const hasBlockingTie = blockingTies.length > 0;
-  if (hasBlockingTie) {
-    let roundsToCheck = "";
-    for (const match of blockingTies) {
-      const entrant1Name = match?.entrant1?.name || "TBD";
-      const entrant2Name = match?.entrant2?.name || "TBD";
-      roundsToCheck +=
-        "\n**Match " +
-        match.match +
-        "**: " +
-        entrant2Name +
-        " vs " +
-        entrant1Name;
-    }
-    let message =
-      "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
-    if (roundsToCheck) {
-      message += roundsToCheck;
-    }
-    if (interaction !== "") {
-      await interaction.editReply({
-        content: message,
-        ephemeral: true,
-      });
-    }
-    console.log(message);
-    if (!secondOfDay && previousMatches && previousMatches.length > 0) {
-      const guildObject =
-        interaction == "" && bot !== ""
-          ? await bot.guilds.cache.get(process.env.GUILD_ID)
-          : interaction.guild;
-      await SendPreviousSingleDayResultsEmbeds(
-        guildObject,
-        previousMatches,
-        { round: stringRound },
-        false
+    console.log(
+      "Round gate check: currentRound=" +
+        stringRound +
+        " nextRoundNumber=" +
+        nextRoundNumber +
+        " blockingTieMatches=" +
+        blockingTies.map((match) => match.match).join(",")
+    );
+    if (malformedBlockingTies.length > 0) {
+      console.log(
+        "Malformed tie entries (missing entrant names):",
+        JSON.stringify(
+          malformedBlockingTies.map((match) => ({
+            match: match?.match,
+            round: match?.round,
+            progress: match?.progress,
+            entrant1: match?.entrant1,
+            entrant2: match?.entrant2,
+          })),
+          null,
+          2
+        )
       );
     }
-    return { blocked: true, reason: "tie_block" };
+    const hasBlockingTie = blockingTies.length > 0;
+    if (hasBlockingTie) {
+      let roundsToCheck = "";
+      for (const match of blockingTies) {
+        const entrant1Name = match?.entrant1?.name || "TBD";
+        const entrant2Name = match?.entrant2?.name || "TBD";
+        roundsToCheck +=
+          "\n**Match " +
+          match.match +
+          "**: " +
+          entrant2Name +
+          " vs " +
+          entrant1Name;
+      }
+      let message =
+        "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
+      if (roundsToCheck) {
+        message += roundsToCheck;
+      }
+      if (interaction !== "") {
+        await interaction.editReply({
+          content: message,
+          ephemeral: true,
+        });
+      }
+      console.log(message);
+      if (!secondOfDay && previousMatches && previousMatches.length > 0) {
+        const guildObject =
+          interaction == "" && bot !== ""
+            ? await bot.guilds.cache.get(process.env.GUILD_ID)
+            : interaction.guild;
+        await SendPreviousSingleDayResultsEmbeds(
+          guildObject,
+          previousMatches,
+          { round: stringRound },
+          false
+        );
+      }
+      return { blocked: true, reason: "tie_block" };
+    }
   }
 
   var matchData = {
@@ -617,7 +642,11 @@ async function EndSingleMatches(interaction = "") {
 
         endMatchByNumber(
           replaceSpacesWithUnderlines(currentTournamentName.replace(/-/g, " ")),
-          match.match,
+          getChallongeMatchNumberForSingle(
+            single,
+            match.match,
+            match.isThirdPlace
+          ),
           challongeResults
         );
       }

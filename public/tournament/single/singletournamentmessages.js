@@ -61,6 +61,24 @@ function getSingleThirdPlaceMatchNumber(single) {
   return getSingleBaseFinalMatchNumber(single.startingMatchCount);
 }
 
+function getChallongeMatchNumberForSingle(single, matchNumber, isThirdPlace) {
+  if (!single?.isChallonge) {
+    return matchNumber;
+  }
+  const thirdPlaceMatchNumber = getSingleThirdPlaceMatchNumber(single);
+  if (!thirdPlaceMatchNumber) {
+    return matchNumber;
+  }
+  const finalMatchNumber = thirdPlaceMatchNumber + 1;
+  if (isThirdPlace || matchNumber === thirdPlaceMatchNumber) {
+    return finalMatchNumber;
+  }
+  if (matchNumber === finalMatchNumber) {
+    return thirdPlaceMatchNumber;
+  }
+  return matchNumber;
+}
+
 function normalizeTournamentNameForGif(name) {
   if (!name) {
     return "tournament";
@@ -679,7 +697,14 @@ async function SendSingleDailyEmbed(
     //await sleep(1000);
   }
   if (single.isChallonge) {
-    await startMatchByNumber(challongeTournamentUrlName, matchData.match);
+    await startMatchByNumber(
+      challongeTournamentUrlName,
+      getChallongeMatchNumberForSingle(
+        single,
+        matchData.match,
+        matchData.isThirdPlace
+      )
+    );
   }
 
   //await ColourPreviousMatches(sheetUrl, previousMatches);
