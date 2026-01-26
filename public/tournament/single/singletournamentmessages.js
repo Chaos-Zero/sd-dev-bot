@@ -452,6 +452,14 @@ async function SendPreviousSingleDayResultsEmbeds(
           "http://91.99.239.6/files/assets/sd-img.png",
       });
     await channel.send({ embeds: [thankYouEmbed] });
+    if (single.isChallonge) {
+      try {
+        await completeChallongeTournament(challongeTournamentUrlName);
+        console.log("Challonge tournament marked complete.");
+      } catch (error) {
+        console.warn("Failed to complete Challonge tournament:", error);
+      }
+    }
     await db
       .get("tournaments")
       .nth(0)

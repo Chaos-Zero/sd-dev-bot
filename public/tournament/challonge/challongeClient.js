@@ -534,6 +534,26 @@ async function completeChallongeMatch(tournamentUrl, matchId) {
   }
 }
 
+async function completeChallongeTournament(tournamentUrl) {
+  const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}.json`;
+  const data = {
+    "tournament[state]": "complete",
+    api_key: challongeKey,
+  };
+  try {
+    const response = await axios.put(endpoint, qs.stringify(data), {
+      headers: getHeaders(challongeKey),
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Failed to complete tournament:",
+      error.response ? error.response.data : error.message
+    );
+    throw error;
+  }
+}
+
 async function updateParticipantNameBySeed(
   tournamentName,
   seedNumber,
