@@ -501,6 +501,10 @@ async function SendSingleDailyEmbed(
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
     "http://91.99.239.6/dev_files/output/" + gifName + ".gif";
+  const matchArtEntry = single?.matchArt?.[matchData.match?.toString()];
+  const matchArtUrl = matchArtEntry?.filename
+    ? "http://91.99.239.6/dev_files/userImages/" + matchArtEntry.filename
+    : "";
 
   const d = new Date();
   let day = d.getDay();
@@ -574,12 +578,20 @@ async function SendSingleDailyEmbed(
     //  "https://cdn.discordapp.com/attachments/998517698881400843/1362350834406527016/Untitled78_20250416225429.png?ex=68021396&is=6800c216&hm=fe929cecae3c018bd5572b9c60d572ad2a5e659de31dfbd7819acc335047e6f5&"
     //)
     .setFooter({
-      text: "< Please listen to both tracks before voting for your favourite.",
+      text:
+        "< Please listen to both tracks before voting for your favourite." +
+        (matchArtEntry?.username
+          ? "\nArt submitted by " + matchArtEntry.username
+          : ""),
       iconURL:
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
     .setThumbnail(gifPath);
+
+  if (matchArtUrl) {
+    embed.setImage(matchArtUrl);
+  }
 
   embed.setURL("https://imgur.com/a/u46xSwV");
 
