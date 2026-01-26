@@ -120,6 +120,45 @@ function getSingleFinalRoundNumberForTournament(single) {
   return single.hasThirdPlaceMatch ? baseRounds + 1 : baseRounds;
 }
 
+function hasStartableSingleMatch(single, minRound = 1) {
+  if (!single || !single.rounds) {
+    return false;
+  }
+  const startedMatches = new Set(single.matches.map((match) => match.match));
+  const rounds = Object.keys(single.rounds)
+    .map((round) => parseInt(round, 10))
+    .filter((round) => !isNaN(round) && round >= minRound)
+    .sort((a, b) => a - b);
+
+  for (const round of rounds) {
+    const entries = Array.isArray(single.rounds[round])
+      ? single.rounds[round]
+      : [];
+    const byMatch = new Map();
+    for (const entry of entries) {
+      if (!entry?.match) {
+        continue;
+      }
+      if (!byMatch.has(entry.match)) {
+        byMatch.set(entry.match, []);
+      }
+      byMatch.get(entry.match).push(entry);
+    }
+    for (const [matchNumber, matchEntries] of byMatch.entries()) {
+      if (startedMatches.has(matchNumber)) {
+        continue;
+      }
+      const validEntries = matchEntries.filter(
+        (entry) => entry?.name && entry?.name !== "TBD" && !entry?.isPlaceholder
+      );
+      if (validEntries.length >= 2) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function ensureThirdPlaceState(single) {
   if (single.hasThirdPlaceMatch === undefined) {
     single.hasThirdPlaceMatch = true;
@@ -269,23 +308,29 @@ async function StartSingleMatch(
         false
       );
     }
-    const tiedMatchesToResend = single.matches.filter(
-      (match) => match.progress === "tie"
+    const hasAnyStartableMatch = hasStartableSingleMatch(
+      single,
+      roundNumberForOutstanding || 1
     );
-    if (tiedMatchesToResend.length > 0) {
-      console.log(
-        "Resending tied matches due to insufficient entrants:",
-        tiedMatchesToResend.map((match) => match.match).join(",")
+    if (!hasAnyStartableMatch) {
+      const tiedMatchesToResend = single.matches.filter(
+        (match) => match.progress === "tie"
       );
-      for (const tiedMatch of tiedMatchesToResend) {
-        await SendSingleBattleMessage(
-          interaction,
-          tiedMatch,
-          bot,
-          single,
-          true,
-          []
+      if (tiedMatchesToResend.length > 0) {
+        console.log(
+          "Resending tied matches due to insufficient entrants:",
+          tiedMatchesToResend.map((match) => match.match).join(",")
         );
+        for (const tiedMatch of tiedMatchesToResend) {
+          await SendSingleBattleMessage(
+            interaction,
+            tiedMatch,
+            bot,
+            single,
+            true,
+            []
+          );
+        }
       }
     }
     return { blocked: true, stopForDay: true, reason: "insufficient_entrants" };
