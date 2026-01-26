@@ -269,6 +269,25 @@ async function StartSingleMatch(
         false
       );
     }
+    const tiedMatchesToResend = single.matches.filter(
+      (match) => match.progress === "tie"
+    );
+    if (tiedMatchesToResend.length > 0) {
+      console.log(
+        "Resending tied matches due to insufficient entrants:",
+        tiedMatchesToResend.map((match) => match.match).join(",")
+      );
+      for (const tiedMatch of tiedMatchesToResend) {
+        await SendSingleBattleMessage(
+          interaction,
+          tiedMatch,
+          bot,
+          single,
+          true,
+          []
+        );
+      }
+    }
     return { blocked: true, stopForDay: true, reason: "insufficient_entrants" };
   }
 
