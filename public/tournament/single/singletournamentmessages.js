@@ -119,7 +119,8 @@ async function SendSingleBattleMessage(
   bot = "",
   singleDb,
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
   //interaction = ""
 ) {
   //,
@@ -169,7 +170,8 @@ async function SendSingleBattleMessage(
     gifName,
     youtubeUrls,
     secondOfDay,
-    previousMatches
+    previousMatches,
+    options
   );
 }
 
@@ -483,7 +485,8 @@ async function SendSingleDailyEmbed(
   gifName,
   youtubeUrls,
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
 ) {
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
@@ -531,6 +534,7 @@ async function SendSingleDailyEmbed(
   }
 
   var embed = new EmbedBuilder();
+  const isTieResend = options?.isTieResend === true;
   embed
     .setTitle(
       (roundLabel ? roundLabel + " - " : "") +
@@ -544,7 +548,7 @@ async function SendSingleDailyEmbed(
       iconURL:
         "http://91.99.239.6/files/assets/sd_logo.png",
     })
-    .setColor(0xffff00)
+    .setColor(isTieResend ? 0xff3b30 : 0xffff00)
     .addFields(
       {
         name:

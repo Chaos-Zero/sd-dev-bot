@@ -462,7 +462,8 @@ async function StartSingleMatch(
               bot,
               single,
               true,
-              []
+              [],
+              { isTieResend: true }
             );
           }
         }
@@ -616,6 +617,20 @@ async function StartSingleMatchBatch(
 
   const single = tournamentDetails[currentTournamentName];
   ensureThirdPlaceState(single);
+  const tieMatchesToSend = [];
+  if (Array.isArray(single.matches)) {
+    const tiedMatches = single.matches
+      .filter((match) => match.progress === "tie")
+      .sort((a, b) => {
+        const roundA = parseInt(a.round);
+        const roundB = parseInt(b.round);
+        if (roundA !== roundB) {
+          return roundA - roundB;
+        }
+        return parseInt(a.match) - parseInt(b.match);
+      });
+    tieMatchesToSend.push(...tiedMatches);
+  }
   const planned = [];
   const simulated = JSON.parse(JSON.stringify(single));
 
@@ -638,7 +653,7 @@ async function StartSingleMatchBatch(
     });
   }
 
-  if (planned.length === 0) {
+  if (planned.length === 0 && tieMatchesToSend.length === 0) {
     return await StartSingleMatch(
       interaction,
       bot,
@@ -649,13 +664,30 @@ async function StartSingleMatchBatch(
   }
 
   let lastResult = { blocked: false };
+  let tieSent = false;
+  if (tieMatchesToSend.length > 0) {
+    let firstTie = true;
+    for (const tiedMatch of tieMatchesToSend) {
+      await SendSingleBattleMessage(
+        interaction,
+        tiedMatch,
+        bot,
+        single,
+        false,
+        firstTie ? previousMatches : [],
+        { isTieResend: true }
+      );
+      tieSent = true;
+      firstTie = false;
+    }
+  }
   for (let i = 0; i < planned.length; i++) {
     lastResult = await StartSingleMatch(
       interaction,
       bot,
-      i > 0,
-      i === 0 ? previousMatches : [],
-      i > 0,
+      i > 0 || tieSent,
+      i === 0 && !tieSent ? previousMatches : [],
+      i > 0 || tieSent,
       planned[i].matchNumber
     );
     if (lastResult?.blocked || lastResult?.stopForDay) {
