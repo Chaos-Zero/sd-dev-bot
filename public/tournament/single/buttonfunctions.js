@@ -68,7 +68,11 @@ async function handleSingleElimButtonPress(interaction, db) {
         return;
       }
     }
-    if (splitButtonName[2] > singleTournament.matches.length) {
+    const matchNumber = parseInt(splitButtonName[2], 10);
+    const matchExists = singleTournament.matches.some(
+      (match) => match.match == matchNumber
+    );
+    if (!matchExists) {
       console.log(
         "Button number: " +
           splitButtonName[2] +
