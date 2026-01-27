@@ -220,7 +220,8 @@ async function StartSingleMatch(
   bot = "",
   secondOfDay = false,
   previousMatches = [],
-  hasStartedMatchThisRun = false
+  hasStartedMatchThisRun = false,
+  forcedMatchNumber = null
 ) {
   var db = GetDb();
   await db.read();
@@ -248,7 +249,7 @@ async function StartSingleMatch(
   var matchesPerDay = single.roundsPerTurn;
 
   let previousMatch = single.matches.length;
-  let matchNumber = single.matches.length + 1;
+  let matchNumber = forcedMatchNumber ?? single.matches.length + 1;
   const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
     single.startingMatchCount,
     single.hasThirdPlaceMatch
@@ -260,11 +261,13 @@ async function StartSingleMatch(
 
   let foundEntries = [];
 
-  const nextStartable = findNextStartableSingleMatch(single, single.round);
-  if (nextStartable) {
-    matchNumber = nextStartable.matchNumber;
-    foundEntries = [...nextStartable.entries];
-    thisRound = nextStartable.round;
+  if (!forcedMatchNumber) {
+    const nextStartable = findNextStartableSingleMatch(single, single.round);
+    if (nextStartable) {
+      matchNumber = nextStartable.matchNumber;
+      foundEntries = [...nextStartable.entries];
+      thisRound = nextStartable.round;
+    }
   }
 
   if (foundEntries.length < 1) {
@@ -584,6 +587,81 @@ async function StartSingleMatch(
     return { blocked: false, stopForDay: true, reason: "third_place_day" };
   }
   return { blocked: false };
+}
+
+async function StartSingleMatchBatch(
+  interaction,
+  bot = "",
+  previousMatches = [],
+  maxMatchesPerDay = 1
+) {
+  const db = GetDb();
+  await db.read();
+  const currentTournamentName = await getCurrentTournament(db);
+  const tournamentDetails = await db.get("tournaments").nth(0).value();
+  if (tournamentDetails.currentTournament == "N/A") {
+    if (interaction != "") {
+      await interaction.editReply({
+        content:
+          "There doesn't appear to be a tournament running at this time.",
+        ephemeral: true,
+      });
+    }
+    console.log(
+      "There doesn't appear to be a tournament running at this time."
+    );
+    return { blocked: true, reason: "no_tournament" };
+  }
+
+  const single = tournamentDetails[currentTournamentName];
+  ensureThirdPlaceState(single);
+  const planned = [];
+  const simulated = JSON.parse(JSON.stringify(single));
+
+  for (let i = 0; i < maxMatchesPerDay; i++) {
+    const nextStartable = findNextStartableSingleMatch(
+      simulated,
+      simulated.round
+    );
+    if (!nextStartable) {
+      break;
+    }
+    planned.push({
+      matchNumber: nextStartable.matchNumber,
+      round: nextStartable.round,
+    });
+    simulated.matches.push({
+      match: nextStartable.matchNumber,
+      round: nextStartable.round,
+      progress: "in-progress",
+    });
+  }
+
+  if (planned.length === 0) {
+    return await StartSingleMatch(
+      interaction,
+      bot,
+      false,
+      previousMatches,
+      false
+    );
+  }
+
+  let lastResult = { blocked: false };
+  for (let i = 0; i < planned.length; i++) {
+    lastResult = await StartSingleMatch(
+      interaction,
+      bot,
+      i > 0,
+      i === 0 ? previousMatches : [],
+      i > 0,
+      planned[i].matchNumber
+    );
+    if (lastResult?.blocked || lastResult?.stopForDay) {
+      break;
+    }
+  }
+  return lastResult;
 }
 
 // Digusting method: needs split down. Far too large.

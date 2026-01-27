@@ -251,7 +251,8 @@ async function StartMatch(
   bot = "",
   secondOfDay = false,
   previousMatches = [],
-  hasStartedMatchThisRun = false
+  hasStartedMatchThisRun = false,
+  maxMatchesPerDay = 1
 ) {
   var db = GetDb();
   await db.write();
@@ -277,6 +278,14 @@ async function StartMatch(
   switch (tournament.tournamentFormat) {
     case "Single Elimination":
       console.log("Starting Single Match");
+      if (!secondOfDay && maxMatchesPerDay > 1) {
+        return await StartSingleMatchBatch(
+          interaction,
+          bot,
+          previousMatches,
+          maxMatchesPerDay
+        );
+      }
       return await StartSingleMatch(
         interaction,
         bot,

@@ -139,7 +139,9 @@ let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
   console.log("Finished with previous Matches");
   //await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, []);
   const matchesPerDay = getAdjustedMatchesPerDay(tournamentDb);
-  for (let matchIndex = 0; matchIndex < matchesPerDay; matchIndex++) {
+  const loopCount =
+    tournamentDb?.tournamentFormat === "Single Elimination" ? 1 : matchesPerDay;
+  for (let matchIndex = 0; matchIndex < loopCount; matchIndex++) {
     const isSecondOfDay = matchIndex > 0;
     const shouldIncludePreviousMatches = matchIndex === 0;
     const result = await StartMatch(
@@ -147,7 +149,8 @@ let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
       GetBot(),
       isSecondOfDay,
       shouldIncludePreviousMatches ? previousMatches : [],
-      matchIndex > 0
+      matchIndex > 0,
+      matchesPerDay
     );
     if (result?.reason) {
       console.log("StartMatch halted:", result.reason);
