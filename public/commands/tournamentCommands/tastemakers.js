@@ -56,22 +56,6 @@ module.exports = {
           .catch((_) => null);
       }
     }
-    let tournamentDb = tournamentDetails[doubleEliminationName];
-    if (!doubleEliminationName || doubleEliminationName === "N/A" || !tournamentDb) {
-      const latestTournament = getLatestTournamentEntry(tournamentDetails);
-      if (latestTournament) {
-        doubleEliminationName = latestTournament.name;
-        tournamentDb = latestTournament.data;
-      } else {
-        return interaction
-          .reply({
-            content: "There are no tournaments available to check.",
-            ephemeral: true,
-          })
-          .then(() => console.log("Reply sent."))
-          .catch((_) => null);
-      }
-    }
     const isPublic = interaction.options.getBoolean("make-public") || false;
     const isAllowedLessThan50Percent =
       interaction.options.getBoolean("include-low-participation") || false;
