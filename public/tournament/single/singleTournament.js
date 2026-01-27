@@ -400,8 +400,11 @@ async function StartSingleMatch(
           entrant1Name;
       }
     }
+    const roleId = single?.roleId;
+    const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
     let message =
-      "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
+      `Hello all and ${rolePing}\n` +
+      "❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
     if (roundsToCheck) {
       message += roundsToCheck;
     }
