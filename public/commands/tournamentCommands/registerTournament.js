@@ -71,6 +71,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    await interaction.deferReply({ ephemeral: true });
     const tournamentName = interaction.options.getString("tournament-name");
     const tournamentFormat = interaction.options.getString("tournament-format");
     const matchesPerDay = interaction.options.getString("matches-per-day");
@@ -90,11 +91,10 @@ module.exports = {
     await dbInstance.read();
     const tournamentDetails = dbInstance.get("tournaments").nth(0).value();
     if (tournamentDetails?.[tournamentName]) {
-      await interaction.reply({
+      await interaction.editReply({
         content:
           `A tournament named "${tournamentName}" already exists. ` +
           "Please use a different name.",
-        ephemeral: true,
       });
       return;
     }
@@ -118,22 +118,22 @@ module.exports = {
           participantRoleId
         );
         if (!result?.ok) {
-          await interaction.reply(
+          await interaction.editReply(
             result?.message ||
               "Tournament setup failed. Please check the CSV and try again."
           );
           return;
         }
-        await interaction.reply(
+        await interaction.editReply(
           `Tournament "${tournamentName}" of type "${tournamentFormat}" started successfully.`
         );
       } else {
-        await interaction.reply(
+        await interaction.editReply(
           `There appears to already be a tournament running. Please wait until "${currentTournament}" is complete.`
         );
       }
     } else {
-      await interaction.reply(
+      await interaction.editReply(
         "Sorry, the CSV file attachment is missing or invalid. Please try again."
       );
     }
