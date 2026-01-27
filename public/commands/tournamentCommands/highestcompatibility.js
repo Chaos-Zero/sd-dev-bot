@@ -61,6 +61,8 @@ module.exports = {
     const userPercent =
       interaction.options.getNumber("specify-participation-percentage") || 25;
 
+    const compatibilityDb = LoadCompatibilityDb();
+
     if (!searchAll && (!tournamentName || tournamentName === "N/A" || !tournamentDb)) {
       const latestTournament = getLatestTournamentWithCompat(
         tournamentDetails,
@@ -79,8 +81,6 @@ module.exports = {
           .catch((_) => null);
       }
     }
-
-    const compatibilityDb = LoadCompatibilityDb();
 
     if (
       userPercent > 100 ||
