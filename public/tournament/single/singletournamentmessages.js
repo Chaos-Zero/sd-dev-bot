@@ -626,6 +626,7 @@ async function SendSingleDailyEmbed(
   const roleId = single?.roleId;
   const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
   var welcomeString = `Hello all and ${rolePing}`;
+  let hasTieWarning = false;
   if (
     Array.isArray(previousMatches) &&
     Array.isArray(previousMatches[1]) &&
@@ -645,6 +646,7 @@ async function SendSingleDailyEmbed(
       welcomeString +=
         "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
         roundsToCheck;
+      hasTieWarning = true;
   } else if (Array.isArray(single?.matches)) {
     const tiedMatches = single.matches.filter(
       (match) => match.progress === "tie"
@@ -666,10 +668,11 @@ async function SendSingleDailyEmbed(
       welcomeString +=
         "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
         roundsToCheck;
+      hasTieWarning = true;
     }
   }
 
-  if (!secondOfDay) {
+  if (!secondOfDay || hasTieWarning) {
     channel.send(welcomeString);
   }
   await sleep(1500);
