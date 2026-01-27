@@ -487,7 +487,7 @@ async function StartSingleMatch(
       )
     );
     console.log(
-      "Round gate check: currentRound=" +
+      "Round gate check (no block): currentRound=" +
         stringRound +
         " nextRoundNumber=" +
         nextRoundNumber +
@@ -509,46 +509,6 @@ async function StartSingleMatch(
           2
         )
       );
-    }
-    const hasBlockingTie = blockingTies.length > 0;
-    if (hasBlockingTie) {
-      let roundsToCheck = "";
-      for (const match of blockingTies) {
-        const entrant1Name = match?.entrant1?.name || "TBD";
-        const entrant2Name = match?.entrant2?.name || "TBD";
-        roundsToCheck +=
-          "\n**Match " +
-          match.match +
-          "**: " +
-          entrant2Name +
-          " vs " +
-          entrant1Name;
-      }
-      let message =
-        "\n❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
-      if (roundsToCheck) {
-        message += roundsToCheck;
-      }
-      if (interaction !== "") {
-        await interaction.editReply({
-          content: message,
-          ephemeral: true,
-        });
-      }
-      console.log(message);
-      if (!secondOfDay && previousMatches && previousMatches.length > 0) {
-        const guildObject =
-          interaction == "" && bot !== ""
-            ? await bot.guilds.cache.get(process.env.GUILD_ID)
-            : interaction.guild;
-        await SendPreviousSingleDayResultsEmbeds(
-          guildObject,
-          previousMatches,
-          { round: stringRound },
-          false
-        );
-      }
-      return { blocked: true, reason: "tie_block" };
     }
   }
 
