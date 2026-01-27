@@ -97,11 +97,7 @@ module.exports = {
     }
 
     if (!matchRound) {
-      return interaction.reply({
-        content:
-          `Match ${matchNumber} was not found in the current tournament.`,
-        ephemeral: true,
-      });
+      matchRound = 0;
     }
 
     const extension = getAttachmentExtension(attachment);
