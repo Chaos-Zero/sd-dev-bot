@@ -62,7 +62,10 @@ module.exports = {
       interaction.options.getNumber("specify-participation-percentage") || 25;
 
     if (!searchAll && (!tournamentName || tournamentName === "N/A" || !tournamentDb)) {
-      const latestTournament = getLatestTournamentEntry(tournamentDetails);
+      const latestTournament = getLatestTournamentWithCompat(
+        tournamentDetails,
+        compatibilityDb
+      ) || getLatestTournamentEntry(tournamentDetails);
       if (latestTournament) {
         tournamentName = latestTournament.name;
         tournamentDb = latestTournament.data;
@@ -158,7 +161,10 @@ module.exports = {
     } else {
       let tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
       if (!tournamentCompat) {
-        const latestTournament = getLatestTournamentEntry(tournamentDetails);
+        const latestTournament = getLatestTournamentWithCompat(
+          tournamentDetails,
+          compatibilityDb
+        ) || getLatestTournamentEntry(tournamentDetails);
         if (latestTournament) {
           tournamentName = latestTournament.name;
           tournamentDb = latestTournament.data;
@@ -312,6 +318,20 @@ function getLatestTournamentEntry(tournamentDetails) {
     return null;
   }
   return allTournaments[allTournaments.length - 1];
+}
+
+function getLatestTournamentWithCompat(tournamentDetails, compatibilityDb) {
+  const allTournaments = getAllTournamentEntries(tournamentDetails);
+  if (allTournaments.length < 1) {
+    return null;
+  }
+  for (let i = allTournaments.length - 1; i >= 0; i -= 1) {
+    const candidate = allTournaments[i];
+    if (compatibilityDb?.tournaments?.[candidate.name]) {
+      return candidate;
+    }
+  }
+  return null;
 }
 
 function buildTournamentSignature(tournaments) {
