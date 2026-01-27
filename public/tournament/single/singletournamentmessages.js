@@ -354,7 +354,7 @@ async function SendPreviousSingleDayResultsEmbeds(
             previousMatches[0][i].match
         )
         .setAuthor({
-          name: "Technology Vs Nature",
+          name: currentTournamentName,
           iconURL:
             "http://91.99.239.6/files/assets/sd_logo.png",
         })
