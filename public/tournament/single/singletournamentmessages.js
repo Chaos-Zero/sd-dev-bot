@@ -292,7 +292,7 @@ async function SendPreviousSingleDayResultsEmbeds(
         "**";
       prevEmbed
         .setTitle(
-          (roundLabel ? roundLabel + " - " : "") +
+          (winnerPlaceLabel ? "" : roundLabel ? roundLabel + " - " : "") +
             (winnerPlaceLabel ? winnerPlaceLabel + ": " : "") +
             getEntrantTypePrefix(previousMatches[0][i].firstPlace.type) +
             previousMatches[0][i].firstPlace.name +
@@ -443,6 +443,13 @@ async function SendPreviousSingleDayResultsEmbeds(
         parseInt(match.round) === finalRoundNumber && match.isThirdPlace !== true
     );
   if (tournamentIsOver) {
+    const finalMatch = previousMatches[0].find(
+      (match) =>
+        parseInt(match.round) === finalRoundNumber && match.isThirdPlace !== true
+    );
+    if (finalMatch?.firstPlace?.link) {
+      await channel.send(finalMatch.firstPlace.link);
+    }
     const thankYouEmbed = new EmbedBuilder()
       .setDescription("Thank you for participating!")
       .setColor(0x4dc399)
