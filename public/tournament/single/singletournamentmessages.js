@@ -507,11 +507,6 @@ async function SendSingleDailyEmbed(
     parseInt(matchData.round),
     matchData.isThirdPlace
   );
-  const roundLabel = getSingleRoundLabel(
-    single,
-    parseInt(matchData.round),
-    matchData.isThirdPlace
-  );
   const currentChallongeUrl =
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
