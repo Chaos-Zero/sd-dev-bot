@@ -380,56 +380,6 @@ async function StartSingleMatch(
         reason: "final_round_complete",
       };
     }
-    let roundsToCheck = "";
-    if (!isNaN(roundNumberForOutstanding)) {
-      for (const match of single.matches) {
-        if (
-          parseInt(match.round) === parseInt(roundNumberForOutstanding) &&
-          match.progress !== "complete"
-        ) {
-          const entrant1Name = match?.entrant1?.name || "TBD";
-          const entrant2Name = match?.entrant2?.name || "TBD";
-          roundsToCheck +=
-            "\n**Match " +
-            match.match +
-            "**: " +
-            entrant2Name +
-            " vs " +
-            entrant1Name;
-        }
-      }
-    }
-    if (!roundsToCheck) {
-      const tiedMatches = single.matches.filter(
-        (match) => match.progress === "tie"
-      );
-      for (const match of tiedMatches) {
-        const entrant1Name = match?.entrant1?.name || "TBD";
-        const entrant2Name = match?.entrant2?.name || "TBD";
-        roundsToCheck +=
-          "\n**Match " +
-          match.match +
-          "**: " +
-          entrant2Name +
-          " vs " +
-          entrant1Name;
-      }
-    }
-    const roleId = single?.roleId;
-    const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
-    let message =
-      `Hello all and ${rolePing}\n` +
-      "❗There are still outstanding matches in this round.❗\nPlease vote on or reconsider these matches before we continue into the next round: ";
-    if (roundsToCheck) {
-      message += roundsToCheck;
-    }
-    if (interaction !== "") {
-      await interaction.editReply({
-        content: message,
-        ephemeral: true,
-      });
-    }
-    console.log(message);
     if (!secondOfDay && previousMatches && previousMatches.length > 0) {
       const guildObject =
         interaction == "" && bot !== ""
@@ -442,28 +392,38 @@ async function StartSingleMatch(
         false
       );
     }
-    const hasAnyStartableMatch = hasStartableSingleMatch(
-      single,
-      roundNumberForOutstanding || 1
-    );
+
+    const hasAnyStartableMatch = hasStartableSingleMatch(single, 1);
+    const finalRoundNumber = getSingleFinalRoundNumberForTournament(single);
+    const isFinalRound = roundNumberForOutstanding === finalRoundNumber;
+    const isThirdPlaceRound =
+      thirdPlaceMatchNumber &&
+      roundNumberForOutstanding === getSingleTotalRounds(single.startingMatchCount);
+
     if (!hasAnyStartableMatch && !hasStartedMatchThisRun) {
-      const tiedMatchesToResend = single.matches.filter(
-        (match) => match.progress === "tie"
-      );
-      if (tiedMatchesToResend.length > 0) {
+      if (isFinalRound || isThirdPlaceRound) {
         console.log(
-          "Resending tied matches due to insufficient entrants:",
-          tiedMatchesToResend.map((match) => match.match).join(",")
+          "Skipping tie resend: final/third-place round only."
         );
-        for (const tiedMatch of tiedMatchesToResend) {
-          await SendSingleBattleMessage(
-            interaction,
-            tiedMatch,
-            bot,
-            single,
-            true,
-            []
+      } else {
+        const tiedMatchesToResend = single.matches.filter(
+          (match) => match.progress === "tie"
+        );
+        if (tiedMatchesToResend.length > 0) {
+          console.log(
+            "Resending tied matches due to insufficient entrants:",
+            tiedMatchesToResend.map((match) => match.match).join(",")
           );
+          for (const tiedMatch of tiedMatchesToResend) {
+            await SendSingleBattleMessage(
+              interaction,
+              tiedMatch,
+              bot,
+              single,
+              true,
+              []
+            );
+          }
         }
       }
     } else if (hasStartedMatchThisRun) {
