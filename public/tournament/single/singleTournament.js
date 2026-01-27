@@ -742,12 +742,17 @@ async function StartSingleMatchBatch(
   }
 
   if (planned.length > 0) {
+    const hasSentFirstMessage = tieMatchesToSend.length > 0;
     for (let i = 0; i < planned.length; i++) {
+      const isFirstPlanned = i === 0;
+      const secondOfDay = hasSentFirstMessage || !isFirstPlanned;
+      const includePreviousMatches =
+        !hasSentFirstMessage && isFirstPlanned ? previousMatches : [];
       lastResult = await StartSingleMatch(
         interaction,
         bot,
-        true,
-        [],
+        secondOfDay,
+        includePreviousMatches,
         true,
         planned[i].matchNumber
       );
