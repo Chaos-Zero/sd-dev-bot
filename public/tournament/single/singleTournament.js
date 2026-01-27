@@ -895,6 +895,11 @@ async function EndSingleMatches(interaction = "") {
   let single = tournamentDetails[currentTournamentName];
   ensureThirdPlaceState(single);
   var matchesPerDay = single.roundsPerTurn;
+  const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
+    single.startingMatchCount,
+    single.hasThirdPlaceMatch
+  );
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
 
   var tiedMatches = [];
 
