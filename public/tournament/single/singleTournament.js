@@ -316,6 +316,28 @@ async function StartSingleMatch(
     (entry) => entry?.isPlaceholder === true || entry?.name === "TBD"
   );
   if (foundEntries.length < 2 || hasPlaceholderEntrant) {
+    const alternateMatch = findNextStartableSingleMatch(single, 1);
+    if (
+      alternateMatch &&
+      alternateMatch.matchNumber &&
+      alternateMatch.matchNumber !== matchNumber
+    ) {
+      console.log(
+        "Insufficient entrants for match " +
+          matchNumber +
+          ". Starting alternate match " +
+          alternateMatch.matchNumber +
+          " instead."
+      );
+      return await StartSingleMatch(
+        interaction,
+        bot,
+        true,
+        [],
+        true,
+        alternateMatch.matchNumber
+      );
+    }
     console.log(
       "There are not enough entrants available for the next match yet."
     );
