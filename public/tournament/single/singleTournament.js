@@ -331,6 +331,17 @@ async function StartSingleMatch(
     }
   }
 
+  if (single.isChallonge && foundEntries.length > 1) {
+    foundEntries.sort((a, b) => {
+      const seedA = parseInt(a?.challongeSeed || 0, 10);
+      const seedB = parseInt(b?.challongeSeed || 0, 10);
+      if (seedA && seedB && seedA !== seedB) {
+        return seedA - seedB;
+      }
+      return 0;
+    });
+  }
+
   const existingMatch = single.matches.find(
     (match) => parseInt(match.match) === parseInt(matchNumber)
   );
@@ -664,30 +675,26 @@ async function StartSingleMatchBatch(
   }
 
   let lastResult = { blocked: false };
-  let tieSent = false;
   if (tieMatchesToSend.length > 0) {
-    let firstTie = true;
     for (const tiedMatch of tieMatchesToSend) {
       await SendSingleBattleMessage(
         interaction,
         tiedMatch,
         bot,
         single,
-        false,
-        firstTie ? previousMatches : [],
+        true,
+        [],
         { isTieResend: true }
       );
-      tieSent = true;
-      firstTie = false;
     }
   }
   for (let i = 0; i < planned.length; i++) {
     lastResult = await StartSingleMatch(
       interaction,
       bot,
-      i > 0 || tieSent,
-      i === 0 && !tieSent ? previousMatches : [],
-      i > 0 || tieSent,
+      i > 0,
+      i === 0 ? previousMatches : [],
+      i > 0,
       planned[i].matchNumber
     );
     if (lastResult?.blocked || lastResult?.stopForDay) {
