@@ -56,6 +56,22 @@ module.exports = {
           .catch((_) => null);
       }
     }
+    let tournamentDb = tournamentDetails[doubleEliminationName];
+    if (!doubleEliminationName || doubleEliminationName === "N/A" || !tournamentDb) {
+      const latestTournament = getLatestTournamentEntry(tournamentDetails);
+      if (latestTournament) {
+        doubleEliminationName = latestTournament.name;
+        tournamentDb = latestTournament.data;
+      } else {
+        return interaction
+          .reply({
+            content: "There are no tournaments available to check.",
+            ephemeral: true,
+          })
+          .then(() => console.log("Reply sent."))
+          .catch((_) => null);
+      }
+    }
     const isPublic = interaction.options.getBoolean("make-public") || false;
     const isAllowedLessThan50Percent =
       interaction.options.getBoolean("include-low-participation") || false;
@@ -350,7 +366,7 @@ function CreateDiscordEmbed(
       .setFooter({
         text: "Supradarky's VGM Club",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+          "http://91.99.239.6/files/assets/sd-img.png",
       })
   );
 }

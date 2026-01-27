@@ -176,14 +176,14 @@ module.exports = {
       .setAuthor({
         name: track["sd label"] || "Unknown Label",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+          "http://91.99.239.6/files/assets/sd_logo.png",
       })
       .setColor(0x5865f2)
       .setThumbnail(formattedUrl[0][0])
       .setFooter({
         text: "Supradarky's VGM Club",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+          "http://91.99.239.6/files/assets/sd-img.png",
       });
 
     // Add inline fields if they exist
@@ -313,12 +313,12 @@ async function handleSeriesResults(
       .setAuthor({
         name: track["sd label"] || "Unknown Label",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+          "http://91.99.239.6/files/assets/sd_logo.png",
       })
       .setFooter({
         text: `Result ${index + 1} of ${matches.length}`,
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+          "http://91.99.239.6/files/assets/sd-img.png",
       });
 
     if (locationInfo && locationInfo["track type"]) {

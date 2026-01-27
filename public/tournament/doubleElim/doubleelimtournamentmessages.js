@@ -11,6 +11,24 @@ eval(fs.readFileSync("./public/database/read.js") + "");
 eval(fs.readFileSync("./public/database/write.js") + "");
 eval(fs.readFileSync("./public/tournament/tournamentutils.js") + "");
 
+function normalizeTournamentNameForGif(name) {
+  if (!name) {
+    return "tournament";
+  }
+  return replaceSpacesWithUnderlines(name.replace(/-/g, " ")).toLowerCase();
+}
+
+function buildTournamentGifName(tournamentName, round, match) {
+  const safeName = normalizeTournamentNameForGif(tournamentName);
+  return `${safeName}-round${round}match${match}`;
+}
+
+async function getCurrentTournamentNameFromDb() {
+  const db = GetDb();
+  await db.read();
+  return db.get("tournaments[0].currentTournament").value();
+}
+
 async function SendDoubleElimBattleMessage(
   interaction,
   matchData,
@@ -41,7 +59,12 @@ async function SendDoubleElimBattleMessage(
   //);
 
   const youtubeUrls = [matchData.entrant1.link, matchData.entrant2.link];
-  let gifName = "round" + matchData.round + "match" + matchData.match;
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
+  let gifName = buildTournamentGifName(
+    currentTournamentName,
+    matchData.round,
+    matchData.match
+  );
   downloadImages(youtubeUrls).then(async () => {
     // Discord caches images so we have to change the name each day
     // Just going to use the date
@@ -100,6 +123,7 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
   );
 
   const members = await guild.members.fetch();
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
 
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
@@ -118,8 +142,11 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
 
       var ytLinks = await GetYtThumb(links);
 
-      let gifName =
-        "round" + matchData.round + "match" + previousMatches[0][i].match;
+      let gifName = buildTournamentGifName(
+        currentTournamentName,
+        matchData.round,
+        previousMatches[0][i].match
+      );
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];
@@ -166,7 +193,7 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
           .setAuthor({
             name: "Match " + previousMatches[0][i].match + " Winner",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+              "http://91.99.239.6/files/assets/sd_logo.png",
           })
           .addFields({
             name: loserText,
@@ -212,7 +239,7 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
           .setAuthor({
             name: "Best VGM 2022",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+              "http://91.99.239.6/files/assets/sd_logo.png",
           })
           .setDescription(
             "**------------------------------------**\n**Battle Entries**:\n**A. " +
@@ -255,7 +282,7 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
           .setFooter({
             text: "Supradarky's VGM Club",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+              "http://91.99.239.6/files/assets/sd-img.png",
           });
         logsEmbedsToSend.push(resultLogEmbed);
       });
@@ -308,7 +335,7 @@ async function SendDoubleElimDailyEmbed(
     .setAuthor({
       name: "Best VGM List Cameo Contest",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        "http://91.99.239.6/files/assets/sd_logo.png",
     })
     .setColor(0xffff00)
     .addFields(
@@ -342,7 +369,7 @@ async function SendDoubleElimDailyEmbed(
     .setFooter({
       text: "< Please listen to the tracks in full and then place your vote!",
       iconURL:
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
+        "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
     .setThumbnail(gifPath);
@@ -351,9 +378,17 @@ async function SendDoubleElimDailyEmbed(
       embed.setImage('https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/Tetrace.png?v=1698940221642')
     
       
+  const db = GetDb();
+  await db.read();
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
+  const tournamentDetails = db.get("tournaments").nth(0).value();
+  const tournament = tournamentDetails?.[currentTournamentName];
+  const roleId = tournament?.roleId;
+  const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
+
   var embedsToSend = [embed];
   var welcomeString =
-    "Hello all and <@&1326256775262896290>\nFollow along with this contest here: https://challonge.com/Best_VGM_List_Cameo_Contest";
+    `Hello all and ${rolePing}\nFollow along with this contest here: https://challonge.com/Best_VGM_List_Cameo_Contest`;
   if (previousMatches.length > 0 && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {

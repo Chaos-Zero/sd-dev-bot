@@ -25,7 +25,7 @@ async function GetYtThumb(urls, standardRes = false) {
     //let thumb = "https://i1.ytimg.com/vi/" + ytVideoId + "/maxresdefault.jpg";
     let thumb =
       ytVideoId == "zero"
-        ? "https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/Album%20Art.png?v=1724065338538"
+        ? "http://91.99.239.6/files/assets/album_art.png"
         : "https://i1.ytimg.com/vi/" + ytVideoId + urlEnd;
 
     formattedUrls.push([thumb, ytVideoId]);

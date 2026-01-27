@@ -38,6 +38,14 @@ function getSingleTotalRounds(startingMatchCount) {
   return rounds;
 }
 
+function getSingleFinalRoundNumber(single) {
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  if (!baseRounds) {
+    return 0;
+  }
+  return single.hasThirdPlaceMatch ? baseRounds + 1 : baseRounds;
+}
+
 function getSingleBaseFinalMatchNumber(startingMatchCount) {
   const baseFinalMatchNumber = parseInt(startingMatchCount) * 2 - 1;
   if (isNaN(baseFinalMatchNumber) || baseFinalMatchNumber < 1) {
@@ -46,25 +54,60 @@ function getSingleBaseFinalMatchNumber(startingMatchCount) {
   return baseFinalMatchNumber;
 }
 
-function getThirdPlaceMatchNumber(single) {
+function getSingleThirdPlaceMatchNumber(single) {
   if (single.hasThirdPlaceMatch === false) {
     return null;
   }
   return getSingleBaseFinalMatchNumber(single.startingMatchCount);
 }
 
+function getChallongeMatchNumberForSingle(single, matchNumber, isThirdPlace) {
+  if (!single?.isChallonge) {
+    return matchNumber;
+  }
+  const thirdPlaceMatchNumber = getSingleThirdPlaceMatchNumber(single);
+  if (!thirdPlaceMatchNumber) {
+    return matchNumber;
+  }
+  const finalMatchNumber = thirdPlaceMatchNumber + 1;
+  if (isThirdPlace || matchNumber === thirdPlaceMatchNumber) {
+    return finalMatchNumber;
+  }
+  if (matchNumber === finalMatchNumber) {
+    return thirdPlaceMatchNumber;
+  }
+  return matchNumber;
+}
+
+function normalizeTournamentNameForGif(name) {
+  if (!name) {
+    return "tournament";
+  }
+  return replaceSpacesWithUnderlines(name.replace(/-/g, " ")).toLowerCase();
+}
+
+function buildTournamentGifName(tournamentName, round, match) {
+  const safeName = normalizeTournamentNameForGif(tournamentName);
+  return `${safeName}-round${round}match${match}`;
+}
+
+function getEntrantTypePrefix(type) {
+  return type ? type + " wins!\n" : "";
+}
+
 function getSingleRoundLabel(single, roundNum, isThirdPlace) {
   if (isThirdPlace) {
     return "Match for Third Place";
   }
-  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
-  if (!totalRounds || isNaN(roundNum)) {
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const finalRoundNumber = getSingleFinalRoundNumber(single);
+  if (!baseRounds || isNaN(roundNum)) {
     return "";
   }
-  if (roundNum === totalRounds) {
+  if (roundNum === finalRoundNumber) {
     return "Final";
   }
-  if (roundNum === totalRounds - 1) {
+  if (roundNum === baseRounds - 1) {
     return "Semifinal";
   }
   return "";
@@ -76,7 +119,8 @@ async function SendSingleBattleMessage(
   bot = "",
   singleDb,
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
   //interaction = ""
 ) {
   //,
@@ -106,30 +150,42 @@ async function SendSingleBattleMessage(
   //);
 
   const youtubeUrls = [matchData.entrant1.link, matchData.entrant2.link];
-  let gifName = "round" + matchData.round + "match" + matchData.match;
+  const db = GetDb();
+  db.read();
+  const currentTournamentName = await getCurrentTournament(db);
+  let gifName = buildTournamentGifName(
+    currentTournamentName,
+    matchData.round,
+    matchData.match
+  );
 
   await downloadImages(youtubeUrls);
   console.log("Making gif");
   //  await createGif("neuquant", gifName).then(async () => {
   await createGif("neuquant", gifName);
 
-  SendSingleDailyEmbed(
+  await SendSingleDailyEmbed(
     guildObject,
     matchData,
     gifName,
     youtubeUrls,
     secondOfDay,
-    previousMatches
+    previousMatches,
+    options
   );
 }
 
 async function SendPreviousSingleDayResultsEmbeds(
   guild,
   previousMatches,
-  matchData
+  matchData,
+  includeTieWarning = true
 ) {
   console.log("We're in previous day stuff");
-  if (previousMatches.length < 1 || previousMatches[0].length < 1) {
+  if (
+    previousMatches.length < 1 ||
+    (previousMatches[0].length < 1 && previousMatches[1].length < 1)
+  ) {
     return 0;
   }
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
@@ -138,7 +194,12 @@ async function SendPreviousSingleDayResultsEmbeds(
     process.env.BOT_LOG_CHANEL
   );
 
-  const members = await guild.members.fetch();
+  let members = [];
+  try {
+    members = await guild.members.fetch();
+  } catch (error) {
+    console.log("Failed to fetch guild members for results:", error);
+  }
 
   var db = GetDb();
   db.read();
@@ -150,9 +211,10 @@ async function SendPreviousSingleDayResultsEmbeds(
 
   let single = tournamentDetails[currentTournamentName];
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
-    currentTournamentName
+    currentTournamentName.replace(/-/g, " ")
   );
-  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const finalRoundNumber = getSingleFinalRoundNumber(single);
 
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
@@ -161,8 +223,6 @@ async function SendPreviousSingleDayResultsEmbeds(
   let embedImg = "";
   let imagesFolder = "public/commands/gif/input";
   let dstPath = "public/commands/gif/jpg";
-    
-  var welcomeString = "Hello all and <@&1326256775262896290>\nFollow along with this contest here: https://challonge.com/Technology_vs_Nature";
 
   var prevWinner = "";
 
@@ -173,11 +233,11 @@ async function SendPreviousSingleDayResultsEmbeds(
 
       var ytLinks = await GetYtThumb(links);
 
-      let gifName =
-        "round" +
-        previousMatches[0][i].round +
-        "match" +
-        previousMatches[0][i].match;
+      let gifName = buildTournamentGifName(
+        currentTournamentName,
+        previousMatches[0][i].round,
+        previousMatches[0][i].match
+      );
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];
@@ -206,24 +266,37 @@ async function SendPreviousSingleDayResultsEmbeds(
           startCell;
         */
 
-      var secondPlaceText =
-        //"**2nd Place:" +
-        "**Runner-up: " +
-        previousMatches[0][i].secondPlace.name +
-        " - " +
-        previousMatches[0][i].secondPlace.title + "**";
-
       var nextRound = 6;
       const roundLabel = getSingleRoundLabel(
         single,
         parseInt(previousMatches[0][i].round),
         previousMatches[0][i].isThirdPlace
       );
+      const isThirdPlaceMatch = previousMatches[0][i].isThirdPlace === true;
+      const isFinalMatch = roundLabel === "Final" && !isThirdPlaceMatch;
+      const winnerPlaceLabel = isThirdPlaceMatch
+        ? "3rd Place"
+        : isFinalMatch
+        ? "1st Place"
+        : null;
+      const runnerUpLabel = isThirdPlaceMatch
+        ? "4th Place"
+        : isFinalMatch
+        ? "2nd Place"
+        : "Runner-up";
+      var secondPlaceText =
+        "**" +
+        runnerUpLabel +
+        ": " +
+        previousMatches[0][i].secondPlace.name +
+        " - " +
+        previousMatches[0][i].secondPlace.title +
+        "**";
       prevEmbed
         .setTitle(
-          (roundLabel ? roundLabel + " - " : "") +
-            previousMatches[0][i].firstPlace.type +
-            " wins!\n" +
+          (winnerPlaceLabel ? "" : roundLabel ? roundLabel + " - " : "") +
+            (winnerPlaceLabel ? winnerPlaceLabel + ": " : "") +
+            getEntrantTypePrefix(previousMatches[0][i].firstPlace.type) +
             previousMatches[0][i].firstPlace.name +
             " - " +
             previousMatches[0][i].firstPlace.title +
@@ -232,7 +305,7 @@ async function SendPreviousSingleDayResultsEmbeds(
         .setAuthor({
           name: "Match " + previousMatches[0][i].match + " Results",
           iconURL:
-            "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+            "http://91.99.239.6/files/assets/sd_logo.png",
         })
         .addFields({
           name: secondPlaceText,
@@ -281,9 +354,9 @@ async function SendPreviousSingleDayResultsEmbeds(
             previousMatches[0][i].match
         )
         .setAuthor({
-          name: "Technology Vs Nature",
+          name: currentTournamentName,
           iconURL:
-            "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+            "http://91.99.239.6/files/assets/sd_logo.png",
         })
         .setDescription(
           "\n**------------------------------------**\n**Match Participants**:\n**A. " +
@@ -333,7 +406,7 @@ async function SendPreviousSingleDayResultsEmbeds(
         .setFooter({
           text: "Supradarky's VGM Club",
           iconURL:
-            "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+            "http://91.99.239.6/files/assets/sd-img.png",
         });
       if (
         previousMatches[0][i].firstPlace.points !==
@@ -344,15 +417,14 @@ async function SendPreviousSingleDayResultsEmbeds(
       await AddSingleWinnerToNextRound(
         previousMatches[0][i].firstPlace,
         previousMatches[0][i].round,
-        previousMatches[0][i].isThirdPlace
+        previousMatches[0][i].isThirdPlace,
+        previousMatches[0][i].match
       );
       //resultLogEmbed;
     }
   }
 
-  console.log("Sending previous day stuff");
-    channel.send(welcomeString);
-  
+  console.log("Sending previous day stuff");  
   await sleep(500);
     
   for (var i = 0; i < previousEmbedsToSend.length; i++) {
@@ -366,22 +438,37 @@ async function SendPreviousSingleDayResultsEmbeds(
   }
 
   const tournamentIsOver =
-    totalRounds > 0 &&
+    finalRoundNumber > 0 &&
     previousMatches[1].length === 0 &&
     previousMatches[0].some(
       (match) =>
-        parseInt(match.round) === totalRounds && match.isThirdPlace !== true
+        parseInt(match.round) === finalRoundNumber && match.isThirdPlace !== true
     );
   if (tournamentIsOver) {
+    const finalMatch = previousMatches[0].find(
+      (match) =>
+        parseInt(match.round) === finalRoundNumber && match.isThirdPlace !== true
+    );
+    if (finalMatch?.firstPlace?.link) {
+      await channel.send(finalMatch.firstPlace.link);
+    }
     const thankYouEmbed = new EmbedBuilder()
       .setDescription("Thank you for participating!")
       .setColor(0x4dc399)
       .setFooter({
         text: "Supradarky's VGM Club",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+          "http://91.99.239.6/files/assets/sd-img.png",
       });
     await channel.send({ embeds: [thankYouEmbed] });
+    if (single.isChallonge) {
+      try {
+        await completeChallongeTournament(challongeTournamentUrlName);
+        console.log("Challonge tournament marked complete.");
+      } catch (error) {
+        console.warn("Failed to complete Challonge tournament:", error);
+      }
+    }
     await db
       .get("tournaments")
       .nth(0)
@@ -398,7 +485,8 @@ async function SendSingleDailyEmbed(
   gifName,
   youtubeUrls,
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
 ) {
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
@@ -412,7 +500,12 @@ async function SendSingleDailyEmbed(
 
   let single = tournamentDetails[currentTournamentName];
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
-    currentTournamentName
+    currentTournamentName.replace(/-/g, " ")
+  );
+  const roundLabel = getSingleRoundLabel(
+    single,
+    parseInt(matchData.round),
+    matchData.isThirdPlace
   );
   const roundLabel = getSingleRoundLabel(
     single,
@@ -423,6 +516,10 @@ async function SendSingleDailyEmbed(
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
+  const matchArtEntry = single?.matchArt?.[matchData.match?.toString()];
+  const matchArtUrl = matchArtEntry?.filename
+    ? "http://91.99.239.6/files/userImages/" + matchArtEntry.filename
+    : "";
 
   const d = new Date();
   let day = d.getDay();
@@ -442,6 +539,7 @@ async function SendSingleDailyEmbed(
   }
 
   var embed = new EmbedBuilder();
+  const isTieResend = options?.isTieResend === true;
   embed
     .setTitle(
       (roundLabel ? roundLabel + " - " : "") +
@@ -453,9 +551,9 @@ async function SendSingleDailyEmbed(
     .setAuthor({
       name: currentTournamentName,
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        "http://91.99.239.6/files/assets/sd_logo.png",
     })
-    .setColor(0xffff00)
+    .setColor(isTieResend ? 0xff3b30 : 0xffff00)
     .addFields(
       {
         name:
@@ -466,12 +564,18 @@ async function SendSingleDailyEmbed(
       {
         name:
           `A. ` + matchData.entrant1.name + ` - ` + matchData.entrant1.title,
-        value: "Faction: " + matchData.entrant1.type + "\n" + matchData.entrant1.link,
+        value:
+          (matchData.entrant1.type
+            ? "Faction: " + matchData.entrant1.type + "\n"
+            : "") + matchData.entrant1.link,
       },
       {
         name:
           `B. ` + matchData.entrant2.name + ` - ` + matchData.entrant2.title,
-        value: "Faction: " + matchData.entrant2.type + "\n" + matchData.entrant2.link,
+        value:
+          (matchData.entrant2.type
+            ? "Faction: " + matchData.entrant2.type + "\n"
+            : "") + matchData.entrant2.link,
       },
       {
         name: "------------------------------------\nTournament Links",
@@ -490,12 +594,20 @@ async function SendSingleDailyEmbed(
     //  "https://cdn.discordapp.com/attachments/998517698881400843/1362350834406527016/Untitled78_20250416225429.png?ex=68021396&is=6800c216&hm=fe929cecae3c018bd5572b9c60d572ad2a5e659de31dfbd7819acc335047e6f5&"
     //)
     .setFooter({
-      text: "< Please listen to both tracks before voting for your favourite.",
+      text:
+        "< Please listen to both tracks before voting for your favourite." +
+        (matchArtEntry?.username
+          ? "\nArt submitted by " + matchArtEntry.username
+          : ""),
       iconURL:
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
+        "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
     .setThumbnail(gifPath);
+
+  if (matchArtUrl) {
+    embed.setImage(matchArtUrl);
+  }
 
   embed.setURL("https://imgur.com/a/u46xSwV");
 
@@ -527,9 +639,14 @@ async function SendSingleDailyEmbed(
   }*/
 
   var embedsToSend = [embed];
-  var welcomeString = "Hello all and <@&1326256775262896290>";
-  //  var welcomeString = "Thank you, all and <@&828707504363274261>, for participating.\nSee you in the next tournament!";
-  if (previousMatches.length > 0 && previousMatches[1].length > 0) {
+  const roleId = single?.roleId;
+  const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
+  var welcomeString = `Hello all and ${rolePing}`;
+  if (
+    Array.isArray(previousMatches) &&
+    Array.isArray(previousMatches[1]) &&
+    previousMatches[1].length > 0
+  ) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {
       roundsToCheck +=
@@ -541,13 +658,35 @@ async function SendSingleDailyEmbed(
         entry.entrant1.name +
         "";
     }
-    welcomeString +=
-      "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
-      roundsToCheck;
+      welcomeString +=
+        "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
+        roundsToCheck;
+  } else if (Array.isArray(single?.matches)) {
+    const tiedMatches = single.matches.filter(
+      (match) => match.progress === "tie"
+    );
+    if (tiedMatches.length > 0) {
+      let roundsToCheck = "";
+      for (const match of tiedMatches) {
+        const entrant1Name = match?.entrant1?.name || "TBD";
+        const entrant2Name = match?.entrant2?.name || "TBD";
+        roundsToCheck +=
+          "\n**Match " +
+          match.match +
+          "**: " +
+          entrant2Name +
+          " vs " +
+          entrant1Name +
+          "";
+      }
+      welcomeString +=
+        "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
+        roundsToCheck;
+    }
   }
 
   if (!secondOfDay) {
-    //channel.send(welcomeString);
+    channel.send(welcomeString);
   }
   await sleep(1500);
   channel.send({ embeds: embedsToSend }).then((embedMessage) => {
@@ -621,7 +760,23 @@ async function SendSingleDailyEmbed(
     //);
     //await sleep(1000);
   }
-  await startMatchByNumber(challongeTournamentUrlName, matchData.match);
+  if (single.isChallonge) {
+    const thirdPlaceMatchNumber = getSingleThirdPlaceMatchNumber(single);
+    const finalMatchNumber = thirdPlaceMatchNumber
+      ? thirdPlaceMatchNumber + 1
+      : null;
+    let matchType = null;
+    if (matchData.isThirdPlace || matchData.match === thirdPlaceMatchNumber) {
+      matchType = "third_place";
+    } else if (finalMatchNumber && matchData.match === finalMatchNumber) {
+      matchType = "final";
+    }
+    await startMatchByNumber(
+      challongeTournamentUrlName,
+      matchData.match,
+      matchType ? { matchType } : {}
+    );
+  }
 
   //await ColourPreviousMatches(sheetUrl, previousMatches);
   //await sleep(1000);*/
@@ -653,10 +808,39 @@ function getNextRoundMatchNumber(startingMatchCount, roundNum, matchNum) {
   return nextRoundStart + Math.floor(position / 2);
 }
 
+function dedupeRoundEntries(single) {
+  if (!single || !single.rounds) {
+    return;
+  }
+  for (const roundNum of Object.keys(single.rounds)) {
+    const entries = single.rounds[roundNum];
+    if (!Array.isArray(entries)) {
+      continue;
+    }
+    const seen = new Set();
+    const deduped = [];
+    for (const entry of entries) {
+      const key = [
+        roundNum,
+        entry?.match,
+        entry?.name,
+        entry?.fromMatch,
+      ].join("|");
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      deduped.push(entry);
+    }
+    single.rounds[roundNum] = deduped;
+  }
+}
+
 async function AddSingleWinnerToNextRound(
   firstPlaceEntrant,
   matchRound,
-  isThirdPlace
+  isThirdPlace,
+  matchNumber
 ) {
   var db = GetDb();
   await db.read();
@@ -665,6 +849,7 @@ async function AddSingleWinnerToNextRound(
 
   let tournamentDetails = await db.get("tournaments").nth(0).value();
   let single = tournamentDetails[currentTournamentName];
+  dedupeRoundEntries(single);
   if (isThirdPlace) {
     return;
   }
@@ -678,26 +863,38 @@ async function AddSingleWinnerToNextRound(
   var nextRoundNum = (roundNum + 1).toString();
   var nextMatchNum = single.nextRoundNextMatch;
   var startingMatchCount = parseInt(single.startingMatchCount);
-  const totalRounds = getSingleTotalRounds(single.startingMatchCount);
-  const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(single);
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const finalRoundNumber = getSingleFinalRoundNumber(single);
+  const thirdPlaceRoundNumber = baseRounds;
+  const thirdPlaceMatchNumber = getSingleThirdPlaceMatchNumber(single);
+  const resolvedMatchNumber = !isNaN(parseInt(matchNumber))
+    ? parseInt(matchNumber)
+    : parseInt(firstPlaceEntrant.match);
+  const sourceMatch = single.matches?.find(
+    (match) => parseInt(match.match) === parseInt(resolvedMatchNumber)
+  );
+  if (sourceMatch && sourceMatch.progress !== "complete") {
+    return;
+  }
   if (
     !isNaN(startingMatchCount) &&
     !isNaN(roundNum) &&
-    !isNaN(parseInt(firstPlaceEntrant.match))
+    !isNaN(resolvedMatchNumber)
   ) {
     nextMatchNum = getNextRoundMatchNumber(
       startingMatchCount,
       roundNum,
-      parseInt(firstPlaceEntrant.match)
+      resolvedMatchNumber
     );
   }
   if (
     single.hasThirdPlaceMatch &&
     thirdPlaceMatchNumber &&
-    totalRounds > 0 &&
-    roundNum === totalRounds - 1
+    baseRounds > 0 &&
+    roundNum === baseRounds - 1
   ) {
     nextMatchNum = parseInt(thirdPlaceMatchNumber) + 1;
+    nextRoundNum = finalRoundNumber.toString();
   }
 
   var entrantForNextRound = {
@@ -705,11 +902,23 @@ async function AddSingleWinnerToNextRound(
     title: firstPlaceEntrant.title,
     link: firstPlaceEntrant.link,
     type: firstPlaceEntrant.type,
+    challongeSeed: firstPlaceEntrant.challongeSeed,
+    challongeParticipantId: firstPlaceEntrant.challongeParticipantId,
     match: parseInt(nextMatchNum),
+    fromMatch: resolvedMatchNumber,
   };
 
   if (!single.rounds[nextRoundNum]) {
     single.rounds[nextRoundNum] = [];
+  }
+  const existingNextRoundEntry = single.rounds[nextRoundNum].some(
+    (entry) =>
+      parseInt(entry.match) === parseInt(nextMatchNum) &&
+      (entry.fromMatch === resolvedMatchNumber ||
+        entry.name === firstPlaceEntrant.name)
+  );
+  if (existingNextRoundEntry) {
+    return;
   }
   single.rounds[nextRoundNum].push(entrantForNextRound);
 

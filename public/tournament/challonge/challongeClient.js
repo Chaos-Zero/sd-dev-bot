@@ -534,6 +534,26 @@ async function completeChallongeMatch(tournamentUrl, matchId) {
   }
 }
 
+async function completeChallongeTournament(tournamentUrl) {
+  const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}.json`;
+  const data = {
+    "tournament[state]": "complete",
+    api_key: challongeKey,
+  };
+  try {
+    const response = await axios.put(endpoint, qs.stringify(data), {
+      headers: getHeaders(challongeKey),
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Failed to complete tournament:",
+      error.response ? error.response.data : error.message
+    );
+    throw error;
+  }
+}
+
 async function updateParticipantNameBySeed(
   tournamentName,
   seedNumber,
@@ -587,7 +607,34 @@ async function updateParticipantNameBySeed(
   }
 }
 
-async function getMatchIdByNumber(tournamentName, matchNumber) {
+async function getChallongeParticipants(tournamentName) {
+  const response = await axios.get(
+    `${BASE_URL}/tournaments/${tournamentName}/participants.json`,
+    {
+      params: {
+        api_key: challongeKey,
+      },
+    }
+  );
+  return response.data.map((p) => p.participant || p);
+}
+
+async function getChallongeParticipantMaps(tournamentName) {
+  const participants = await getChallongeParticipants(tournamentName);
+  const bySeed = {};
+  const byName = {};
+  for (const participant of participants) {
+    if (participant?.seed != null) {
+      bySeed[participant.seed] = participant.id;
+    }
+    if (participant?.name) {
+      byName[participant.name] = participant.id;
+    }
+  }
+  return { bySeed, byName };
+}
+
+async function getMatchIdByNumber(tournamentName, matchNumber, options = {}) {
   try {
     // Log the request URL
     console.log(`Requesting matches for tournament: ${tournamentName}`);
@@ -601,7 +648,7 @@ async function getMatchIdByNumber(tournamentName, matchNumber) {
       }
     );
 
-    const matches = response.data;
+    const matches = response.data.map((m) => m.match || m);
 
     // Log the matches array to ensure it's not empty
     if (!matches.length) {
@@ -612,9 +659,31 @@ async function getMatchIdByNumber(tournamentName, matchNumber) {
     // Log the match number being searched for
     console.log(`Searching for match number: ${matchNumber}`);
 
-    const match = matches.find(
-      (m) => m.match.suggested_play_order === matchNumber
-    );
+    let match = null;
+    if (options.matchType === "third_place") {
+      match = matches.find((m) => m.is_third_place_match === true);
+    } else if (options.matchType === "final") {
+      const nonThirdPlace = matches.filter(
+        (m) => m.is_third_place_match !== true
+      );
+      match = nonThirdPlace
+        .slice()
+        .sort((a, b) => {
+          const roundA = a.round ?? 0;
+          const roundB = b.round ?? 0;
+          if (roundA !== roundB) {
+            return roundA - roundB;
+          }
+          const orderA = a.suggested_play_order ?? 0;
+          const orderB = b.suggested_play_order ?? 0;
+          return orderA - orderB;
+        })
+        .pop();
+    } else {
+      match = matches.find(
+        (m) => m.suggested_play_order === matchNumber
+      );
+    }
 
     if (!match) {
       console.error(`No match found with match number ${matchNumber}`);
@@ -622,20 +691,65 @@ async function getMatchIdByNumber(tournamentName, matchNumber) {
     }
 
     // Log the found match ID
-    console.log(`Found match ID: ${match.match.id}`);
+    console.log(`Found match ID: ${match.id}`);
 
-    return match.match.id;
+    return match.id;
   } catch (error) {
     console.error("Failed to retrieve matches:", error);
     throw error;
   }
 }
 
+async function endMatchByIdWithEntrants(
+  tournamentName,
+  matchId,
+  entrant1Id,
+  entrant2Id,
+  entrant1Score,
+  entrant2Score
+) {
+  try {
+    const match = await getChallongeMatch(tournamentName, matchId);
+    if (!match) {
+      throw new Error("Match not found.");
+    }
 
-async function endMatchByNumber(tournamentName, matchNumber, scoresCsv) {
+    const player1Id = match.player1_id;
+    const player2Id = match.player2_id;
+    if (!player1Id || !player2Id) {
+      throw new Error("Match is missing player IDs.");
+    }
+
+    let scoresCsv;
+    if (player1Id === entrant1Id && player2Id === entrant2Id) {
+      scoresCsv = `${entrant1Score}-${entrant2Score}`;
+    } else if (player1Id === entrant2Id && player2Id === entrant1Id) {
+      scoresCsv = `${entrant2Score}-${entrant1Score}`;
+    } else {
+      throw new Error("Entrant IDs do not match match player IDs.");
+    }
+
+    await endChallongeMatch(tournamentName, matchId, scoresCsv);
+    console.log(`Match ${matchId} updated successfully.`);
+  } catch (error) {
+    console.error("Failed to update match by ID:", error);
+  }
+}
+
+
+async function endMatchByNumber(
+  tournamentName,
+  matchNumber,
+  scoresCsv,
+  options = {}
+) {
   try {
     // Get the match ID based on the match number
-    const matchId = await getMatchIdByNumber(tournamentName, matchNumber);
+    const matchId = await getMatchIdByNumber(
+      tournamentName,
+      matchNumber,
+      options
+    );
 
     if (!matchId) {
       console.error(`Could not find a match with number ${matchNumber}`);
@@ -650,10 +764,14 @@ async function endMatchByNumber(tournamentName, matchNumber, scoresCsv) {
   }
 }
 
-async function startMatchByNumber(tournamentName, matchNumber) {
+async function startMatchByNumber(tournamentName, matchNumber, options = {}) {
   try {
     // Get the match ID based on the match number
-    const matchId = await getMatchIdByNumber(tournamentName, matchNumber);
+    const matchId = await getMatchIdByNumber(
+      tournamentName,
+      matchNumber,
+      options
+    );
 
     if (!matchId) {
       console.error(`Could not find a match with number ${matchNumber}`);
@@ -667,4 +785,3 @@ async function startMatchByNumber(tournamentName, matchNumber) {
     console.error("Failed to start match by number:", error);
   }
 }
-

@@ -12,7 +12,7 @@ const {
 } = require("discord.js");
 
 const smallLoadingEmbed = new EmbedBuilder().setImage(
-  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo-load-small.gif?v=1679713388809"
+  "http://91.99.239.6/files/assets/Domo_load.gif"
 );
 
 const loadingEmbed = new EmbedBuilder().setImage(
@@ -20,7 +20,7 @@ const loadingEmbed = new EmbedBuilder().setImage(
 );
 
 const noResultsEmbed = new EmbedBuilder().setImage(
-  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-sweat-blank-messageno-results.gif?v=1679872181343"
+  "http://91.99.239.6/files/assets/domo-sweat-blank-messageno-results.gif"
 );
 
 var attempts = 0
@@ -103,7 +103,7 @@ async function SearchVgmdb(interaction, query, attempts) {
       var imageExtension = imgUrl.split(".");
       var formattedImgUrl =
         imageExtension == "gif"
-          ? "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Album%20Art.png?v=1679783448288"
+          ? "http://91.99.239.6/files/assets/album_art.png"
           : imgUrl;
       const embed = await createVGMdbEmbed(
         filteredResults[0],

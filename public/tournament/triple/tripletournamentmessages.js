@@ -13,6 +13,24 @@ eval(fs.readFileSync("./public/tournament/tournamentutils.js") + "");
 eval(fs.readFileSync("./public/collections/tournamentCells.js") + "");
 eval(fs.readFileSync("./public/api/google/sheetsfunctions.js") + "");
 
+function normalizeTournamentNameForGif(name) {
+  if (!name) {
+    return "tournament";
+  }
+  return replaceSpacesWithUnderlines(name.replace(/-/g, " ")).toLowerCase();
+}
+
+function buildTournamentGifName(tournamentName, round, match) {
+  const safeName = normalizeTournamentNameForGif(tournamentName);
+  return `${safeName}-round${round}match${match}`;
+}
+
+async function getCurrentTournamentNameFromDb() {
+  const db = GetDb();
+  await db.read();
+  return db.get("tournaments[0].currentTournament").value();
+}
+
 //colours for sheets cells:
 const lightGreen = { red: 0.8, green: 1, blue: 0.8, alpha: 0.2 };
 const lightGray = { red: 0.9, green: 0.9, blue: 0.9, alpha: 0.2 };
@@ -57,7 +75,12 @@ async function SendTripleBattleMessage(
     matchData.entrant2.link,
     matchData.entrant3.link,
   ];
-  let gifName = "round" + matchData.round + "match" + matchData.match;
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
+  let gifName = buildTournamentGifName(
+    currentTournamentName,
+    matchData.round,
+    matchData.match
+  );
   downloadImages(youtubeUrls).then(async () => {
     // Discord caches images so we have to change the name each day
     // Just going to use the date
@@ -98,6 +121,7 @@ async function SendPreviousTripleDayResultsEmbeds(
   );
 
   const members = await guild.members.fetch();
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
 
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
@@ -148,8 +172,11 @@ async function SendPreviousTripleDayResultsEmbeds(
 
       var ytLinks = await GetYtThumb(links);
 
-      let gifName =
-        "round3match" + previousMatches[0][i].match;
+      let gifName = buildTournamentGifName(
+        currentTournamentName,
+        matchData.round,
+        previousMatches[0][i].match
+      );
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];
@@ -205,7 +232,7 @@ async function SendPreviousTripleDayResultsEmbeds(
               previousMatches[0][i].match +
               " Winner",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+              "http://91.99.239.6/files/assets/sd_logo.png",
           })
           .addFields(
             {
@@ -327,7 +354,7 @@ async function SendPreviousTripleDayResultsEmbeds(
           .setAuthor({
             name: "Best VGM 2023 Awards",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+              "http://91.99.239.6/files/assets/sd_logo.png",
           })
           .setDescription(
             "**------------------------------------**\n**Battle Entries**:\n**A. " +
@@ -424,7 +451,7 @@ async function SendPreviousTripleDayResultsEmbeds(
           .setFooter({
             text: "Supradarky's VGM Club",
             iconURL:
-              "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+              "http://91.99.239.6/files/assets/sd-img.png",
           });
         await logsEmbedsToSend.push(resultLogEmbed);
         await AddWinnerToNextRound(firstPlaceEntrant);
@@ -482,7 +509,7 @@ async function SendTripleDailyEmbed(
     .setAuthor({
       name: "Best VGM 2023 Awards",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        "http://91.99.239.6/files/assets/sd_logo.png",
     })
     .setColor(0xffff00)
     .addFields(
@@ -521,7 +548,7 @@ async function SendTripleDailyEmbed(
     .setFooter({
       text: "After having listened to all tracks, vote for your ranked order of preference.",
       iconURL:
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
+        "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
     .setThumbnail(gifPath);
@@ -553,8 +580,16 @@ async function SendTripleDailyEmbed(
     );
   }*/
 
+  const db = GetDb();
+  await db.read();
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
+  const tournamentDetails = db.get("tournaments").nth(0).value();
+  const tournament = tournamentDetails?.[currentTournamentName];
+  const roleId = tournament?.roleId;
+  const rolePing = roleId ? `<@&${roleId}>` : "<@&1193953209019007106>";
+
   var embedsToSend = [embed];
-  var welcomeString = "Hello all and <@&1193953209019007106>";
+  var welcomeString = `Hello all and ${rolePing}`;
   if (previousMatches.length > 0 && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {

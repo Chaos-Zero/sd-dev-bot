@@ -152,7 +152,7 @@ class QueueManager {
             embedToSend.setFooter({
               text: "Up next: " + trimStringTo45(queue.songs[0].title),
               iconURL:
-                "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Next.png?v=1708342497115",
+                "http://91.99.239.6/files/assets/Next.png",
             });
           }
 
@@ -246,7 +246,7 @@ class QueueManager {
       embedToSend.setFooter({
         text: "Up next: " + trimStringTo45(queue.songs[0].title),
         iconURL:
-          "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Next.png?v=1708342497115",
+          "http://91.99.239.6/files/assets/Next.png",
       });
     }
     return embedToSend;

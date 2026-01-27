@@ -7,7 +7,7 @@ const path = require("path");
 const sleep = require("util").promisify(setTimeout);
 
 const image = new AttachmentBuilder(
-  "https://cdn.glitch.global/ad38934a-3e73-4549-80e0-2d0f6d56c5c0/All%20ties.png?v=1743436129639"
+  "http://91.99.239.6/files/assets/all_ties.png"
 );
 //let oneOffJoke = new cron.CronJob("00 30 17 * * *", () => {
 //"25 32 00 * * 1-6"
@@ -31,7 +31,7 @@ async function CreateAprilFools() {
     .setAuthor({
       name: "Best VGM Twenty Exty Five Awards",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        "http://91.99.239.6/files/assets/sd_logo.png",
     })
     .setColor(0xffff00)
     //.setDescription(
@@ -99,13 +99,13 @@ async function CreateAprilFools() {
     .setFooter({
       text: "Please listen to both tracks. Or else. No refunds.",
       iconURL:
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
+        "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
     //  .setTitle(`${title1}`)
     //.setDescription("Blah blah")
     .setThumbnail(
-      "https://cdn.glitch.global/ad38934a-3e73-4549-80e0-2d0f6d56c5c0/dbt.gif?v=1743495021201"
-      //"https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016"
+      "http://91.99.239.6/files/assets/dbt.gif"
+      //"http://91.99.239.6/files/assets/sd-img.png"
     );
 
   embed1.setURL("https://imgur.com/a/sEcrnVT");
@@ -116,7 +116,7 @@ async function CreateAprilFools() {
     .setAuthor({
       name: "Best VGM 2025? Awards?",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+        "http://91.99.239.6/files/assets/sd_logo.png",
     })
     .setColor(0xffff00)
     //.setDescription(
@@ -153,7 +153,7 @@ async function CreateAprilFools() {
     .setFooter({
       text: "After having listened to all tracks, please mind the gap when alighting from this train.",
       iconURL:
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Domo%20Smarty%20pants%20face.png?v=1691064432062",
+        "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
       //{
       //  name: `...1️⃣...`,
       //  value: `A>B>C`,
@@ -188,8 +188,8 @@ async function CreateAprilFools() {
     //  .setTitle(`${title1}`)
     //.setDescription("Blah blah")
     .setThumbnail(
-      "https://cdn.glitch.global/ad38934a-3e73-4549-80e0-2d0f6d56c5c0/mba.gif?v=1743495021819"
-      //"https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016"
+      "http://91.99.239.6/files/assets/mba.gif"
+      //"http://91.99.239.6/files/assets/sd-img.png"
     );
 
   embed2.setURL("https://imgur.com/a/sEcrnVT");

@@ -357,7 +357,7 @@ bot.on("messageCreate", function (msg) {
 });
 
 const throwEmbed = new EmbedBuilder().setImage(
-  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-stuffed-animal.gif?v=1680306555071"
+  "http://91.99.239.6/files/assets/domo-stuffed-animal.gif"
 );
 
 // make all the files in 'public' available

@@ -2,19 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 function getCompatibilityDbPath() {
-  const cwdPath = path.join(process.cwd(), ".data", "compatibility.json");
-  if (fs.existsSync(cwdPath)) {
-    return cwdPath;
-  }
-  return path.join(
-    path.sep,
-    "home",
-    "botuser",
-    "bots",
-    "live",
-    ".data",
-    "compatibility.json"
-  );
+  return path.join(process.cwd(), ".data", "compatibility.json");
 }
 
 function getDefaultCompatibilityDb() {

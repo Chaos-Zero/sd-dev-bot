@@ -21,7 +21,7 @@ async function aiRespond(bot, message, aiPrefix) {
 
   if (isInlist(badWords)) {
     myMessage.edit(
-      "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Prompt-Throwl.gif?v=1695416870032"
+      "http://91.99.239.6/files/assets/Prompt-Throwl.gif"
     );
     return;
   }
@@ -62,7 +62,7 @@ async function aiRespond(bot, message, aiPrefix) {
       botResponse.toLowerCase().includes("language model")
     ) {
       botResponse =
-        "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/Prompt-Throwl.gif?v=1695416870032";
+        "http://91.99.239.6/files/assets/Prompt-Throwl.gif?v=1695416870032";
     }
 
     console.log(message.author.username + " has sent this prompt: " + userQuery)

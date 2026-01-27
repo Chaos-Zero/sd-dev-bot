@@ -18,12 +18,40 @@ function returnDuplicateEntries(entries) {
   return duplicates;
 }
 
+async function getTestModeChannelOverride(guild) {
+  try {
+    if (typeof GetDb !== "function") {
+      return null;
+    }
+    const db = GetDb();
+    await db.read();
+    const testMode = db.get("tournaments[0].testMode").value();
+    if (!testMode || testMode.enabled !== true) {
+      return null;
+    }
+    let channel = null;
+    if (testMode.channelId) {
+      channel = guild.channels.cache.get(testMode.channelId) || null;
+    }
+    if (!channel && testMode.channelName) {
+      channel = guild.channels.cache.find(
+        (ch) => ch.name === testMode.channelName
+      );
+    }
+    return channel || null;
+  } catch (error) {
+    return null;
+  }
+}
+
 async function GetChannelByName(guild, channelString) {
-  var channel = await guild.channels.cache.find(
+  const overrideChannel = await getTestModeChannelOverride(guild);
+  if (overrideChannel) {
+    return overrideChannel;
+  }
+  const channel = await guild.channels.cache.find(
     (ch) => ch.name === channelString
   );
-  //console.log("Channel: " + channel.name);
-
   return await channel;
 }
 

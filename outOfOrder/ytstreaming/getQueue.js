@@ -205,7 +205,7 @@ function CreatePages(queue, songsPerPage) {
         " entries | Total length: " +
         queueDuration,
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+        "http://91.99.239.6/files/assets/sd-img.png",
     });
     pages.push(embed);
   }

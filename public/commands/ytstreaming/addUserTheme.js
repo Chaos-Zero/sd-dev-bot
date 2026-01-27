@@ -49,7 +49,7 @@ module.exports = {
         content:
           "I think I'll give this one up, let you down, ran around and desert **U**..rl",
         files: [
-          "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/icegif-162.gif?v=1708620662863",
+          "http://91.99.239.6/files/assets/icegif-162.gif?v=1708620662863",
         ],
         ephemeral: true,
       });
@@ -66,7 +66,7 @@ module.exports = {
         content:
           "You're the only one on the bus, and it already left the station. Plz, no.",
         files: [
-          "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/mOoj9J.gif?v=1708621520820",
+          "http://91.99.239.6/files/assets/mOoj9J.gif?v=1708621520820",
         ],
         ephemeral: true,
       });

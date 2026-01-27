@@ -12,13 +12,13 @@ async function SendGuessingGameHelpDmMessage(user) {
     .setTitle(`So it looks like you're hosting a guessing game!`)
     .setColor(0xff0000)
     .setThumbnail(
-      "https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/ggame.png?v=1708522281382"
+      "http://91.99.239.6/files/assets/guess/ggame.png"
     )
     .setDescription(description)
     .setFooter({
       text: "Supradarky's VGM Club",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+        "http://91.99.239.6/files/assets/guess/sd-img.png",
     });
 
   return await user.send({ embeds: [initalHelpEmbed] }).catch(console.error);
@@ -37,13 +37,13 @@ async function SendGuessingGameInstructionDm(message) {
     .setTitle(`How to start your list`)
     .setColor(0xed8947)
     .setThumbnail(
-      "https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/ggstarted.png?v=1708530541842"
+      "http://91.99.239.6/files/assets/guess/ggstarted.png"
     )
     .setDescription(startDescription)
     .setFooter({
       text: "Supradarky's VGM Club",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+        "http://91.99.239.6/files/assets/sd-img.png",
     });
 
   const changesDescription =
@@ -64,13 +64,13 @@ async function SendGuessingGameInstructionDm(message) {
     .setTitle(`Bot behavior during guessing games`)
     .setColor(0x07d074)
     .setThumbnail(
-      "https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/ggplaying.png?v=1708530546314"
+      "http://91.99.239.6/files/assets/guess/ggplaying.png"
     )
     .setDescription(changesDescription)
     .setFooter({
       text: "Supradarky's VGM Club",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+        "http://91.99.239.6/files/assets/sd-img.png",
     });
 
   const pointsTrackerDescription =
@@ -91,13 +91,13 @@ async function SendGuessingGameInstructionDm(message) {
     .setTitle(`Domo can keep score for you!`)
     .setColor(0xffd700)
     .setThumbnail(
-      "https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/ggpoints.png?v=1708531236507"
+      "http://91.99.239.6/files/assets/guess/ggpoints.png"
     )
     .setDescription(pointsTrackerDescription)
     .setFooter({
       text: "Supradarky's VGM Club",
       iconURL:
-        "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+        "http://91.99.239.6/files/assets/sd-img.png",
     });
 
   var embeds = [startEmbed, changeEmbed, pointsTrackerEmbed];

@@ -21,7 +21,7 @@ const archiveFolder = path.join(
 );
 const contributorCsvPath = path.join(archiveFolder, "contributorVgm.csv");
 const DEFAULT_ICON_URL =
-  "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752";
+  "http://91.99.239.6/files/assets/sd_logo.png";
 
 // Load contributor map
 const contributorMap = getContributorMap();
@@ -353,7 +353,7 @@ function getContributorMap() {
     seriesName: "SupraDarky's Best",
     userColor: 0xff0000,
     iconUrl:
-      "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/SD%20Logo.png?v=1676855711752",
+      "http://91.99.239.6/files/assets/sd_logo.png",
   };
   return contributors;
 }
@@ -411,7 +411,7 @@ async function paginateSeriesResults(
       .setFooter({
         text: "Playlists can be accessed via the link at the top of the message!",
         iconURL:
-          "https://cdn.glitch.global/485febab-53bf-46f2-9ec1-a3c597dfaebe/sd-img.jpeg?v=1676586931016",
+          "http://91.99.239.6/files/assets/sd-img.png",
       });
   };
 

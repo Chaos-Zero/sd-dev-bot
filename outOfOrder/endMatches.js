@@ -54,7 +54,8 @@ module.exports = {
 
     console.log("Finished with previous Matches");
     await interaction.editReply("Sending Messages");
-    await StartMatch(interaction, "", false, previousMatches);
+    const matchesPerDay = tournamentDb?.roundsPerTurn || 1;
+    await StartMatch(interaction, "", false, previousMatches, false, matchesPerDay);
     // 30 Seconds to be safe
     //await sleep(30000);
     //await startMatch(interaction, "", true);
