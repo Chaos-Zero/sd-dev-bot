@@ -626,7 +626,11 @@ async function SendSingleDailyEmbed(
   const roleId = single?.roleId;
   const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
   var welcomeString = `Hello all and ${rolePing}`;
-  if (Array.isArray(previousMatches) && Array.isArray(previousMatches[1]) && previousMatches[1].length > 0) {
+  if (
+    Array.isArray(previousMatches) &&
+    Array.isArray(previousMatches[1]) &&
+    previousMatches[1].length > 0
+  ) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {
       roundsToCheck +=
@@ -641,6 +645,28 @@ async function SendSingleDailyEmbed(
       welcomeString +=
         "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
         roundsToCheck;
+  } else if (Array.isArray(single?.matches)) {
+    const tiedMatches = single.matches.filter(
+      (match) => match.progress === "tie"
+    );
+    if (tiedMatches.length > 0) {
+      let roundsToCheck = "";
+      for (const match of tiedMatches) {
+        const entrant1Name = match?.entrant1?.name || "TBD";
+        const entrant2Name = match?.entrant2?.name || "TBD";
+        roundsToCheck +=
+          "\n**Match " +
+          match.match +
+          "**: " +
+          entrant2Name +
+          " vs " +
+          entrant1Name +
+          "";
+      }
+      welcomeString +=
+        "\n❗ It appears we have a tie match! ❗\nPlease vote on or reconsider these matches: " +
+        roundsToCheck;
+    }
   }
 
   if (!secondOfDay) {

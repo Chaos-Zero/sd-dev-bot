@@ -259,6 +259,10 @@ async function StartSingleMatch(
         result.match
       );
     }
+    await db.read();
+    tournamentDetails = await db.get("tournaments").nth(0).value();
+    single = tournamentDetails[currentTournamentName];
+    ensureThirdPlaceState(single);
   }
 
   var matchesPerDay = single.roundsPerTurn;
