@@ -331,6 +331,44 @@ async function StartSingleMatch(
     }
   }
 
+  const existingMatch = single.matches.find(
+    (match) => parseInt(match.match) === parseInt(matchNumber)
+  );
+  if (existingMatch && existingMatch.progress !== "tie") {
+    if (!forcedMatchNumber) {
+      const alternateMatch = findNextStartableSingleMatch(single, 1);
+      if (
+        alternateMatch &&
+        alternateMatch.matchNumber &&
+        alternateMatch.matchNumber !== matchNumber
+      ) {
+        console.log(
+          "Match " +
+            matchNumber +
+            " already exists. Starting alternate match " +
+            alternateMatch.matchNumber +
+            " instead."
+        );
+        return await StartSingleMatch(
+          interaction,
+          bot,
+          true,
+          [],
+          true,
+          alternateMatch.matchNumber
+        );
+      }
+    }
+    console.log(
+      "Match " +
+        matchNumber +
+        " already exists with progress=" +
+        existingMatch.progress +
+        ". Skipping."
+    );
+    return { blocked: true, reason: "match_already_exists" };
+  }
+
   const hasPlaceholderEntrant = foundEntries.some(
     (entry) => entry?.isPlaceholder === true || entry?.name === "TBD"
   );
