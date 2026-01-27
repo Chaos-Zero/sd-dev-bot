@@ -895,11 +895,15 @@ async function EndSingleMatches(interaction = "") {
   let single = tournamentDetails[currentTournamentName];
   ensureThirdPlaceState(single);
   var matchesPerDay = single.roundsPerTurn;
+  const testModeEnabled = tournamentDetails?.testMode?.enabled === true;
+  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
+  const finalRoundNumber = single.hasThirdPlaceMatch
+    ? baseRounds + 1
+    : baseRounds;
   const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
     single.startingMatchCount,
     single.hasThirdPlaceMatch
   );
-  const baseRounds = getSingleTotalRounds(single.startingMatchCount);
 
   var tiedMatches = [];
 
@@ -1264,11 +1268,15 @@ async function EndSingleMatches(interaction = "") {
     })
     .write();
 
-  UpdateCompatibilityForMatches(
-    currentTournamentName,
-    "Single Elimination",
-    completedMatchesForCompat
-  );
+  if (!testModeEnabled) {
+    UpdateCompatibilityForMatches(
+      currentTournamentName,
+      "Single Elimination",
+      completedMatchesForCompat
+    );
+  } else {
+    console.log("Compatibility update skipped (test mode).");
+  }
   if (interaction !== "") {
     await interaction.editReply({
       content: "Looks good.",
