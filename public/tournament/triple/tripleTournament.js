@@ -219,6 +219,7 @@ async function EndTripleMatches(interaction = "") {
 
   let triple = tournamentDetails[currentTournamentName];
   var matchesPerDay = triple.roundsPerTurn;
+  const testModeEnabled = tournamentDetails?.testMode?.enabled === true;
 
   var tiedMatches = [];
 
@@ -604,11 +605,15 @@ async function EndTripleMatches(interaction = "") {
     })
     .write();
 
-  UpdateCompatibilityForMatches(
-    currentTournamentName,
-    "3v3 Ranked",
-    completedMatchesForCompat
-  );
+  if (!testModeEnabled) {
+    UpdateCompatibilityForMatches(
+      currentTournamentName,
+      "3v3 Ranked",
+      completedMatchesForCompat
+    );
+  } else {
+    console.log("Compatibility update skipped (test mode).");
+  }
   if (interaction !== "") {
     await interaction.editReply({
       content: "Looks good.",

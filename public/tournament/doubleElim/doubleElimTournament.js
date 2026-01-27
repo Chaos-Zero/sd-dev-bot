@@ -198,6 +198,7 @@ async function EndDoubleElimMatches(interaction = "") {
 
   let doubleElimination = tournamentDetails[currentTournamentName];
   var matchesPerDay = doubleElimination.roundsPerTurn;
+  const testModeEnabled = tournamentDetails?.testMode?.enabled === true;
 
   var tiedMatches = [];
   var bracket = doubleElimination.currentBracket;
@@ -398,11 +399,15 @@ async function EndDoubleElimMatches(interaction = "") {
     })
     .write();
 
-  UpdateCompatibilityForMatches(
-    currentTournamentName,
-    "Double Elimination",
-    completedMatchesForCompat
-  );
+  if (!testModeEnabled) {
+    UpdateCompatibilityForMatches(
+      currentTournamentName,
+      "Double Elimination",
+      completedMatchesForCompat
+    );
+  } else {
+    console.log("Compatibility update skipped (test mode).");
+  }
 
   if (interaction !== "") {
     await interaction.editReply({
