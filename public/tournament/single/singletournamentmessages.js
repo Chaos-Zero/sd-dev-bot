@@ -828,6 +828,12 @@ async function AddSingleWinnerToNextRound(
   const resolvedMatchNumber = !isNaN(parseInt(matchNumber))
     ? parseInt(matchNumber)
     : parseInt(firstPlaceEntrant.match);
+  const sourceMatch = single.matches?.find(
+    (match) => parseInt(match.match) === parseInt(resolvedMatchNumber)
+  );
+  if (sourceMatch && sourceMatch.progress !== "complete") {
+    return;
+  }
   if (
     !isNaN(startingMatchCount) &&
     !isNaN(roundNum) &&

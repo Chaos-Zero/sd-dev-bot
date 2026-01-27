@@ -246,6 +246,21 @@ async function StartSingleMatch(
   let single = tournamentDetails[currentTournamentName];
   ensureThirdPlaceState(single);
 
+  if (
+    Array.isArray(previousMatches) &&
+    Array.isArray(previousMatches[0]) &&
+    previousMatches[0].length > 0
+  ) {
+    for (const result of previousMatches[0]) {
+      await AddSingleWinnerToNextRound(
+        result.firstPlace,
+        result.round,
+        result.isThirdPlace,
+        result.match
+      );
+    }
+  }
+
   var matchesPerDay = single.roundsPerTurn;
 
   let previousMatch = single.matches.length;
