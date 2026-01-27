@@ -709,10 +709,10 @@ async function StartSingleMatchBatch(
     tieMatchesToSend.push(...tiedMatches);
   }
   const simulated = JSON.parse(JSON.stringify(single));
-  const planned = collectStartableSingleMatches(
-    simulated,
-    simulated.round
-  ).slice(0, maxMatchesPerDay);
+  const planned = collectStartableSingleMatches(simulated, 1).slice(
+    0,
+    maxMatchesPerDay
+  );
 
   if (planned.length === 0 && tieMatchesToSend.length === 0) {
     return await StartSingleMatch(
