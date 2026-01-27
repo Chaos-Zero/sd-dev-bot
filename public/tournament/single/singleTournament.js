@@ -204,6 +204,52 @@ function findNextStartableSingleMatch(single, minRound = 1) {
   return null;
 }
 
+function collectStartableSingleMatches(single, minRound = 1) {
+  if (!single || !single.rounds) {
+    return [];
+  }
+  const startedMatches = new Set(single.matches.map((match) => match.match));
+  const rounds = Object.keys(single.rounds)
+    .map((round) => parseInt(round, 10))
+    .filter((round) => !isNaN(round) && round >= minRound)
+    .sort((a, b) => a - b);
+
+  const startable = [];
+  for (const round of rounds) {
+    const entries = Array.isArray(single.rounds[round])
+      ? single.rounds[round]
+      : [];
+    const byMatch = new Map();
+    for (const entry of entries) {
+      if (!entry?.match) {
+        continue;
+      }
+      if (!byMatch.has(entry.match)) {
+        byMatch.set(entry.match, []);
+      }
+      byMatch.get(entry.match).push(entry);
+    }
+    const matchNumbers = Array.from(byMatch.keys()).sort((a, b) => a - b);
+    for (const matchNumber of matchNumbers) {
+      if (startedMatches.has(matchNumber)) {
+        continue;
+      }
+      const matchEntries = byMatch.get(matchNumber) || [];
+      const validEntries = matchEntries.filter(
+        (entry) => entry?.name && entry?.name !== "TBD" && !entry?.isPlaceholder
+      );
+      if (validEntries.length >= 2) {
+        startable.push({
+          round,
+          matchNumber,
+          entries: matchEntries,
+        });
+      }
+    }
+  }
+  return startable;
+}
+
 function ensureThirdPlaceState(single) {
   if (single.hasThirdPlaceMatch === undefined) {
     single.hasThirdPlaceMatch = true;
@@ -642,27 +688,11 @@ async function StartSingleMatchBatch(
       });
     tieMatchesToSend.push(...tiedMatches);
   }
-  const planned = [];
   const simulated = JSON.parse(JSON.stringify(single));
-
-  for (let i = 0; i < maxMatchesPerDay; i++) {
-    const nextStartable = findNextStartableSingleMatch(
-      simulated,
-      simulated.round
-    );
-    if (!nextStartable) {
-      break;
-    }
-    planned.push({
-      matchNumber: nextStartable.matchNumber,
-      round: nextStartable.round,
-    });
-    simulated.matches.push({
-      match: nextStartable.matchNumber,
-      round: nextStartable.round,
-      progress: "in-progress",
-    });
-  }
+  const planned = collectStartableSingleMatches(
+    simulated,
+    simulated.round
+  ).slice(0, maxMatchesPerDay);
 
   if (planned.length === 0 && tieMatchesToSend.length === 0) {
     return await StartSingleMatch(
