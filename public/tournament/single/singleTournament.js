@@ -394,7 +394,6 @@ async function StartSingleMatch(
     }
 
     const hasAnyStartableMatch = hasStartableSingleMatch(single, 1);
-    const finalRoundNumber = getSingleFinalRoundNumberForTournament(single);
     const isFinalRound = roundNumberForOutstanding === finalRoundNumber;
     const isThirdPlaceRound =
       thirdPlaceMatchNumber &&
