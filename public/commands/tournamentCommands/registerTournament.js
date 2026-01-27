@@ -37,6 +37,12 @@ module.exports = {
           { name: "Four", value: "4" }
         )
     )
+    .addAttachmentOption((option) =>
+      option
+        .setName("csv-file")
+        .setDescription("CSV file used to register the tournament.")
+        .setRequired(true)
+    )
     .addBooleanOption((option) =>
       option
         .setName("randomise-tournament")
@@ -56,12 +62,6 @@ module.exports = {
           "Has entries on challonge hidden in first round until match."
         )
         .setRequired(false)
-    )
-    .addAttachmentOption((option) =>
-      option
-        .setName("csv-file")
-        .setDescription("CSV file used to register the tournament.")
-        .setRequired(true)
     )
     .addStringOption((option) =>
       option
