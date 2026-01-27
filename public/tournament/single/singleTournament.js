@@ -675,30 +675,59 @@ async function StartSingleMatchBatch(
   }
 
   let lastResult = { blocked: false };
+  if (planned.length > 0) {
+    lastResult = await StartSingleMatch(
+      interaction,
+      bot,
+      false,
+      previousMatches,
+      false,
+      planned[0].matchNumber
+    );
+    if (lastResult?.blocked || lastResult?.stopForDay) {
+      return lastResult;
+    }
+    if (tieMatchesToSend.length > 0) {
+      for (const tiedMatch of tieMatchesToSend) {
+        await SendSingleBattleMessage(
+          interaction,
+          tiedMatch,
+          bot,
+          single,
+          true,
+          [],
+          { isTieResend: true }
+        );
+      }
+    }
+    for (let i = 1; i < planned.length; i++) {
+      lastResult = await StartSingleMatch(
+        interaction,
+        bot,
+        true,
+        [],
+        true,
+        planned[i].matchNumber
+      );
+      if (lastResult?.blocked || lastResult?.stopForDay) {
+        break;
+      }
+    }
+    return lastResult;
+  }
   if (tieMatchesToSend.length > 0) {
+    let firstTie = true;
     for (const tiedMatch of tieMatchesToSend) {
       await SendSingleBattleMessage(
         interaction,
         tiedMatch,
         bot,
         single,
-        true,
-        [],
+        !firstTie,
+        firstTie ? previousMatches : [],
         { isTieResend: true }
       );
-    }
-  }
-  for (let i = 0; i < planned.length; i++) {
-    lastResult = await StartSingleMatch(
-      interaction,
-      bot,
-      i > 0,
-      i === 0 ? previousMatches : [],
-      i > 0,
-      planned[i].matchNumber
-    );
-    if (lastResult?.blocked || lastResult?.stopForDay) {
-      break;
+      firstTie = false;
     }
   }
   return lastResult;
