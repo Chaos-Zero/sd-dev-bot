@@ -607,6 +607,33 @@ async function updateParticipantNameBySeed(
   }
 }
 
+async function getChallongeParticipants(tournamentName) {
+  const response = await axios.get(
+    `${BASE_URL}/tournaments/${tournamentName}/participants.json`,
+    {
+      params: {
+        api_key: challongeKey,
+      },
+    }
+  );
+  return response.data.map((p) => p.participant || p);
+}
+
+async function getChallongeParticipantMaps(tournamentName) {
+  const participants = await getChallongeParticipants(tournamentName);
+  const bySeed = {};
+  const byName = {};
+  for (const participant of participants) {
+    if (participant?.seed != null) {
+      bySeed[participant.seed] = participant.id;
+    }
+    if (participant?.name) {
+      byName[participant.name] = participant.id;
+    }
+  }
+  return { bySeed, byName };
+}
+
 async function getMatchIdByNumber(tournamentName, matchNumber, options = {}) {
   try {
     // Log the request URL
@@ -670,6 +697,42 @@ async function getMatchIdByNumber(tournamentName, matchNumber, options = {}) {
   } catch (error) {
     console.error("Failed to retrieve matches:", error);
     throw error;
+  }
+}
+
+async function endMatchByIdWithEntrants(
+  tournamentName,
+  matchId,
+  entrant1Id,
+  entrant2Id,
+  entrant1Score,
+  entrant2Score
+) {
+  try {
+    const match = await getChallongeMatch(tournamentName, matchId);
+    if (!match) {
+      throw new Error("Match not found.");
+    }
+
+    const player1Id = match.player1_id;
+    const player2Id = match.player2_id;
+    if (!player1Id || !player2Id) {
+      throw new Error("Match is missing player IDs.");
+    }
+
+    let scoresCsv;
+    if (player1Id === entrant1Id && player2Id === entrant2Id) {
+      scoresCsv = `${entrant1Score}-${entrant2Score}`;
+    } else if (player1Id === entrant2Id && player2Id === entrant1Id) {
+      scoresCsv = `${entrant2Score}-${entrant1Score}`;
+    } else {
+      throw new Error("Entrant IDs do not match match player IDs.");
+    }
+
+    await endChallongeMatch(tournamentName, matchId, scoresCsv);
+    console.log(`Match ${matchId} updated successfully.`);
+  } catch (error) {
+    console.error("Failed to update match by ID:", error);
   }
 }
 

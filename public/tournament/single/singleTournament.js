@@ -259,6 +259,60 @@ function ensureThirdPlaceState(single) {
   }
 }
 
+async function ensureChallongeParticipantMaps(
+  single,
+  tournamentUrl,
+  db,
+  currentTournamentName
+) {
+  if (!single?.isChallonge) {
+    return single;
+  }
+  if (single.challongeParticipantsBySeed && single.challongeParticipantsByName) {
+    return single;
+  }
+  const maps = await getChallongeParticipantMaps(tournamentUrl);
+  single.challongeParticipantsBySeed = maps.bySeed || {};
+  single.challongeParticipantsByName = maps.byName || {};
+  db.get("tournaments")
+    .nth(0)
+    .assign({
+      [currentTournamentName]: single,
+    })
+    .write();
+  return single;
+}
+
+function getChallongeParticipantIdForEntry(single, entry) {
+  const seed = entry?.challongeSeed;
+  if (
+    seed != null &&
+    single?.challongeParticipantsBySeed &&
+    single.challongeParticipantsBySeed[seed]
+  ) {
+    return single.challongeParticipantsBySeed[seed];
+  }
+  const titleFirst =
+    entry?.title && entry?.name ? `${entry.title} - ${entry.name}` : entry?.name;
+  if (
+    titleFirst &&
+    single?.challongeParticipantsByName &&
+    single.challongeParticipantsByName[titleFirst]
+  ) {
+    return single.challongeParticipantsByName[titleFirst];
+  }
+  const nameFirst =
+    entry?.title && entry?.name ? `${entry.name} - ${entry.title}` : entry?.name;
+  if (
+    nameFirst &&
+    single?.challongeParticipantsByName &&
+    single.challongeParticipantsByName[nameFirst]
+  ) {
+    return single.challongeParticipantsByName[nameFirst];
+  }
+  return null;
+}
+
 // Neeed Round, Match Number, Names, Game, Links, Status
 // Neeed Round, Match Number, Names, Game, Links, Status
 async function StartSingleMatch(
@@ -291,6 +345,28 @@ async function StartSingleMatch(
 
   let single = tournamentDetails[currentTournamentName];
   ensureThirdPlaceState(single);
+  if (single.isChallonge) {
+    const challongeTournamentUrlName = replaceSpacesWithUnderlines(
+      currentTournamentName.replace(/-/g, " ")
+    );
+    single = await ensureChallongeParticipantMaps(
+      single,
+      challongeTournamentUrlName,
+      db,
+      currentTournamentName
+    );
+  }
+  if (single.isChallonge) {
+    const challongeTournamentUrlName = replaceSpacesWithUnderlines(
+      currentTournamentName.replace(/-/g, " ")
+    );
+    single = await ensureChallongeParticipantMaps(
+      single,
+      challongeTournamentUrlName,
+      db,
+      currentTournamentName
+    );
+  }
 
   if (
     Array.isArray(previousMatches) &&
@@ -596,12 +672,16 @@ async function StartSingleMatch(
     isChallonge: single.isChallonge,
     isThirdPlace: matchNumber === thirdPlaceMatchNumber,
     progress: "in-progress",
+    challongeMatchId: null,
     entrant1: {
       name: foundEntries[0].name,
       title: foundEntries[0].title,
       link: foundEntries[0].link,
       type: foundEntries[0].type,
       challongeSeed: foundEntries[0].challongeSeed,
+      challongeParticipantId: single.isChallonge
+        ? getChallongeParticipantIdForEntry(single, foundEntries[0])
+        : null,
       voters: [],
       points: 0,
     },
@@ -611,10 +691,34 @@ async function StartSingleMatch(
       link: foundEntries[1].link,
       type: foundEntries[1].type,
       challongeSeed: foundEntries[1].challongeSeed,
+      challongeParticipantId: single.isChallonge
+        ? getChallongeParticipantIdForEntry(single, foundEntries[1])
+        : null,
       voters: [],
       points: 0,
     },
   };
+
+  if (single.isChallonge) {
+    const challongeTournamentUrlName = replaceSpacesWithUnderlines(
+      currentTournamentName.replace(/-/g, " ")
+    );
+    const thirdPlaceMatchNumber = getSingleThirdPlaceMatchNumber(single);
+    const finalMatchNumber = thirdPlaceMatchNumber
+      ? thirdPlaceMatchNumber + 1
+      : null;
+    let matchType = null;
+    if (matchData.isThirdPlace || matchData.match === thirdPlaceMatchNumber) {
+      matchType = "third_place";
+    } else if (finalMatchNumber && matchData.match === finalMatchNumber) {
+      matchType = "final";
+    }
+    matchData.challongeMatchId = await getMatchIdByNumber(
+      challongeTournamentUrlName,
+      matchData.match,
+      matchType ? { matchType } : {}
+    );
+  }
 
   single.round = thisRound;
   single.matchNumber = matchNumber;
@@ -844,6 +948,7 @@ async function EndSingleMatches(interaction = "") {
       match: "",
       type: "",
       challongeSeed: "",
+      challongeParticipantId: "",
     };
 
     var secondPlace = {
@@ -853,6 +958,7 @@ async function EndSingleMatches(interaction = "") {
       match: "",
       type: "",
       challongeSeed: "",
+      challongeParticipantId: "",
     };
 
     var winnerExists =
@@ -895,6 +1001,7 @@ async function EndSingleMatches(interaction = "") {
           match: match.match,
           type: match.entrant1.type,
           challongeSeed: match.entrant1.challongeSeed,
+          challongeParticipantId: match.entrant1.challongeParticipantId,
           points: match.entrant1.points,
           voters: match.entrant1.voters,
           voteLetter: "A",
@@ -906,6 +1013,7 @@ async function EndSingleMatches(interaction = "") {
           match: match.match,
           type: match.entrant2.type,
           challongeSeed: match.entrant2.challongeSeed,
+          challongeParticipantId: match.entrant2.challongeParticipantId,
           points: match.entrant2.points,
           voters: match.entrant2.voters,
           voteLetter: "B",
@@ -922,6 +1030,7 @@ async function EndSingleMatches(interaction = "") {
           match: match.match,
           type: match.entrant2.type,
           challongeSeed: match.entrant2.challongeSeed,
+          challongeParticipantId: match.entrant2.challongeParticipantId,
           points: match.entrant2.points,
           voters: match.entrant2.voters,
           voteLetter: "B",
@@ -933,6 +1042,7 @@ async function EndSingleMatches(interaction = "") {
           match: match.match,
           type: match.entrant1.type,
           challongeSeed: match.entrant1.challongeSeed,
+          challongeParticipantId: match.entrant1.challongeParticipantId,
           points: match.entrant1.points,
           voters: match.entrant1.voters,
           voteLetter: "A",
@@ -970,6 +1080,7 @@ async function EndSingleMatches(interaction = "") {
           link: secondPlace.link,
           type: secondPlace.type,
           challongeSeed: secondPlace.challongeSeed,
+          challongeParticipantId: secondPlace.challongeParticipantId,
           match: thirdPlaceMatchNumber,
           fromMatch: match.match,
           round: baseRounds,
@@ -980,6 +1091,9 @@ async function EndSingleMatches(interaction = "") {
       if (single.isChallonge) {
         const challongeResults =
           match.entrant1.points + "-" + match.entrant2.points;
+        const challongeTournamentUrlName = replaceSpacesWithUnderlines(
+          currentTournamentName.replace(/-/g, " ")
+        );
         const thirdPlaceMatchNumber = getThirdPlaceMatchNumber(
           single.startingMatchCount,
           single.hasThirdPlaceMatch
@@ -993,13 +1107,36 @@ async function EndSingleMatches(interaction = "") {
         } else if (finalMatchNumber && match.match === finalMatchNumber) {
           matchType = "final";
         }
-
-        endMatchByNumber(
-          replaceSpacesWithUnderlines(currentTournamentName.replace(/-/g, " ")),
-          match.match,
-          challongeResults,
-          matchType ? { matchType } : {}
-        );
+        const entrant1Id =
+          match.entrant1.challongeParticipantId ||
+          getChallongeParticipantIdForEntry(single, match.entrant1);
+        const entrant2Id =
+          match.entrant2.challongeParticipantId ||
+          getChallongeParticipantIdForEntry(single, match.entrant2);
+        const matchId =
+          match.challongeMatchId ||
+          (await getMatchIdByNumber(
+            challongeTournamentUrlName,
+            match.match,
+            matchType ? { matchType } : {}
+          ));
+        if (matchId && entrant1Id && entrant2Id) {
+          await endMatchByIdWithEntrants(
+            challongeTournamentUrlName,
+            matchId,
+            entrant1Id,
+            entrant2Id,
+            match.entrant1.points,
+            match.entrant2.points
+          );
+        } else {
+          await endMatchByNumber(
+            challongeTournamentUrlName,
+            match.match,
+            challongeResults,
+            matchType ? { matchType } : {}
+          );
+        }
       }
     }
 
@@ -1023,6 +1160,7 @@ async function EndSingleMatches(interaction = "") {
         link: firstPlace.link,
         type: firstPlace.type,
         challongeSeed: firstPlace.challongeSeed,
+        challongeParticipantId: firstPlace.challongeParticipantId,
         voters: firstPlace.voters,
         points: firstPlace.points,
         voteLetter: firstPlace.voteLetter,
@@ -1033,6 +1171,7 @@ async function EndSingleMatches(interaction = "") {
         link: secondPlace.link,
         type: secondPlace.type,
         challongeSeed: secondPlace.challongeSeed,
+        challongeParticipantId: secondPlace.challongeParticipantId,
         voters: secondPlace.voters,
         points: secondPlace.points,
         voteLetter: secondPlace.voteLetter,
@@ -1089,6 +1228,7 @@ async function EndSingleMatches(interaction = "") {
             link: loser.link,
             type: loser.type,
             challongeSeed: loser.challongeSeed,
+            challongeParticipantId: loser.challongeParticipantId,
             match: thirdPlaceMatchNumber,
             fromMatch: match.match,
           }
@@ -1098,6 +1238,7 @@ async function EndSingleMatches(interaction = "") {
             link: "",
             type: "",
             challongeSeed: "",
+            challongeParticipantId: "",
             match: thirdPlaceMatchNumber,
             fromMatch: match.match,
             isPlaceholder: true,
