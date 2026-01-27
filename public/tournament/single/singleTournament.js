@@ -672,8 +672,28 @@ async function StartSingleMatchBatch(
     return { blocked: true, reason: "no_tournament" };
   }
 
-  const single = tournamentDetails[currentTournamentName];
+  let single = tournamentDetails[currentTournamentName];
   ensureThirdPlaceState(single);
+  if (
+    Array.isArray(previousMatches) &&
+    Array.isArray(previousMatches[0]) &&
+    previousMatches[0].length > 0
+  ) {
+    for (const completed of previousMatches[0]) {
+      if (completed?.firstPlace) {
+        await AddSingleWinnerToNextRound(
+          completed.firstPlace,
+          completed.round,
+          completed.isThirdPlace,
+          completed.match
+        );
+      }
+    }
+    await db.read();
+    const refreshed = await db.get("tournaments").nth(0).value();
+    single = refreshed[currentTournamentName];
+    ensureThirdPlaceState(single);
+  }
   const tieMatchesToSend = [];
   if (Array.isArray(single.matches)) {
     const tiedMatches = single.matches
