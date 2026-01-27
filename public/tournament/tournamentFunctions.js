@@ -65,7 +65,8 @@ async function registerTournament(
   isChallonge,
   isHiddenBracket,
   csvFilePath,
-  roundsPerTurn = 1
+  roundsPerTurn = 1,
+  participantRoleId = ""
 ) {
   console.log("Received CSV file path (URL):", csvFilePath);
   var db = GetDb();
@@ -204,6 +205,7 @@ async function registerTournament(
                   eliminated: [],
                   final: [],
                   isChallonge: isChallonge,
+                  roleId: participantRoleId,
                 },
               })
               .write();
@@ -226,6 +228,7 @@ async function registerTournament(
                   eliminated: [],
                   final: [],
                   isChallonge: isChallonge,
+                  roleId: participantRoleId,
                 },
               })
               .write();

@@ -623,7 +623,9 @@ async function SendSingleDailyEmbed(
   }*/
 
   var embedsToSend = [embed];
-  var welcomeString = "Hello all and <@&1326256775262896290>";
+  const roleId = single?.roleId;
+  const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
+  var welcomeString = `Hello all and ${rolePing}`;
   if (Array.isArray(previousMatches) && Array.isArray(previousMatches[1]) && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {

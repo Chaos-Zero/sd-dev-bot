@@ -580,8 +580,16 @@ async function SendTripleDailyEmbed(
     );
   }*/
 
+  const db = GetDb();
+  await db.read();
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
+  const tournamentDetails = db.get("tournaments").nth(0).value();
+  const tournament = tournamentDetails?.[currentTournamentName];
+  const roleId = tournament?.roleId;
+  const rolePing = roleId ? `<@&${roleId}>` : "<@&1193953209019007106>";
+
   var embedsToSend = [embed];
-  var welcomeString = "Hello all and <@&1193953209019007106>";
+  var welcomeString = `Hello all and ${rolePing}`;
   if (previousMatches.length > 0 && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {

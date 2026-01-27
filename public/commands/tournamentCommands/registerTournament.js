@@ -1,12 +1,6 @@
-const {
-  SlashCommandBuilder,
-  MessageAttachment,
-  MessageCollector,
-} = require("discord.js");
-const { setTimeout } = require("timers/promises");
+const { SlashCommandBuilder } = require("discord.js");
 
 const fs = require("fs");
-const fetch = require("node-fetch");
 
 eval(fs.readFileSync("./public/main.js") + "");
 fs.readFileSync("./public/tournament/tournamentFunctions.js") + "";
@@ -62,6 +56,18 @@ module.exports = {
           "Has entries on challonge hidden in first round until match."
         )
         .setRequired(false)
+    )
+    .addAttachmentOption((option) =>
+      option
+        .setName("csv-file")
+        .setDescription("CSV file used to register the tournament.")
+        .setRequired(true)
+    )
+    .addStringOption((option) =>
+      option
+        .setName("participant-role-id")
+        .setDescription("Role ID to ping for match updates (optional).")
+        .setRequired(false)
     ),
 
   async execute(interaction) {
@@ -74,6 +80,11 @@ module.exports = {
       interaction.options.getBoolean("create-challonge-bracket") || false;
     const isHiddenBracket =
       interaction.options.getBoolean("set-challonge-hidden") || false;
+    const csvAttachment = interaction.options.getAttachment("csv-file");
+    const rawRoleId = interaction.options.getString("participant-role-id");
+    const participantRoleId = rawRoleId
+      ? rawRoleId.replace(/\D/g, "")
+      : "";
 
     const dbInstance = GetDb();
     await dbInstance.read();
@@ -88,23 +99,9 @@ module.exports = {
       return;
     }
 
-    // Ask for a CSV file
-    await interaction.reply({
-      content: "Please upload the CSV file for the tournament.",
-      ephemeral: true,
-    });
-    // Wait for the next message (you can implement a proper way to get the next message)
-    const collected = await interaction.channel.awaitMessages({
-      filter: (m) => m.attachments.first(),
-      max: 1,
-      time: 60000,
-      errors: ["time"],
-    });
-
-    // Process the message and get the CSV file
-    const attachment = collected.first().attachments.first().url;
+    const attachment = csvAttachment?.url;
     console.log(attachment);
-    if (attachment && attachment.includes(".csv")) {
+    if (attachment && attachment.toLowerCase().includes(".csv")) {
       var currentTournament = dbInstance
         .get("tournaments[0].currentTournament")
         .value();
@@ -117,29 +114,27 @@ module.exports = {
           isChallonge,
           isHiddenBracket,
           attachment,
-          parseInt(matchesPerDay)
+          parseInt(matchesPerDay),
+          participantRoleId
         );
         if (!result?.ok) {
-          await interaction.editReply(
+          await interaction.reply(
             result?.message ||
               "Tournament setup failed. Please check the CSV and try again."
           );
-          await collected.first().delete();
           return;
         }
-        await interaction.editReply(
+        await interaction.reply(
           `Tournament "${tournamentName}" of type "${tournamentFormat}" started successfully.`
         );
-        await collected.first().delete();
       } else {
-        await interaction.editReply(
+        await interaction.reply(
           `There appears to already be a tournament running. Please wait until "${currentTournament}" is complete.`
         );
-        await collected.first().delete();
       }
     } else {
-      await interaction.editReply(
-        "Sorry, a CSV file must be the next thing you send. Please try the process again."
+      await interaction.reply(
+        "Sorry, the CSV file attachment is missing or invalid. Please try again."
       );
     }
   },

@@ -378,9 +378,17 @@ async function SendDoubleElimDailyEmbed(
       embed.setImage('https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/Tetrace.png?v=1698940221642')
     
       
+  const db = GetDb();
+  await db.read();
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
+  const tournamentDetails = db.get("tournaments").nth(0).value();
+  const tournament = tournamentDetails?.[currentTournamentName];
+  const roleId = tournament?.roleId;
+  const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
+
   var embedsToSend = [embed];
   var welcomeString =
-    "Hello all and <@&1326256775262896290>\nFollow along with this contest here: https://challonge.com/Best_VGM_List_Cameo_Contest";
+    `Hello all and ${rolePing}\nFollow along with this contest here: https://challonge.com/Best_VGM_List_Cameo_Contest`;
   if (previousMatches.length > 0 && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {
