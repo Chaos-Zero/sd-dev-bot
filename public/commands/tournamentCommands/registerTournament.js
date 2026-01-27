@@ -102,11 +102,19 @@ module.exports = {
     const attachment = csvAttachment?.url;
     console.log(attachment);
     if (attachment && attachment.toLowerCase().includes(".csv")) {
-      var currentTournament = dbInstance
+      let currentTournament = dbInstance
         .get("tournaments[0].currentTournament")
         .value();
+      if (!currentTournament) {
+        currentTournament = "N/A";
+        dbInstance
+          .get("tournaments")
+          .nth(0)
+          .assign({ currentTournament })
+          .write();
+      }
 
-      if (currentTournament == "N/A") {
+      if (currentTournament === "N/A") {
         const result = await registerTournament(
           tournamentName,
           tournamentFormat,
