@@ -34,7 +34,8 @@ async function SendDoubleElimBattleMessage(
   matchData,
   bot = "",
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
 
   //interaction = ""
 ) {
@@ -53,8 +54,14 @@ async function SendDoubleElimBattleMessage(
     previousMatches.length == 0 ? 1 : previousMatches.length;
   var sleepTime = 4500 * sleepMultiplier;
   //await sleep(sleepTime);
-  if (!secondOfDay) {
-    await SendPreviousDayResultsEmbeds(guildObject, previousMatches, matchData);
+  const skipPreviousResults = options?.skipPreviousResults === true;
+  if (!secondOfDay && !skipPreviousResults) {
+    await SendPreviousDayResultsEmbeds(
+      guildObject,
+      previousMatches,
+      matchData,
+      options
+    );
   }
   //);
 
@@ -88,7 +95,12 @@ async function SendDoubleElimBattleMessage(
   });
 }
 
-async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
+async function SendPreviousDayResultsEmbeds(
+  guild,
+  previousMatches,
+  matchData,
+  options = {}
+) {
   /*
     SPLIT THIS OFF INTO A DIFFERENT FUNCTION
     {
@@ -125,6 +137,8 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
   const members = await guild.members.fetch();
   const currentTournamentName = await getCurrentTournamentNameFromDb();
 
+  const includeResults = options?.includeResults !== false;
+  const includeLogs = options?.includeLogs !== false;
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
   var links = [];
@@ -206,7 +220,9 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
             "**Points: " + previousMatches[0][i].winner.points + "**"
           )
           .setImage(previousWinnerPath);
-        previousEmbedsToSend.push(prevEmbed);
+        if (includeResults) {
+          previousEmbedsToSend.push(prevEmbed);
+        }
 
         var resultLogEmbed = new EmbedBuilder();
 
@@ -284,20 +300,26 @@ async function SendPreviousDayResultsEmbeds(guild, previousMatches, matchData) {
             iconURL:
               "http://91.99.239.6/files/assets/sd-img.png",
           });
-        logsEmbedsToSend.push(resultLogEmbed);
+        if (includeLogs) {
+          logsEmbedsToSend.push(resultLogEmbed);
+        }
       });
     }
   }
   console.log("Sending previous day stuff");
 
-  for (var i = 0; i < previousEmbedsToSend.length; i++) {
-    await channel.send({ embeds: [previousEmbedsToSend[i]] });
-    await sleep(250);
+  if (includeResults) {
+    for (var i = 0; i < previousEmbedsToSend.length; i++) {
+      await channel.send({ embeds: [previousEmbedsToSend[i]] });
+      await sleep(250);
+    }
   }
 
-  for (var i = 0; i < logsEmbedsToSend.length; i++) {
-    await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
-    await sleep(250);
+  if (includeLogs) {
+    for (var i = 0; i < logsEmbedsToSend.length; i++) {
+      await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
+      await sleep(250);
+    }
   }
 }
 

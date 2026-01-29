@@ -135,7 +135,8 @@ async function SendSingleBattleMessage(
   } else {
     guildObject = interaction.guild;
   }
-  if (previousMatches != "") {
+  const skipPreviousResults = options?.skipPreviousResults === true;
+  if (previousMatches != "" && !skipPreviousResults) {
     var sleepMultiplier =
       previousMatches.length == 0 ? 1 : previousMatches.length;
     var sleepTime = 4500 * sleepMultiplier;
@@ -179,7 +180,8 @@ async function SendPreviousSingleDayResultsEmbeds(
   guild,
   previousMatches,
   matchData,
-  includeTieWarning = true
+  includeTieWarning = true,
+  options = {}
 ) {
   console.log("We're in previous day stuff");
   if (
@@ -225,6 +227,11 @@ async function SendPreviousSingleDayResultsEmbeds(
   let dstPath = "public/commands/gif/jpg";
 
   var prevWinner = "";
+
+  const includeResults = options?.includeResults !== false;
+  const includeLogs = options?.includeLogs !== false;
+  const advanceWinners = options?.advanceWinners !== false;
+  const allowCompletion = options?.allowCompletion !== false;
 
   for (var i = 0; i < previousMatches[0].length; i++) {
     if (previousMatches[0][i].firstPlace.name !== prevWinner) {
@@ -321,8 +328,9 @@ async function SendPreviousSingleDayResultsEmbeds(
         .setImage(previousWinnerPath);
 
       if (
+        includeResults &&
         previousMatches[0][i].firstPlace.points !==
-        previousMatches[0][i].secondPlace.points
+          previousMatches[0][i].secondPlace.points
       ) {
         previousEmbedsToSend.push(prevEmbed);
       }
@@ -409,17 +417,20 @@ async function SendPreviousSingleDayResultsEmbeds(
             "http://91.99.239.6/files/assets/sd-img.png",
         });
       if (
+        includeLogs &&
         previousMatches[0][i].firstPlace.points !==
-        previousMatches[0][i].secondPlace.points
+          previousMatches[0][i].secondPlace.points
       ) {
         await logsEmbedsToSend.push(resultLogEmbed);
       }
-      await AddSingleWinnerToNextRound(
-        previousMatches[0][i].firstPlace,
-        previousMatches[0][i].round,
-        previousMatches[0][i].isThirdPlace,
-        previousMatches[0][i].match
-      );
+      if (advanceWinners) {
+        await AddSingleWinnerToNextRound(
+          previousMatches[0][i].firstPlace,
+          previousMatches[0][i].round,
+          previousMatches[0][i].isThirdPlace,
+          previousMatches[0][i].match
+        );
+      }
       //resultLogEmbed;
     }
   }
@@ -427,55 +438,63 @@ async function SendPreviousSingleDayResultsEmbeds(
   console.log("Sending previous day stuff");  
   await sleep(500);
     
-  for (var i = 0; i < previousEmbedsToSend.length; i++) {
-    await channel.send({ embeds: [previousEmbedsToSend[i]] });
-    await sleep(250);
-  }
-
-  for (var i = 0; i < logsEmbedsToSend.length; i++) {
-    await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
-    await sleep(250);
-  }
-
-  const tournamentIsOver =
-    finalRoundNumber > 0 &&
-    previousMatches[1].length === 0 &&
-    previousMatches[0].some(
-      (match) =>
-        parseInt(match.round) === finalRoundNumber && match.isThirdPlace !== true
-    );
-  if (tournamentIsOver) {
-    const finalMatch = previousMatches[0].find(
-      (match) =>
-        parseInt(match.round) === finalRoundNumber && match.isThirdPlace !== true
-    );
-    if (finalMatch?.firstPlace?.link) {
-      await channel.send(finalMatch.firstPlace.link);
+  if (includeResults) {
+    for (var i = 0; i < previousEmbedsToSend.length; i++) {
+      await channel.send({ embeds: [previousEmbedsToSend[i]] });
+      await sleep(250);
     }
-    const thankYouEmbed = new EmbedBuilder()
-      .setDescription("Thank you for participating!")
-      .setColor(0x4dc399)
-      .setFooter({
-        text: "Supradarky's VGM Club",
-        iconURL:
-          "http://91.99.239.6/files/assets/sd-img.png",
-      });
-    await channel.send({ embeds: [thankYouEmbed] });
-    if (single.isChallonge) {
-      try {
-        await completeChallongeTournament(challongeTournamentUrlName);
-        console.log("Challonge tournament marked complete.");
-      } catch (error) {
-        console.warn("Failed to complete Challonge tournament:", error);
+  }
+
+  if (includeLogs) {
+    for (var i = 0; i < logsEmbedsToSend.length; i++) {
+      await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
+      await sleep(250);
+    }
+  }
+
+  if (allowCompletion) {
+    const tournamentIsOver =
+      finalRoundNumber > 0 &&
+      previousMatches[1].length === 0 &&
+      previousMatches[0].some(
+        (match) =>
+          parseInt(match.round) === finalRoundNumber &&
+          match.isThirdPlace !== true
+      );
+    if (tournamentIsOver) {
+      const finalMatch = previousMatches[0].find(
+        (match) =>
+          parseInt(match.round) === finalRoundNumber &&
+          match.isThirdPlace !== true
+      );
+      if (finalMatch?.firstPlace?.link) {
+        await channel.send(finalMatch.firstPlace.link);
       }
+      const thankYouEmbed = new EmbedBuilder()
+        .setDescription("Thank you for participating!")
+        .setColor(0x4dc399)
+        .setFooter({
+          text: "Supradarky's VGM Club",
+          iconURL:
+            "http://91.99.239.6/files/assets/sd-img.png",
+        });
+      await channel.send({ embeds: [thankYouEmbed] });
+      if (single.isChallonge) {
+        try {
+          await completeChallongeTournament(challongeTournamentUrlName);
+          console.log("Challonge tournament marked complete.");
+        } catch (error) {
+          console.warn("Failed to complete Challonge tournament:", error);
+        }
+      }
+      await db
+        .get("tournaments")
+        .nth(0)
+        .assign({
+          currentTournament: "N/A",
+        })
+        .write();
     }
-    await db
-      .get("tournaments")
-      .nth(0)
-      .assign({
-        currentTournament: "N/A",
-      })
-      .write();
   }
 }
 
@@ -705,7 +724,11 @@ async function SendSingleDailyEmbed(
   //const sheetUrl =
   //  "https://docs.google.com/spreadsheets/d/14R4XTkML8aoDx8ENPPWPyaWE_hhUPDlzYX6mqsytoX4/";
   //if round 1, we need to fill in the days match
-  if (matchData.round == 1 && single.isChallonge) {
+  if (
+    matchData.round == 1 &&
+    single.isChallonge &&
+    options?.skipChallongeUpdates !== true
+  ) {
     var entrantString1 =
       matchData.entrant1.title + ` - ` + matchData.entrant1.name;
     var entrantString2 =
