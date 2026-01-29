@@ -350,8 +350,20 @@ bot.on("messageCreate", function (msg) {
   // No Guild means DM
   if (msg.guild == null) {
     console.log("It's recognised as a DM");
-    if (msg.content.toLowerCase() == "gghelp") {
+    const content = msg.content.trim();
+    const lowerContent = content.toLowerCase();
+    if (lowerContent === "gghelp") {
       SendGuessingGameInstructionDm(msg);
+      return;
+    }
+    const helpMatch = content.match(/^domo help\b\s*(.*)$/i);
+    if (helpMatch) {
+      const topic = (helpMatch[1] || "").trim();
+      if (topic.length === 0) {
+        SendDomoHelpIntroDm(msg.author);
+      } else {
+        SendDomoHelpDetailsDm(msg.author, topic);
+      }
     }
   }
 });

@@ -2,6 +2,336 @@ const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 eval(fs.readFileSync("./public/collections/roles.js") + "");
 
+const DOMO_HELP_THUMBNAIL =
+  "http://91.99.239.6/files/assets/sd_logo.png";
+const DOMO_HELP_FOOTER = {
+  text: "Supradarky's VGM Club",
+  iconURL: "http://91.99.239.6/files/assets/sd-img.png",
+};
+
+function getDomoHelpCategories() {
+  return [
+    {
+      id: "tournament-admin",
+      title: "Tournament Setup & Admin",
+      summary: "Create, manage, and resend tournament matches.",
+      commands: [
+        {
+          name: "/register-tournament",
+          desc: "Register a new tournament using a CSV file.",
+          args:
+            "tournament-name*, tournament-format*, matches-per-day*, csv-file*, randomise-tournament?, create-challonge-bracket?, set-challonge-hidden?, participant-role-id?",
+        },
+        {
+          name: "/start-match",
+          desc: "Manually start a day's worth of matches.",
+          args: "none",
+        },
+        {
+          name: "/change-match-per-round",
+          desc: "Change matches-per-day for the current tournament.",
+          args: "matches-per-day* (1/2/4)",
+        },
+        {
+          name: "/resend-current-matches",
+          desc: "Resend currently active matches without DB changes.",
+          args: "include-results?, include-logs?",
+        },
+        {
+          name: "/remove-tournament",
+          desc: "Remove a tournament from the DB (confirmation required).",
+          args: "tournament-name*",
+        },
+        {
+          name: "/set-test-mode",
+          desc: "Route all tournament messages/logs to a test channel.",
+          args: "channel*",
+        },
+        {
+          name: "/clear-test-mode",
+          desc: "Disable test mode routing.",
+          args: "none",
+        },
+        {
+          name: "/add-match-art",
+          desc: "Upload artwork for a match embed.",
+          args: "match-number*, artist-name*, image*",
+        },
+        {
+          name: "/edit-tournament-embeds",
+          desc: "Edit an embed by message ID.",
+          args: "channel-name*, message-id*",
+        },
+        {
+          name: "/update-entrant",
+          desc: "Interactively update an entrant field.",
+          args: "none (interactive)",
+        },
+        {
+          name: "/toggle-dm-receipts",
+          desc: "Toggle DM vote receipts.",
+          args: "none",
+        },
+      ],
+    },
+    {
+      id: "tournament-analytics",
+      title: "Tournament Analytics",
+      summary: "Compatibility and voting insights.",
+      commands: [
+        {
+          name: "/most-compatible",
+          desc: "Find your most compatible voter.",
+          args: "make-public?, specify-participation-percentage?, search-all-tournaments?",
+        },
+        {
+          name: "/user-compatibility",
+          desc: "Compare your votes with another user.",
+          args: "other-member*, make-public?, search-all-tournaments?",
+        },
+        {
+          name: "/taste-makers",
+          desc: "Find who most often voted for winners.",
+          args: "make-public?, include-low-participation?",
+        },
+        {
+          name: "/iconoclast",
+          desc: "Find who most often voted against winners.",
+          args: "make-public?, include-low-participation?",
+        },
+      ],
+    },
+    {
+      id: "tracks",
+      title: "Tracks & Playlists",
+      summary: "Pull tracks or generate playlists.",
+      commands: [
+        {
+          name: "/sd-track",
+          desc: "Get a SupraDarky track (random or filtered).",
+          args: "track-number?, series?, year?, make-public?",
+        },
+        {
+          name: "/community-track",
+          desc: "Get a community track (random or filtered).",
+          args: "contributor?, track-number?, series?, year?, include-supra?, make-public?",
+        },
+        {
+          name: "/generate-playlist",
+          desc: "Generate a 10-track playlist.",
+          args: "contributor?, series?, year?, make-public?",
+        },
+      ],
+    },
+    {
+      id: "youtube",
+      title: "YouTube & Playlist Tracking",
+      summary: "Manage playlist tracking and user themes.",
+      commands: [
+        {
+          name: "/toggle-playlist-channel",
+          desc: "Toggle a channel for playlist tracking.",
+          args: "channel-name*, channel-type* (permanent/spotlight), new-playlist-frequency?",
+        },
+        {
+          name: "/list-yt-channels",
+          desc: "List registered playlist tracking channels.",
+          args: "none",
+        },
+        {
+          name: "/yt-register-user-theme",
+          desc: "Set your personal listening party theme song.",
+          args: "youtube-url*",
+        },
+      ],
+    },
+    {
+      id: "guessing-game",
+      title: "Guessing Game",
+      summary: "Host and manage guessing games.",
+      commands: [
+        {
+          name: "/gg-host-guessing-game",
+          desc: "Start a guessing game session.",
+          args: "add-cohosts?",
+        },
+        {
+          name: "/gg-register-cohost",
+          desc: "Add cohosts to the current game.",
+          args: "cohosts*",
+        },
+        {
+          name: "/gg-show-guessing-game-scores",
+          desc: "Show current guessing game scores.",
+          args: "none",
+        },
+        {
+          name: "/gg-end-guessing-game",
+          desc: "End the guessing game and post results.",
+          args: "none",
+        },
+      ],
+    },
+    {
+      id: "misc",
+      title: "Misc",
+      summary: "Utility commands.",
+      commands: [
+        {
+          name: "/ping",
+          desc: "Check if the bot is alive.",
+          args: "none",
+        },
+        {
+          name: "/echo",
+          desc: "Have the bot repeat a message.",
+          args: "input*",
+        },
+        {
+          name: "/help",
+          desc: "Show this help menu.",
+          args: "topic?",
+        },
+      ],
+    },
+  ];
+}
+
+function normalizeHelpTopic(input) {
+  if (!input) return "";
+  return input.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function findHelpCategory(topic) {
+  const normalized = normalizeHelpTopic(topic);
+  if (!normalized) return null;
+
+  const categories = getDomoHelpCategories();
+  for (const category of categories) {
+    if (
+      normalized === category.id ||
+      normalized === category.title.toLowerCase()
+    ) {
+      return category;
+    }
+  }
+
+  const aliases = {
+    "tournaments": "tournament-admin",
+    "tournament": "tournament-admin",
+    "tournament admin": "tournament-admin",
+    "tournament setup": "tournament-admin",
+    "tournament analytics": "tournament-analytics",
+    "analytics": "tournament-analytics",
+    "compatibility": "tournament-analytics",
+    "tracks": "tracks",
+    "playlists": "tracks",
+    "youtube": "youtube",
+    "playlist tracking": "youtube",
+    "guessing game": "guessing-game",
+    "guessing games": "guessing-game",
+    "misc": "misc",
+  };
+
+  const alias = aliases[normalized];
+  if (!alias) return null;
+  return categories.find((category) => category.id === alias) || null;
+}
+
+function findHelpCommand(topic) {
+  const normalized = normalizeHelpTopic(topic).replace(/\//g, "");
+  if (!normalized) return null;
+  const categories = getDomoHelpCategories();
+  for (const category of categories) {
+    for (const command of category.commands) {
+      const commandName = command.name.replace("/", "").toLowerCase();
+      if (normalized === commandName) {
+        return { command, category };
+      }
+    }
+  }
+  return null;
+}
+
+function buildHelpIntroEmbed() {
+  const categories = getDomoHelpCategories();
+  const descriptionLines = [
+    "Hi! Here are the command categories available:",
+    "",
+    ...categories.map(
+      (category) => `• **${category.title}** — ${category.summary}`
+    ),
+    "",
+    "Reply with **`Domo help <category>`** or **`Domo help /command`** to see details.",
+    "Example: `Domo help tournament setup` or `Domo help /register-tournament`",
+  ];
+
+  return new EmbedBuilder()
+    .setTitle("MajorDomo Help")
+    .setColor(0x5865f2)
+    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setDescription(descriptionLines.join("\n"))
+    .setFooter(DOMO_HELP_FOOTER);
+}
+
+function buildHelpCategoryEmbed(category) {
+  const lines = category.commands.map((command) => {
+    const args = command.args || "none";
+    return `**${command.name}** — ${command.desc}\nArgs: \`${args}\``;
+  });
+
+  return new EmbedBuilder()
+    .setTitle(category.title)
+    .setColor(0x4aa3df)
+    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setDescription(lines.join("\n\n"))
+    .setFooter(DOMO_HELP_FOOTER);
+}
+
+function buildHelpCommandEmbed(command, category) {
+  return new EmbedBuilder()
+    .setTitle(`${command.name} — ${category.title}`)
+    .setColor(0x43b581)
+    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setDescription(
+      `**What it does:** ${command.desc}\n**Args:** \`${command.args || "none"}\``
+    )
+    .setFooter(DOMO_HELP_FOOTER);
+}
+
+async function SendDomoHelpIntroDm(user) {
+  const embed = buildHelpIntroEmbed();
+  return await user.send({ embeds: [embed] }).catch(console.error);
+}
+
+async function SendDomoHelpDetailsDm(user, topic) {
+  const category = findHelpCategory(topic);
+  if (category) {
+    const embed = buildHelpCategoryEmbed(category);
+    return await user.send({ embeds: [embed] }).catch(console.error);
+  }
+
+  const commandMatch = findHelpCommand(topic);
+  if (commandMatch) {
+    const embed = buildHelpCommandEmbed(
+      commandMatch.command,
+      commandMatch.category
+    );
+    return await user.send({ embeds: [embed] }).catch(console.error);
+  }
+
+  const fallbackEmbed = new EmbedBuilder()
+    .setTitle("Help Topic Not Found")
+    .setColor(0xffc107)
+    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setDescription(
+      "I couldn't find that category or command. Try **`Domo help`** to see the available categories."
+    )
+    .setFooter(DOMO_HELP_FOOTER);
+
+  return await user.send({ embeds: [fallbackEmbed] }).catch(console.error);
+}
+
 async function SendGuessingGameHelpDmMessage(user) {
   const description =
     `Hello and thanks for taking the time to host a guessing game for the server!\n\n` +
@@ -26,12 +356,10 @@ async function SendGuessingGameHelpDmMessage(user) {
 
 async function SendGuessingGameInstructionDm(message) {
   const startDescription =
-    `Starting a game is already underway and guessing game followers will have been alerted in the **"#guessing-games"** channel.\n\n` +
-    `Once you\'re ready to start playing, join the **"VGM Station"** voice channel and then use the \`/yt-play\` slash command in the **"#listening-parties-host"** text channel.\n\n**All playback commands should be used in the **"#listening-parties-host"** channel**.\n\n` +
-    `Paste your **YouTube playlist url** into the \`song-url\` option which appears automatically once the \`/yt-play\` slash command is selected.\n\n` +
-    `**This will start MajorDomo-Bot playback automatically** and your pre-game or main game can start!\n\n` +
-    `You can start playlists and wait until completion or continue to use the \`/yt-play\` slash command to queue up more music.\n\n` + 
-`When using \`/gg-host-guessing-game\`, there is an option called \`add-cohosts\` that will allow other users the same permissions as the main host. Cohosts can also be added at any time using \`gg-register-cohost\`.\n\n`;
+    `Starting a game (/gg-host-guessing-game) is simple and when underway guessing game followers will have been alerted in the **"#guessing-games"** channel.\n\n` +
+    
+`When using \`/gg-host-guessing-game\`, there is an option called \`add-cohosts\` that will allow other users the same permissions as the main host. Cohosts can also be added at any time using \`gg-register-cohost\`.\n\n` + 
+"**Once you are finished with your guessing game, please ensure you run `/end-guessing-game` to send totals and allow users to use the bot again**!";
 
   var startEmbed = new EmbedBuilder()
     .setTitle(`How to start your list`)
@@ -100,7 +428,7 @@ async function SendGuessingGameInstructionDm(message) {
         "http://91.99.239.6/files/assets/sd-img.png",
     });
 
-  var embeds = [startEmbed, changeEmbed, pointsTrackerEmbed];
+  var embeds = [startEmbed, pointsTrackerEmbed];
 
   await message.author.send({ embeds: embeds });
 }
