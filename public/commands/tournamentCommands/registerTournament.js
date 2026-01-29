@@ -40,7 +40,9 @@ module.exports = {
     .addAttachmentOption((option) =>
       option
         .setName("csv-file")
-        .setDescription("CSV file used to register the tournament.")
+        .setDescription(
+          "CSV with columns: Name, Title, Link (Type optional). Extra columns ignored."
+        )
         .setRequired(true)
     )
     .addBooleanOption((option) =>
