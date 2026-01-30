@@ -535,11 +535,13 @@ async function SendSingleDailyEmbed(
     ? "http://91.99.239.6/dev_files/userImages/" + matchArtEntry.filename
     : "";
 
-  const d = new Date();
-  let day = d.getDay();
-
-  var timeUntilNextRound =
-    day == 5 ? GetTimeInEpochStamp(71.75) : GetTimeInEpochStamp(24);
+  const scheduleTime = tournamentDetails?.tournamentPostTime || "19:00";
+  const includeWeekends =
+    tournamentDetails?.tournamentIncludeWeekends === true;
+  var timeUntilNextRound = GetNextScheduleEpochFromSettings(
+    scheduleTime,
+    includeWeekends
+  );
   var todaysSheetCell = "";
 
   if (!secondOfDay) {

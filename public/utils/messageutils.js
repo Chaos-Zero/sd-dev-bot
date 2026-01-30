@@ -83,6 +83,54 @@ function GetTimeInEpochStamp(hoursToAdd = 0) {
   return unixDate.toString();
 }
 
+function GetNextScheduleEpochFromSettings(time, includeWeekends) {
+  const safeTime = typeof time === "string" && time.includes(":") ? time : "19:00";
+  const [hourStr, minuteStr] = safeTime.split(":");
+  let hour = Number(hourStr);
+  let minute = Number(minuteStr);
+  if (
+    Number.isNaN(hour) ||
+    Number.isNaN(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    hour = 19;
+    minute = 0;
+  }
+  const now = new Date();
+  let candidate = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      hour,
+      minute,
+      0,
+      0
+    )
+  );
+  if (candidate.getTime() <= now.getTime()) {
+    candidate = new Date(candidate.getTime() + 24 * 60 * 60 * 1000);
+  }
+  if (!includeWeekends) {
+    while (candidate.getUTCDay() === 0 || candidate.getUTCDay() === 6) {
+      candidate = new Date(candidate.getTime() + 24 * 60 * 60 * 1000);
+    }
+  }
+  return Math.floor(candidate.getTime() / 1000);
+}
+
+function GetNextTournamentScheduleEpoch() {
+  const db = GetDb();
+  db.read();
+  const tournamentRoot = db.get("tournaments").nth(0).value() || {};
+  const scheduleTime = tournamentRoot.tournamentPostTime || "19:00";
+  const includeWeekends = tournamentRoot.tournamentIncludeWeekends === true;
+  return GetNextScheduleEpochFromSettings(scheduleTime, includeWeekends);
+}
+
 async function downloadFile(url) {
   console.log("Downloading file from URL:", url);
   try {

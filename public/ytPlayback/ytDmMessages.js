@@ -42,9 +42,9 @@ function getDomoHelpCategories() {
       commands: [
         {
           name: "/register-tournament",
-          desc: "Register a new tournament using a CSV file.",
+          desc: "Register a new tournament using a CSV file.\n If you would like step by step instructios on how to set up a tournament, you can send `tournament-help` in a DM to the bot.",
           args:
-            "tournament-name*, tournament-format*, matches-per-day*, csv-file*, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role-id, notes: <fill-in>",
+            "tournament-name*, tournament-format*, matches-per-day*, csv-file*, post-time (UTC hourly, confirm with timezone prompt), include-weekends, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role-id, notes: <fill-in>",
         },
         {
           name: "/start-match",
@@ -94,12 +94,22 @@ function getDomoHelpCategories() {
         {
           name: "/toggle-dm-receipts",
           desc: "Toggle DM vote receipts.",
-          args: "none",
+          
         },
         {
           name: "/manage-admin",
           desc: "Add or remove Domo Admins (owner/admin only).",
           args: "action* (add-user/remove-user/add-role/remove-role), user (required for add-user), role (required for add-role)",
+        },
+        {
+          name: "/set-tournament-time",
+          desc: "Set the daily tournament post time (GMT, 24-hour).",
+          args: "time* (UTC hourly)",
+        },
+        {
+          name: "/set-tournament-weekends",
+          desc: "Enable or disable weekend tournament posting.",
+          args: "include-weekends*",
         },
       ],
     },
@@ -171,7 +181,7 @@ function getDomoHelpCategories() {
         {
           name: "/list-yt-channels",
           desc: "List registered playlist tracking channels.",
-          args: "none",
+          
         },
         {
           name: "/yt-register-user-theme",
@@ -200,12 +210,12 @@ function getDomoHelpCategories() {
         {
           name: "/gg-show-guessing-game-scores",
           desc: "Show current guessing game scores.",
-          args: "none",
+          
         },
         {
           name: "/gg-end-guessing-game",
           desc: "End the guessing game and post results.",
-          args: "none",
+          
         },
       ],
     },
@@ -219,7 +229,7 @@ function getDomoHelpCategories() {
         {
           name: "/ping",
           desc: "Check if the bot is alive.",
-          args: "none",
+          
         },
         {
           name: "/echo",
@@ -388,6 +398,85 @@ async function SendDomoHelpDetailsDm(user, topic) {
     .setFooter(domoHelpFoot);
 
   return await user.send({ embeds: [fallbackEmbed] }).catch(console.error);
+}
+
+async function SendTournamentHelpDm(message) {
+  const introEmbed = new EmbedBuilder()
+    .setTitle("Tournament Setup — Quick Start")
+    .setColor(0x8e44ad)
+    .setThumbnail(
+      "http://91.99.239.6/files/assets/domo_smarty_pants_face.png"
+    )
+    .setDescription(
+      [
+        "**Welcome!** This is a quick guide to getting an automated tournament running using the options available with the `/register-tournament` slash command.",
+        "",
+        "",
+      ].join("\n")
+    )
+    .setFooter(domoHelpFoot);
+
+  const csvEmbed = new EmbedBuilder()
+    .setTitle("Step 1 — Prepare Your CSV")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/sd_logo.png")
+    .setDescription(
+      [
+        "Tournaments require a CSV file uplodaed with columns `title`, `name`, and `link` to read correctly. This can be easily achieved by exporting any type of spreadsheet to the CSV format.",
+        "",
+        "Below is an exmaple using Google Sheets",
+      ].join("\n")
+    )
+    .setFooter(domoHelpFoot);
+
+  const registerEmbed = new EmbedBuilder()
+    .setTitle("Step 2 — Register the Tournament")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/bowtie.png")
+    .setDescription(
+      [
+        "Use **`/register-tournament`** with your CSV.",
+        "_TODO: Describe options and best practices._",
+        "",
+        "Notes: <fill-in>",
+      ].join("\n")
+    )
+    .setFooter(domoHelpFoot);
+
+  const runEmbed = new EmbedBuilder()
+    .setTitle("Step 3 — Run Daily Matches")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/Next.png")
+    .setDescription(
+      [
+        "Use **`/start-match`** each day to post new matches.",
+        "_TODO: Explain timing, tie behavior, and resends._",
+      ].join("\n")
+    )
+    .setFooter(domoHelpFoot);
+
+  const adminEmbed = new EmbedBuilder()
+    .setTitle("Tips & Admin Tools")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/album_art.png")
+    .setDescription(
+      [
+        "_TODO: Add tips about test mode, resending, match art, and edits._",
+        "",
+        "Useful commands: `/set-test-mode`, `/resend-current-matches`, `/add-match-art`.",
+      ].join("\n")
+    )
+    .setFooter(domoHelpFoot);
+
+  const embeds = [
+    introEmbed,
+    csvEmbed,
+    registerEmbed,
+    runEmbed,
+    adminEmbed,
+  ];
+
+  return await message.author.send({ embeds }).catch(console.error);
 }
 
 async function HandleDomoHelpTopicSelect(interaction) {

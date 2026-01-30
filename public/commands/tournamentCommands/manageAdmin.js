@@ -22,6 +22,8 @@ function ensureTournamentRoot(db) {
       channelId: "",
       channelName: "",
     },
+    tournamentPostTime: "19:00",
+    tournamentIncludeWeekends: false,
   };
   db.get("tournaments").push(base).write();
   return base;

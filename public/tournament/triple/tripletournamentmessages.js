@@ -501,11 +501,7 @@ async function SendTripleDailyEmbed(
   const gifPath =
     "http://91.99.239.6/dev_files/output/" + gifName + ".gif";
 
-  const d = new Date();
-  let day = d.getDay();
-
-  var timeUntilNextRound =
-    day == 5 ? GetTimeInEpochStamp(72) : GetTimeInEpochStamp(24);
+  var timeUntilNextRound = GetNextTournamentScheduleEpoch();
 
   var todaysSheetCell = "";
 

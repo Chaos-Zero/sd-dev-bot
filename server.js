@@ -356,6 +356,10 @@ bot.on("messageCreate", function (msg) {
       SendGuessingGameInstructionDm(msg);
       return;
     }
+    if (lowerContent === "tournament-help") {
+      SendTournamentHelpDm(msg);
+      return;
+    }
   }
 });
 
