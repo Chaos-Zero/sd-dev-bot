@@ -8,6 +8,24 @@ eval(fs.readFileSync("./public/collections/roles.js") + "");
 
 const domoHelpThumb = "http://91.99.239.6/files/assets/bowtie.png";
 
+const domoHelpCategoryColors = {
+  tournamentAdmin: 0x8e44ad,
+  tournamentAnalytics: 0x2ecc71,
+  tracks: 0x8b0000,
+  youtube: 0xFF0000,
+  guessingGame: 0xffd700,
+  misc: 0xffffff,
+};
+
+const domoHelpCategoryThumbs = {
+  tournamentAdmin: "http://91.99.239.6/files/assets/guess/admin.png",
+  tournamentAnalytics: "http://91.99.239.6/files/assets/guess/ggplaying.png",
+  tracks: "http://91.99.239.6/files/assets/guess/ggstarted.png",
+  youtube: "http://91.99.239.6/files/assets/guess/ggame.png",
+  guessingGame: "http://91.99.239.6/files/assets/guess/ggpoints.png",
+  misc: "http://91.99.239.6/files/assets/guess/misc.png",
+};
+
 const domoHelpFoot = {
   text: "Supradarky's VGM Club",
   iconURL: "http://91.99.239.6/files/assets/sd-img.png",
@@ -19,6 +37,8 @@ function getDomoHelpCategories() {
       id: "tournament-admin",
       title: "Tournament Setup & Admin",
       summary: "Create, manage, and resend tournament matches.",
+      color: domoHelpCategoryColors.tournamentAdmin,
+      thumbnail: domoHelpCategoryThumbs.tournamentAdmin,
       commands: [
         {
           name: "/register-tournament",
@@ -87,6 +107,8 @@ function getDomoHelpCategories() {
       id: "tournament-analytics",
       title: "Tournament Analytics",
       summary: "Compatibility and voting insights.",
+      color: domoHelpCategoryColors.tournamentAnalytics,
+      thumbnail: domoHelpCategoryThumbs.tournamentAnalytics,
       commands: [
         {
           name: "/most-compatible",
@@ -114,6 +136,8 @@ function getDomoHelpCategories() {
       id: "tracks",
       title: "Tracks & Playlists",
       summary: "Pull tracks or generate playlists.",
+      color: domoHelpCategoryColors.tracks,
+      thumbnail: domoHelpCategoryThumbs.tracks,
       commands: [
         {
           name: "/sd-track",
@@ -136,6 +160,8 @@ function getDomoHelpCategories() {
       id: "youtube",
       title: "YouTube & Playlist Tracking",
       summary: "Manage playlist tracking and user themes.",
+      color: domoHelpCategoryColors.youtube,
+      thumbnail: domoHelpCategoryThumbs.youtube,
       commands: [
         {
           name: "/toggle-playlist-channel",
@@ -158,6 +184,8 @@ function getDomoHelpCategories() {
       id: "guessing-game",
       title: "Guessing Game",
       summary: "Host and manage guessing games.",
+      color: domoHelpCategoryColors.guessingGame,
+      thumbnail: domoHelpCategoryThumbs.guessingGame,
       commands: [
         {
           name: "/gg-host-guessing-game",
@@ -185,6 +213,8 @@ function getDomoHelpCategories() {
       id: "misc",
       title: "Misc",
       summary: "Utility commands.",
+      color: domoHelpCategoryColors.misc,
+      thumbnail: domoHelpCategoryThumbs.misc,
       commands: [
         {
           name: "/ping",
@@ -307,8 +337,8 @@ function buildHelpCategoryEmbed(category) {
 
   return new EmbedBuilder()
     .setTitle(category.title)
-    .setColor(0x4aa3df)
-    .setThumbnail(domoHelpThumb)
+    .setColor(category.color || 0x4aa3df)
+    .setThumbnail(category.thumbnail || domoHelpThumb)
     .setDescription(lines.join("\n\n"))
     .setFooter(domoHelpFoot);
 }
@@ -316,8 +346,8 @@ function buildHelpCategoryEmbed(category) {
 function buildHelpCommandEmbed(command, category) {
   return new EmbedBuilder()
     .setTitle(`${command.name} — ${category.title}`)
-    .setColor(0x43b581)
-    .setThumbnail(domoHelpThumb)
+    .setColor(category.color || 0x43b581)
+    .setThumbnail(category.thumbnail || domoHelpThumb)
     .setDescription(
       `**What it does:** ${command.desc}\n**Args:** \`${command.args || "none"}\``
     )
