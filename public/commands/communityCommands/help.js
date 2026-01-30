@@ -51,7 +51,15 @@ function getDomoAdminStatus(interaction) {
   db.read();
   const tournamentRoot = db.get("tournaments").nth(0).value() || {};
   const admins = Array.isArray(tournamentRoot.admin) ? tournamentRoot.admin : [];
-  return interaction.guild.ownerId === interaction.user.id || admins.includes(interaction.user.id);
+  const adminRoles = Array.isArray(tournamentRoot.adminRoles)
+    ? tournamentRoot.adminRoles
+    : [];
+  const isOwner = interaction.guild.ownerId === interaction.user.id;
+  const isDbAdmin = admins.includes(interaction.user.id);
+  const memberRoles = interaction.member?.roles?.cache;
+  const hasAdminRole =
+    memberRoles && adminRoles.some((roleId) => memberRoles.has(roleId));
+  return isOwner || isDbAdmin || hasAdminRole;
 }
 
 function filterHelpCategoriesForUser(categories, isAdmin) {
