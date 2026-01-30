@@ -10,6 +10,10 @@ eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/ytPlayback/ytDmMessages.js") + "");
 
 const domoHelpThumb = "http://91.99.239.6/files/assets/bowtie.png";
+const domoHelpFoot = {
+  text: "Supradarky's VGM Club",
+  iconURL: "http://91.99.239.6/files/assets/sd-img.png",
+};
 
 function buildHelpTopicSelectMenuFromCategories(categories) {
   const options = categories.map((category) => ({
@@ -42,7 +46,7 @@ function buildHelpIntroEmbedForCategories(categories) {
     .setColor(0x5865f2)
     .setThumbnail(domoHelpThumb)
     .setDescription(descriptionLines.join("\n"))
-    .setFooter(DOMO_HELP_FOOTER);
+    .setFooter(domoHelpFoot);
 }
 
 function getDomoAdminStatus(interaction) {
@@ -173,7 +177,7 @@ module.exports = {
       .setDescription(
         "I couldn't find that category or command. Try `/help` to see the available categories."
       )
-      .setFooter(DOMO_HELP_FOOTER);
+      .setFooter(domoHelpFoot);
 
     const categories = filterHelpCategoriesForUser(
       getDomoHelpCategories(),

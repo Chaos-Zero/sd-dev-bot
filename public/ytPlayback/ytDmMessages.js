@@ -8,7 +8,7 @@ eval(fs.readFileSync("./public/collections/roles.js") + "");
 
 const domoHelpThumb = "http://91.99.239.6/files/assets/bowtie.png";
 
-const DOMO_HELP_FOOTER = {
+const domoHelpFoot = {
   text: "Supradarky's VGM Club",
   iconURL: "http://91.99.239.6/files/assets/sd-img.png",
 };
@@ -296,7 +296,7 @@ function buildHelpIntroEmbed() {
     .setColor(0x5865f2)
     .setThumbnail(domoHelpThumb)
     .setDescription(descriptionLines.join("\n"))
-    .setFooter(DOMO_HELP_FOOTER);
+    .setFooter(domoHelpFoot);
 }
 
 function buildHelpCategoryEmbed(category) {
@@ -310,7 +310,7 @@ function buildHelpCategoryEmbed(category) {
     .setColor(0x4aa3df)
     .setThumbnail(domoHelpThumb)
     .setDescription(lines.join("\n\n"))
-    .setFooter(DOMO_HELP_FOOTER);
+    .setFooter(domoHelpFoot);
 }
 
 function buildHelpCommandEmbed(command, category) {
@@ -321,7 +321,7 @@ function buildHelpCommandEmbed(command, category) {
     .setDescription(
       `**What it does:** ${command.desc}\n**Args:** \`${command.args || "none"}\``
     )
-    .setFooter(DOMO_HELP_FOOTER);
+    .setFooter(domoHelpFoot);
 }
 
 async function SendDomoHelpIntroDm(user) {
@@ -355,7 +355,7 @@ async function SendDomoHelpDetailsDm(user, topic) {
     .setDescription(
       "I couldn't find that category or command. Try **`Domo help`** to see the available categories."
     )
-    .setFooter(DOMO_HELP_FOOTER);
+    .setFooter(domoHelpFoot);
 
   return await user.send({ embeds: [fallbackEmbed] }).catch(console.error);
 }
