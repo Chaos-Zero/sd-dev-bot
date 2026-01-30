@@ -9,6 +9,8 @@ const fs = require("fs");
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/ytPlayback/ytDmMessages.js") + "");
 
+const domoHelpThumb = "http://91.99.239.6/files/assets/bowtie.png";
+
 function buildHelpTopicSelectMenuFromCategories(categories) {
   const options = categories.map((category) => ({
     label: category.title,
@@ -38,7 +40,7 @@ function buildHelpIntroEmbedForCategories(categories) {
   return new EmbedBuilder()
     .setTitle("MajorDomo Help")
     .setColor(0x5865f2)
-    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setThumbnail(domoHelpThumb)
     .setDescription(descriptionLines.join("\n"))
     .setFooter(DOMO_HELP_FOOTER);
 }
@@ -167,7 +169,7 @@ module.exports = {
     const fallbackEmbed = new EmbedBuilder()
       .setTitle("Help Topic Not Found")
       .setColor(0xffc107)
-      .setThumbnail(DOMO_HELP_THUMBNAIL)
+      .setThumbnail(domoHelpThumb)
       .setDescription(
         "I couldn't find that category or command. Try `/help` to see the available categories."
       )

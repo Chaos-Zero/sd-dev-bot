@@ -6,8 +6,8 @@ const {
 const fs = require("fs");
 eval(fs.readFileSync("./public/collections/roles.js") + "");
 
-const DOMO_HELP_THUMBNAIL =
-  "http://91.99.239.6/files/assets/sd_logo.png";
+const domoHelpThumb = "http://91.99.239.6/files/assets/bowtie.png";
+
 const DOMO_HELP_FOOTER = {
   text: "Supradarky's VGM Club",
   iconURL: "http://91.99.239.6/files/assets/sd-img.png",
@@ -294,7 +294,7 @@ function buildHelpIntroEmbed() {
   return new EmbedBuilder()
     .setTitle("MajorDomo Help")
     .setColor(0x5865f2)
-    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setThumbnail(domoHelpThumb)
     .setDescription(descriptionLines.join("\n"))
     .setFooter(DOMO_HELP_FOOTER);
 }
@@ -308,7 +308,7 @@ function buildHelpCategoryEmbed(category) {
   return new EmbedBuilder()
     .setTitle(category.title)
     .setColor(0x4aa3df)
-    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setThumbnail(domoHelpThumb)
     .setDescription(lines.join("\n\n"))
     .setFooter(DOMO_HELP_FOOTER);
 }
@@ -317,7 +317,7 @@ function buildHelpCommandEmbed(command, category) {
   return new EmbedBuilder()
     .setTitle(`${command.name} — ${category.title}`)
     .setColor(0x43b581)
-    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setThumbnail(domoHelpThumb)
     .setDescription(
       `**What it does:** ${command.desc}\n**Args:** \`${command.args || "none"}\``
     )
@@ -351,7 +351,7 @@ async function SendDomoHelpDetailsDm(user, topic) {
   const fallbackEmbed = new EmbedBuilder()
     .setTitle("Help Topic Not Found")
     .setColor(0xffc107)
-    .setThumbnail(DOMO_HELP_THUMBNAIL)
+    .setThumbnail(domoHelpThumb)
     .setDescription(
       "I couldn't find that category or command. Try **`Domo help`** to see the available categories."
     )
