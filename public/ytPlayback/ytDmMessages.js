@@ -18,7 +18,7 @@ const domoHelpCategoryColors = {
 };
 
 const domoHelpCategoryThumbs = {
-  tournamentAdmin: "http://91.99.239.6/files/assets/guess/admin.png",
+  tournamentAdmin: "http://91.99.239.6/files/assets/guess/admin2.png",
   tournamentAnalytics: "http://91.99.239.6/files/assets/guess/ggplaying.png",
   tracks: "http://91.99.239.6/files/assets/guess/ggstarted.png",
   youtube: "http://91.99.239.6/files/assets/guess/ggame.png",
@@ -44,11 +44,11 @@ function getDomoHelpCategories() {
           name: "/register-tournament",
           desc: "Register a new tournament using a CSV file.",
           args:
-            "tournament-name*, tournament-format*, matches-per-day*, csv-file*, randomise-tournament?, create-challonge-bracket?, set-challonge-hidden?, participant-role-id?",
+            "tournament-name*, tournament-format*, matches-per-day*, csv-file*, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role-id, notes: <fill-in>",
         },
         {
           name: "/start-match",
-          desc: "Manually start a day's worth of matches.",
+          desc: "Manually start a day's worth of matches for the current tournament.",
           args: "none",
         },
         {
@@ -59,7 +59,7 @@ function getDomoHelpCategories() {
         {
           name: "/resend-current-matches",
           desc: "Resend currently active matches without DB changes.",
-          args: "include-results?, include-logs?",
+          args: "include-results, include-logs",
         },
         {
           name: "/remove-tournament",
@@ -89,7 +89,7 @@ function getDomoHelpCategories() {
         {
           name: "/update-entrant",
           desc: "Interactively update an entrant field.",
-          args: "none (interactive)",
+          args: "interactive prompts",
         },
         {
           name: "/toggle-dm-receipts",
@@ -99,7 +99,7 @@ function getDomoHelpCategories() {
         {
           name: "/manage-admin",
           desc: "Add or remove Domo Admins (owner/admin only).",
-          args: "action* (add-user/remove-user/add-role/remove-role), user? (required for add-user), role? (required for add-role)",
+          args: "action* (add-user/remove-user/add-role/remove-role), user (required for add-user), role (required for add-role)",
         },
       ],
     },
@@ -112,23 +112,23 @@ function getDomoHelpCategories() {
       commands: [
         {
           name: "/most-compatible",
-          desc: "Find your most compatible voter.",
-          args: "make-public?, specify-participation-percentage?, search-all-tournaments?",
+          desc: "Find your most compatible voter based on shared votes.",
+          args: "make-public, specify-participation-percentage, search-all-tournaments",
         },
         {
           name: "/user-compatibility",
           desc: "Compare your votes with another user.",
-          args: "other-member*, make-public?, search-all-tournaments?",
+          args: "other-member*, make-public, search-all-tournaments",
         },
         {
           name: "/taste-makers",
           desc: "Find who most often voted for winners.",
-          args: "make-public?, include-low-participation?",
+          args: "make-public, include-low-participation",
         },
         {
           name: "/iconoclast",
           desc: "Find who most often voted against winners.",
-          args: "make-public?, include-low-participation?",
+          args: "make-public, include-low-participation",
         },
       ],
     },
@@ -142,17 +142,17 @@ function getDomoHelpCategories() {
         {
           name: "/sd-track",
           desc: "Get a SupraDarky track (random or filtered).",
-          args: "track-number?, series?, year?, make-public?",
+          args: "track-number, series, year, make-public",
         },
         {
           name: "/community-track",
           desc: "Get a community track (random or filtered).",
-          args: "contributor?, track-number?, series?, year?, include-supra?, make-public?",
+          args: "contributor, track-number, series, year, include-supra, make-public",
         },
         {
           name: "/generate-playlist",
           desc: "Generate a 10-track playlist.",
-          args: "contributor?, series?, year?, make-public?",
+          args: "contributor, series, year, make-public",
         },
       ],
     },
@@ -166,7 +166,7 @@ function getDomoHelpCategories() {
         {
           name: "/toggle-playlist-channel",
           desc: "Toggle a channel for playlist tracking.",
-          args: "channel-name*, channel-type* (permanent/spotlight), new-playlist-frequency?",
+          args: "channel-name*, channel-type* (permanent/spotlight), new-playlist-frequency",
         },
         {
           name: "/list-yt-channels",
@@ -190,7 +190,7 @@ function getDomoHelpCategories() {
         {
           name: "/gg-host-guessing-game",
           desc: "Start a guessing game session.",
-          args: "add-cohosts?",
+          args: "add-cohosts",
         },
         {
           name: "/gg-register-cohost",
@@ -229,7 +229,7 @@ function getDomoHelpCategories() {
         {
           name: "/help",
           desc: "Show this help menu.",
-          args: "topic?",
+          args: "topic",
         },
       ],
     },
@@ -332,7 +332,7 @@ function buildHelpIntroEmbed() {
 function buildHelpCategoryEmbed(category) {
   const lines = category.commands.map((command) => {
     const args = command.args || "none";
-    return `**${command.name}** — ${command.desc}\nArgs: \`${args}\``;
+    return `**${command.name}** — ${command.desc}\nOptions: \`${args}\``;
   });
 
   return new EmbedBuilder()
@@ -349,7 +349,7 @@ function buildHelpCommandEmbed(command, category) {
     .setColor(category.color || 0x43b581)
     .setThumbnail(category.thumbnail || domoHelpThumb)
     .setDescription(
-      `**What it does:** ${command.desc}\n**Args:** \`${command.args || "none"}\``
+      `**What it does:** ${command.desc}\n**Options:** \`${command.args || "none"}\``
     )
     .setFooter(domoHelpFoot);
 }
