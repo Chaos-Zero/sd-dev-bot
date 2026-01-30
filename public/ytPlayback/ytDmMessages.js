@@ -76,6 +76,11 @@ function getDomoHelpCategories() {
           desc: "Toggle DM vote receipts.",
           args: "none",
         },
+        {
+          name: "/manage-admin",
+          desc: "Add or remove Domo Admins (owner/admin only).",
+          args: "action* (add/remove), user? (required for add)",
+        },
       ],
     },
     {
