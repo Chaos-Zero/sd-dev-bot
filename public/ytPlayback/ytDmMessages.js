@@ -1,4 +1,8 @@
-const { EmbedBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+} = require("discord.js");
 const fs = require("fs");
 eval(fs.readFileSync("./public/collections/roles.js") + "");
 
@@ -197,6 +201,22 @@ function getDomoHelpCategories() {
   ];
 }
 
+function buildHelpTopicSelectMenu() {
+  const categories = getDomoHelpCategories();
+  const options = categories.map((category) => ({
+    label: category.title,
+    description: category.summary.slice(0, 100),
+    value: category.id,
+  }));
+
+  return new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId("domo-help-topic")
+      .setPlaceholder("Select a help topic")
+      .addOptions(options)
+  );
+}
+
 function normalizeHelpTopic(input) {
   if (!input) return "";
   return input.toLowerCase().replace(/\s+/g, " ").trim();
@@ -301,7 +321,10 @@ function buildHelpCommandEmbed(command, category) {
 
 async function SendDomoHelpIntroDm(user) {
   const embed = buildHelpIntroEmbed();
-  return await user.send({ embeds: [embed] }).catch(console.error);
+  const row = buildHelpTopicSelectMenu();
+  return await user
+    .send({ embeds: [embed], components: [row] })
+    .catch(console.error);
 }
 
 async function SendDomoHelpDetailsDm(user, topic) {
@@ -330,6 +353,27 @@ async function SendDomoHelpDetailsDm(user, topic) {
     .setFooter(DOMO_HELP_FOOTER);
 
   return await user.send({ embeds: [fallbackEmbed] }).catch(console.error);
+}
+
+async function HandleDomoHelpTopicSelect(interaction) {
+  const selected = interaction.values?.[0];
+  if (!selected) {
+    return interaction.reply({
+      content: "Please choose a valid help topic.",
+      ephemeral: true,
+    });
+  }
+  const category = getDomoHelpCategories().find(
+    (item) => item.id === selected
+  );
+  if (!category) {
+    return interaction.reply({
+      content: "That help topic is no longer available.",
+      ephemeral: true,
+    });
+  }
+  const embed = buildHelpCategoryEmbed(category);
+  return interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
 async function SendGuessingGameHelpDmMessage(user) {

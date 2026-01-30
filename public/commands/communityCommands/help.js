@@ -18,8 +18,13 @@ module.exports = {
     let embed;
 
     if (!topic) {
-      embed = buildHelpIntroEmbed();
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+    embed = buildHelpIntroEmbed();
+      const row = buildHelpTopicSelectMenu();
+      return interaction.reply({
+        embeds: [embed],
+        components: [row],
+        ephemeral: true,
+      });
     }
 
     const category = findHelpCategory(topic);
@@ -46,6 +51,11 @@ module.exports = {
       )
       .setFooter(DOMO_HELP_FOOTER);
 
-    return interaction.reply({ embeds: [fallbackEmbed], ephemeral: true });
+    const row = buildHelpTopicSelectMenu();
+    return interaction.reply({
+      embeds: [fallbackEmbed],
+      components: [row],
+      ephemeral: true,
+    });
   },
 };

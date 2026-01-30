@@ -356,15 +356,6 @@ bot.on("messageCreate", function (msg) {
       SendGuessingGameInstructionDm(msg);
       return;
     }
-    const helpMatch = content.match(/^domo help\b\s*(.*)$/i);
-    if (helpMatch) {
-      const topic = (helpMatch[1] || "").trim();
-      if (topic.length === 0) {
-        SendDomoHelpIntroDm(msg.author);
-      } else {
-        SendDomoHelpDetailsDm(msg.author, topic);
-      }
-    }
   }
 });
 
@@ -394,6 +385,12 @@ const listener = app.listen(process.env.PORT, () => {
 
 bot.on(Events.InteractionCreate, (interaction) => {
   console.log(interaction.customId);
+  if (interaction.isStringSelectMenu() && interaction.customId === "domo-help-topic") {
+    const requesterId = interaction.user?.id;
+    if (requesterId) {
+      return HandleDomoHelpTopicSelect(interaction);
+    }
+  }
   var isUserMatch =
     new String(interaction.customId).trim() ==
     new String("album-dropdown-" + String(interaction.user.id)).trim();
