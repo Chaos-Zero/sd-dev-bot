@@ -15,7 +15,7 @@ eval(
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("user-compatibility")
+    .setName("tournament-user-compatibility")
     .setDescription(
       "Compare yourself and another user to see how compatible your votes have been"
     )
@@ -57,7 +57,7 @@ module.exports = {
     if (!userToCompare.includes("<@")) {
       return interaction.reply({
         content:
-          "Please use a tag for the other member identification.\ne.g. `/user-compatibility` `other-member`**@MajorDomo-Bot**",
+          "Please use a tag for the other member identification.\ne.g. `/tournament-user-compatibility` `other-member`**@MajorDomo-Bot**",
         ephemeral: true,
       });
     }

@@ -21,7 +21,7 @@ function isDomoAdmin(interaction, tournamentRoot) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("set-tournament-weekends")
+    .setName("tournament-set-weekends")
     .setDescription("Enable or disable weekend tournament posting.")
     .addBooleanOption((option) =>
       option

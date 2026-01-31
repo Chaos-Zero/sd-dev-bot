@@ -10,7 +10,7 @@ eval(fs.readFileSync("./public/utils/messageutils.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("edit-tournament-embeds")
+    .setName("tournament-edit-embeds")
     .setDescription("Edit an embed by the message ID")
     .addStringOption((option) =>
       option

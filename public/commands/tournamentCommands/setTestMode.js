@@ -5,7 +5,7 @@ eval(fs.readFileSync("./public/main.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("set-test-mode")
+    .setName("tournament-set-test-mode")
     .setDescription("Route all tournament messages/logs to a test channel.")
     .addChannelOption((option) =>
       option

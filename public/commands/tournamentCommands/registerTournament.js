@@ -190,7 +190,7 @@ function getNextScheduledUtcTime(time, includeWeekends) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("register-tournament")
+    .setName("tournament-register")
     .setDescription("Register a new tournament using a CSV file.")
     .addStringOption((option) =>
       option

@@ -10,7 +10,7 @@ eval(fs.readFileSync("./public/main.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("remove-tournament")
+    .setName("tournament-remove-tournament")
     .setDescription("Remove a tournament from the DB (with confirmation).")
     .addStringOption((option) =>
       option

@@ -31,7 +31,7 @@ function ensureTournamentRoot(db) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("manage-admin")
+    .setName("tournament-manage-admin")
     .setDescription("Add or remove Domo Admins (owner/admin only).")
     .addStringOption((option) =>
       option

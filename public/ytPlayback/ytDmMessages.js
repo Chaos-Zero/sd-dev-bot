@@ -41,73 +41,73 @@ function getDomoHelpCategories() {
       thumbnail: domoHelpCategoryThumbs.tournamentAdmin,
       commands: [
         {
-          name: "/register-tournament",
+          name: "/tournament-register",
           desc: "Register a new tournament using a CSV file.\n If you would like step by step instructios on how to set up a tournament, you can send `tournament-help` in a DM to the bot.",
           args:
             "tournament-name*, tournament-format*, matches-per-day*, csv-file*, post-time (UTC hourly, confirm with timezone prompt), include-weekends, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role-id, notes: <fill-in>",
         },
         {
-          name: "/start-match",
+          name: "/tournament-start-match",
           desc: "Manually start a day's worth of matches for the current tournament.",
           args: "none",
         },
         {
-          name: "/change-match-per-round",
+          name: "/tournament-change-match-per-round",
           desc: "Change matches-per-day for the current tournament.",
           args: "matches-per-day* (1/2/4)",
         },
         {
-          name: "/resend-current-matches",
+          name: "/tournament-resend-current-matches",
           desc: "Resend currently active matches without DB changes.",
           args: "include-results, include-logs",
         },
         {
-          name: "/remove-tournament",
+          name: "/tournament-remove-tournament",
           desc: "Remove a tournament from the DB (confirmation required).",
           args: "tournament-name*",
         },
         {
-          name: "/set-test-mode",
+          name: "/tournament-set-test-mode",
           desc: "Route all tournament messages/logs to a test channel.",
           args: "channel*",
         },
         {
-          name: "/clear-test-mode",
+          name: "/tournament-clear-test-mode",
           desc: "Disable test mode routing.",
           args: "none",
         },
         {
-          name: "/add-match-art",
+          name: "/tournament-add-match-art",
           desc: "Upload artwork for a match embed.",
           args: "match-number*, artist-name*, image*",
         },
         {
-          name: "/edit-tournament-embeds",
+          name: "/tournament-edit-embeds",
           desc: "Edit an embed by message ID.",
           args: "channel-name*, message-id*",
         },
         {
-          name: "/update-entrant",
+          name: "/tournament-update-entrant",
           desc: "Interactively update an entrant field.",
           args: "interactive prompts",
         },
         {
-          name: "/toggle-dm-receipts",
+          name: "/tournament-toggle-dm-receipts",
           desc: "Toggle DM vote receipts.",
           
         },
         {
-          name: "/manage-admin",
+          name: "/tournament-manage-admin",
           desc: "Add or remove Domo Admins (owner/admin only).",
           args: "action* (add-user/remove-user/add-role/remove-role), user (required for add-user), role (required for add-role)",
         },
         {
-          name: "/set-tournament-time",
-          desc: "Set the daily tournament post time (GMT, 24-hour).",
+          name: "/tournament-set-time",
+          desc: "Set the daily tournament post time (UTC, 24-hour).",
           args: "time* (UTC hourly)",
         },
         {
-          name: "/set-tournament-weekends",
+          name: "/tournament-set-weekends",
           desc: "Enable or disable weekend tournament posting.",
           args: "include-weekends*",
         },
@@ -121,22 +121,22 @@ function getDomoHelpCategories() {
       thumbnail: domoHelpCategoryThumbs.tournamentAnalytics,
       commands: [
         {
-          name: "/most-compatible",
+          name: "/tournament-most-compatible",
           desc: "Find your most compatible voter based on shared votes.",
           args: "make-public, specify-participation-percentage, search-all-tournaments",
         },
         {
-          name: "/user-compatibility",
+          name: "/tournament-user-compatibility",
           desc: "Compare your votes with another user.",
           args: "other-member*, make-public, search-all-tournaments",
         },
         {
-          name: "/taste-makers",
+          name: "/tournament-taste-makers",
           desc: "Find who most often voted for winners.",
           args: "make-public, include-low-participation",
         },
         {
-          name: "/iconoclast",
+          name: "/tournament-iconoclast",
           desc: "Find who most often voted against winners.",
           args: "make-public, include-low-participation",
         },
@@ -328,7 +328,7 @@ function buildHelpIntroEmbed() {
     ),
     "",
     "Reply with **`Domo help <category>`** or **`Domo help /command`** to see details.",
-    "Example: `Domo help tournament setup` or `Domo help /register-tournament`",
+    "Example: `Domo help tournament setup` or `Domo help /tournament-register`",
   ];
 
   return new EmbedBuilder()
@@ -409,7 +409,7 @@ async function SendTournamentHelpDm(message) {
     )
     .setDescription(
       [
-        "**Welcome!** This is a quick guide to getting an automated tournament running using the options available with the `/register-tournament` slash command.",
+        "**Welcome!** This is a quick guide to getting an automated tournament running using the options available with the `/tournament-register` slash command.",
         "",
         "",
       ].join("\n")
@@ -435,7 +435,7 @@ async function SendTournamentHelpDm(message) {
     .setThumbnail("http://91.99.239.6/files/assets/bowtie.png")
     .setDescription(
       [
-        "Use **`/register-tournament`** with your CSV.",
+        "Use **`/tournament-register`** with your CSV.",
         "_TODO: Describe options and best practices._",
         "",
         "Notes: <fill-in>",
@@ -449,7 +449,7 @@ async function SendTournamentHelpDm(message) {
     .setThumbnail("http://91.99.239.6/files/assets/Next.png")
     .setDescription(
       [
-        "Use **`/start-match`** each day to post new matches.",
+        "Use **`/tournament-start-match`** each day to post new matches.",
         "_TODO: Explain timing, tie behavior, and resends._",
       ].join("\n")
     )
@@ -463,7 +463,7 @@ async function SendTournamentHelpDm(message) {
       [
         "_TODO: Add tips about test mode, resending, match art, and edits._",
         "",
-        "Useful commands: `/set-test-mode`, `/resend-current-matches`, `/add-match-art`.",
+        "Useful commands: `/tournament-set-test-mode`, `/tournament-resend-current-matches`, `/tournament-add-match-art`.",
       ].join("\n")
     )
     .setFooter(domoHelpFoot);

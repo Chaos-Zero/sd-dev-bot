@@ -12,7 +12,7 @@ const loadingEmbed = new EmbedBuilder().setImage(
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("taste-makers")
+    .setName("tournament-taste-makers")
     .setDescription(
       "Find who's on the pulse and has most consistently voted for the winner in matches!"
     )

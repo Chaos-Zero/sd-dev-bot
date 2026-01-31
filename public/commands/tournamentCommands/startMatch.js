@@ -7,8 +7,8 @@ eval(fs.readFileSync("./public/tournament/tournamentFunctions.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("start-match")
-    .setDescription("If there is a tournament set up, we can manually start a days worth of matches using this command."),
+    .setName("tournament-start-next-match")
+    .setDescription("If there is a tournament running, manually start a days worth of matches."),
   async execute(interaction) {
     await interaction.reply("Sending Messages");
     const previousMatches = await EndMatches(interaction);

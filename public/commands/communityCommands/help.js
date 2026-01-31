@@ -109,7 +109,7 @@ module.exports = {
     .addStringOption((option) =>
       option
         .setName("topic")
-        .setDescription("Category or command (e.g. tournament setup, /register-tournament).")
+        .setDescription("Category or command (e.g. tournament setup, /tournament-register).")
         .setRequired(false)
     ),
   async execute(interaction) {

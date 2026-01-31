@@ -20,7 +20,7 @@ const loadingEmbed = new EmbedBuilder().setImage(
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("most-compatible")
+    .setName("tournament-most-compatible")
     .setDescription(
       "Find that other person who shares the most compatible votes with you in a tournament!"
     )

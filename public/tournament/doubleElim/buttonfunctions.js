@@ -35,7 +35,7 @@ async function handleDoubleElimButtonPress(interaction, db) {
       await interaction
         .update({
           content:
-            "You will now receive DM's when casting votes.\nYou can change this at any time by using the `/toggle-dm-receipts` slash command",
+            "You will now receive DM's when casting votes.\nYou can change this at any time by using the `/tournament-toggle-dm-receipts` slash command",
           components: [],
           ephemeral: true,
         })
@@ -46,7 +46,7 @@ async function handleDoubleElimButtonPress(interaction, db) {
       await interaction
         .update({
           content:
-            "You will not receive DM's on votes cast.\nYou can change this at any time by using the `/toggle-dm-receipts` slash command",
+            "You will not receive DM's on votes cast.\nYou can change this at any time by using the `/tournament-toggle-dm-receipts` slash command",
           components: [],
           ephemeral: true,
         })

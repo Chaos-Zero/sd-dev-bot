@@ -12,7 +12,7 @@ const loadingEmbed = new EmbedBuilder().setImage(
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("iconoclast")
+    .setName("tournament-iconoclast")
     .setDescription(
       "Find who's marching to the beat of their own drum!"
     )

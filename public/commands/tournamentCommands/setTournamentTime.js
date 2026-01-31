@@ -175,8 +175,8 @@ async function promptTimeConfirmation(interaction, initialTime) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("set-tournament-time")
-    .setDescription("Set the daily tournament post time (UTC, hourly).")
+    .setName("tournament-set-match-time")
+    .setDescription("Set the daily tournament post time (UTC, hourly). Confirmation with timezones will be prompted. ")
     .addStringOption((option) =>
       option
         .setName("time")
