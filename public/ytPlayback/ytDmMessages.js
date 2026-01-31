@@ -41,8 +41,13 @@ function getDomoHelpCategories() {
       thumbnail: domoHelpCategoryThumbs.tournamentAdmin,
       commands: [
         {
+          name: "If you would like step by step instructios on how to set up a tournament, you can send **`tournament-help`** in a DM directly to the bot",
+          desc: "Other tournament commands are described in more detail to help manage progression and amendments",
+          
+        },
+        {
           name: "/tournament-register",
-          desc: "Register a new tournament using a CSV file.\n If you would like step by step instructios on how to set up a tournament, you can send `tournament-help` in a DM to the bot.\n",
+          desc: "Register a new tournament using a CSV file.",
           args:
             "tournament-name*, tournament-format*, matches-per-day*, csv-file*, post-time (UTC hourly, confirm with timezone prompt), include-weekends, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role, notes: <fill-in>",
         },
