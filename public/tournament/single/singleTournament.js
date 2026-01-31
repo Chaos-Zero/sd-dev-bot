@@ -904,13 +904,6 @@ async function EndSingleMatches(interaction = "") {
     single.startingMatchCount,
     single.hasThirdPlaceMatch
   );
-  console.log(
-    "TP_SYNC: third place config",
-    "tournament=" + currentTournamentName,
-    "baseRounds=" + baseRounds,
-    "thirdPlaceMatchNumber=" + thirdPlaceMatchNumber,
-    "hasThirdPlaceMatch=" + single.hasThirdPlaceMatch
-  );
 
   var tiedMatches = [];
 

@@ -224,62 +224,58 @@ async function registerTournament(
             }
           }
 
-          var RoundLength =
-            tournamentFormat == "3v3 Ranked"
-              ? parseInt(participants.length) / 3
-              : parseInt(participants.length) / 2;
-          var nextRoundLength =
-            tournamentFormat == "3v3 Ranked"
-              ? parseInt(RoundLength.length) / 3
-              : parseInt(RoundLength.length) / 2;
-          if (tournamentFormat == "Double Elimination") {
-            db.get("tournaments")
-              .nth(0)
-              .assign({
-                currentTournament: tournamentTitle,
-                [tournamentTitle]: {
-                  tournamentFormat: tournamentFormat,
-                  startingParticipantCount: RoundLength,
-                  nextWinnerInNextRound: RoundLength + nextRoundLength,
-                  nextLoserInNextRound: RoundLength,
-                  matchNumber: 0,
-                  round: 1,
-                  currentBracket: "winnersBracket",
-                  roundsPerTurn: roundsPerTurn,
-                  matches: [],
-                  winnersBracket: { 1: participants },
-                  losersBracket: {},
-                  eliminated: [],
-                  final: [],
-                  isChallonge: isChallonge,
-                  roleId: participantRoleId,
-                },
-              })
-              .write();
-          } else {
-            db.get("tournaments")
-              .nth(0)
-              .assign({
-                currentTournament: tournamentTitle,
-                [tournamentTitle]: {
-                  tournamentFormat: tournamentFormat,
-                  startingMatchCount: RoundLength,
-                  nextRoundNextMatch: RoundLength + 1,
-                  matchNumber: 0,
-                  round: 1,
-                  roundsPerTurn: roundsPerTurn,
-                  matches: [],
-                  rounds: { 1: participants },
-                  hasThirdPlaceMatch: true,
-                  thirdPlaceEntrants: [],
-                  eliminated: [],
-                  final: [],
-                  isChallonge: isChallonge,
-                  roleId: participantRoleId,
-                },
-              })
-              .write();
-          }
+        var RoundLength =
+          tournamentFormat == "3v3 Ranked"
+            ? parseInt(participants.length) / 3
+            : parseInt(participants.length) / 2;
+        var nextRoundLength =
+          tournamentFormat == "3v3 Ranked"
+            ? parseInt(RoundLength.length) / 3
+            : parseInt(RoundLength.length) / 2;
+        if (tournamentFormat == "Double Elimination") {
+          db.get("tournaments")
+            .nth(0)
+            .assign({
+              currentTournament: tournamentTitle,
+              [tournamentTitle]: {
+                tournamentFormat: tournamentFormat,
+                startingParticipantCount: RoundLength,
+                nextWinnerInNextRound: RoundLength + nextRoundLength,
+                nextLoserInNextRound: RoundLength,
+                matchNumber: 0,
+                round: 1,
+                currentBracket: "winnersBracket",
+                roundsPerTurn: roundsPerTurn,
+                matches: [],
+                winnersBracket: { 1: participants },
+                losersBracket: {},
+                eliminated: [],
+                final: [],
+                isChallonge: isChallonge,
+              },
+            })
+            .write();
+        } else {
+          db.get("tournaments")
+            .nth(0)
+            .assign({
+              currentTournament: tournamentTitle,
+              [tournamentTitle]: {
+                tournamentFormat: tournamentFormat,
+                startingMatchCount: RoundLength,
+                nextRoundNextMatch: RoundLength + 1,
+                matchNumber: 0,
+                round: 1,
+                roundsPerTurn: roundsPerTurn,
+                matches: [],
+                rounds: { 1: participants },
+                eliminated: [],
+                final: [],
+                isChallonge: isChallonge,
+              },
+            })
+            .write();
+        }
 
           finish({ ok: true });
         })

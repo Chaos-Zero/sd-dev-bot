@@ -455,7 +455,7 @@ async function SendTournamentHelpDm(message) {
         "  - You can choose if you want simple 1v1 matches or more complicated variations such as 3v3, ranked matches.",
         "**matches-per-day** - ***[Required]***",
         "  - You can choose how many matches you would like to play per day (1, 2 or 4 currently).",
-        "  - Match for 3rd place and Finals will always take place on a day of their own (sinlge match)",
+        "  - Match for 3rd place and Finals will always take place on a day of their own (single match)",
         "  - If ties occur, these will be highlighted and reposted so you may see more than the specified amount of matches appearing on any given day (tie matches are red in colour)",
         "  - Note: If there are not enough outstanding entrants to make up your selected daily amount, the bot will still make as many as it can (e.g. if a tie match means there is only three matches available in the next round, the bot will still continue to post the maximum amount it can while posting less than 4).",
         "**csv-file** - ***[Required]***",

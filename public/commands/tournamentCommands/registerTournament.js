@@ -393,10 +393,13 @@ module.exports = {
           participantRoleId
         );
         if (!result?.ok) {
-          await interaction.editReply(
-            result?.message ||
-              "Tournament setup failed. Please check the CSV and try again."
-          );
+          await interaction.editReply({
+            content:
+              result?.message ||
+              "Tournament setup failed. Please check the CSV and try again.",
+            embeds: [],
+            components: [],
+          });
           return;
         }
         const refreshedRoot = await dbInstance

@@ -499,7 +499,7 @@ async function SendTripleDailyEmbed(
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
   const gifPath =
-    "http://91.99.239.6/dev_files/output/" + gifName + ".gif";
+    "http://91.99.239.6/files/output/" + gifName + ".gif";
 
   var timeUntilNextRound = GetNextTournamentScheduleEpoch();
 

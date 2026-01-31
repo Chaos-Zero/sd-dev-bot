@@ -42,11 +42,11 @@ module.exports = {
   async execute(interaction) {
     var db = GetDb();
     db.read();
-    let tournamentDetails = db.get("tournaments").nth(0).value();
+    let tournamentDetails = db.get("tournaments").nth(0).value() || {};
     let tournamentName = await db
       .get("tournaments[0].currentTournament")
       .value();
-    let tournamentDb = await tournamentDetails[tournamentName];
+    let tournamentDb = tournamentDetails[tournamentName];
 
     const checkingUser = interaction.user.id;
     const userToCompare = interaction.options.getString("other-member");

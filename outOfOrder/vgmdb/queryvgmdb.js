@@ -12,11 +12,11 @@ const {
 } = require("discord.js");
 
 const smallLoadingEmbed = new EmbedBuilder().setImage(
-  "http://91.99.239.6/dev_files/assets/Domo_load.gif"
+  "http://91.99.239.6/files/assets/Domo_load.gif"
 );
 
 const loadingEmbed = new EmbedBuilder().setImage(
-  "http://91.99.239.6/dev_files/assets/Domo_load.gif"
+  "http://91.99.239.6/files/assets/Domo_load.gif"
 );
 
 const noResultsEmbed = new EmbedBuilder().setImage(
