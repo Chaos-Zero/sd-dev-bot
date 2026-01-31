@@ -440,7 +440,7 @@ async function SendTournamentHelpDm(message) {
   const registerEmbed = new EmbedBuilder()
     .setTitle("Step 2 — Register the Tournament (Required Options)")
     .setColor(0x8e44ad)
-    .setThumbnail("http://91.99.239.6/files/assets/match.png")
+    .setThumbnail("http://91.99.239.6/files/assets/help/match.png")
     .setDescription(
       [
         "Setting up tournaments can be achieved by using the **`/tournament-register`** command with your downloaded CSV file.",
@@ -471,7 +471,7 @@ async function SendTournamentHelpDm(message) {
   const registerOptionsEmbed = new EmbedBuilder()
     .setTitle("Step 2 — Register the Tournament (Additional Options)")
     .setColor(0x8e44ad)
-    .setThumbnail("http://91.99.239.6/files/assets/challonge.png")
+    .setThumbnail("http://91.99.239.6/files/assets/help/challonge.png")
     .setDescription(
       [
         "Optional settings let you customize timing, bracket behavior, and notifications.",
@@ -499,7 +499,7 @@ async function SendTournamentHelpDm(message) {
   const runEmbed = new EmbedBuilder()
     .setTitle("Step 3 — Run Daily Matches")
     .setColor(0x8e44ad)
-    .setThumbnail("http://91.99.239.6/files/assets/results.png")
+    .setThumbnail("http://91.99.239.6/files/assets/help/results.png")
     .setDescription(
       [
         "Matches occur automatically daily at the time you stipulated in the setup stage (excluding weekends unless this option is changed). After setting up your tournament, you will be informed as to when the first set of matches is to take place in the confirmation message",
@@ -515,7 +515,7 @@ async function SendTournamentHelpDm(message) {
   const adminEmbed = new EmbedBuilder()
     .setTitle("Tips & Admin Tools")
     .setColor(0x8e44ad)
-    .setThumbnail("http://91.99.239.6/files/assets/domocommand.png")
+    .setThumbnail("http://91.99.239.6/files/assets/help/domocommand.png")
     .setDescription(
       [
         "With any tournament, there may be some options to change or corrections to make, so here is a detailed list of slash commands and their functions:",
