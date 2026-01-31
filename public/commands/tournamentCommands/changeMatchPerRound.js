@@ -6,7 +6,7 @@ eval(fs.readFileSync("./public/tournament/tournamentFunctions.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("change-match-per-round")
+    .setName("tournament-set-matches-per-day")
     .setDescription("Change the matches-per-round setting for the current tournament.")
     .addIntegerOption((option) =>
       option

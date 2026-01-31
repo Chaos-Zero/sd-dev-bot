@@ -6,7 +6,7 @@ eval(fs.readFileSync("./public/tournament/dmUtils.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("toggle-dm-receipts")
+    .setName("tournament-toggle-dm-receipts")
     .setDescription(
       "Toggle whether you would like DM messages which track you votes in tournaments."
     ),

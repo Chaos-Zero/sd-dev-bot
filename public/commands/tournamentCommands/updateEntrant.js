@@ -15,7 +15,7 @@ const db = low(adapter);
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("update-entrant")
+    .setName("tournament-update-entrant")
     .setDescription("Update an entrant in the tournament."),
 
   async execute(interaction) {

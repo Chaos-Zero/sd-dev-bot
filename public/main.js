@@ -40,6 +40,7 @@ var adapter = new FileSync(".data/db.json");
 var low = require("lowdb");
 var db = new low(adapter);
 var botAccess;
+let sendDailyEmbed;
 
 //runningTournament.updateScore(32, 40);
 //runningTournament.updateScore(25, 21);
@@ -94,7 +95,7 @@ function CreateBot() {
     // Set check chron here
   });
   botAccess = bot;
-  sendDailyEmbed.start();
+  ResetTournamentSchedule();
   //sendAprilFools.start();
   //checkTournamentBattleReactions.start();
   //checkTournamentBattleReactions2.start();
@@ -110,8 +111,83 @@ let sendAprilFools = new cron.CronJob("00 00 19 * * 1-5", async () => {
   //await StartMatch("", GetBot(), true);
 });
 
-let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
+function ensureTournamentRoot(dbInstance) {
+  const tournaments = dbInstance.get("tournaments").value() || [];
+  if (tournaments.length > 0 && tournaments[0]) {
+    return tournaments[0];
+  }
+  const base = {
+    currentTournament: "N/A",
+    receiptUsers: [],
+    admin: [],
+    adminRoles: [],
+    testMode: {
+      enabled: false,
+      channelId: "",
+      channelName: "",
+    },
+    tournamentPostTime: "19:00",
+    tournamentIncludeWeekends: false,
+  };
+  dbInstance.get("tournaments").push(base).write();
+  return base;
+}
+
+function normalizeScheduleTime(input) {
+  if (!input) {
+    return "19:00";
+  }
+  const trimmed = String(input).trim();
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) {
+    return "19:00";
+  }
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return "19:00";
+  }
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return "19:00";
+  }
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function getTournamentScheduleSettings(dbInstance) {
+  const tournamentRoot = ensureTournamentRoot(dbInstance);
+  const normalizedTime = normalizeScheduleTime(
+    tournamentRoot.tournamentPostTime
+  );
+  const includeWeekends = tournamentRoot.tournamentIncludeWeekends === true;
+  const updates = {};
+  if (tournamentRoot.tournamentPostTime !== normalizedTime) {
+    updates.tournamentPostTime = normalizedTime;
+  }
+  if (tournamentRoot.tournamentIncludeWeekends !== includeWeekends) {
+    updates.tournamentIncludeWeekends = includeWeekends;
+  }
+  if (Object.keys(updates).length > 0) {
+    dbInstance.get("tournaments").nth(0).assign(updates).write();
+  }
+  return {
+    time: normalizedTime,
+    includeWeekends,
+  };
+}
+
+function buildTournamentCronExpression(time, includeWeekends) {
+  const [hour, minute] = time.split(":");
+  const dayField = includeWeekends ? "*" : "1-5";
+  return `00 ${minute} ${hour} * * ${dayField}`;
+}
+
+async function runDailyTournamentMatches() {
   var previousMatches = "";
+  const bot = GetBot();
+  if (!bot) {
+    console.log("Bot not ready for tournament schedule yet.");
+    return;
+  }
   let guildObject = await bot.guilds.cache.get(process.env.GUILD_ID);
   previousMatches = await EndMatches();
 
@@ -163,7 +239,31 @@ let sendDailyEmbed = new cron.CronJob("00 25 10 * * 1-5", async () => {
       await sleep(30000);
     }
   }
-});
+}
+
+function ResetTournamentSchedule() {
+  const schedule = getTournamentScheduleSettings(db);
+  const cronExpression = buildTournamentCronExpression(
+    schedule.time,
+    schedule.includeWeekends
+  );
+  if (sendDailyEmbed) {
+    sendDailyEmbed.stop();
+  }
+  sendDailyEmbed = new cron.CronJob(
+    cronExpression,
+    async () => {
+      await runDailyTournamentMatches();
+    },
+    null,
+    false,
+    "Etc/UTC"
+  );
+  if (botAccess) {
+    sendDailyEmbed.start();
+  }
+  return { ...schedule, cronExpression };
+}
 
 function SetupEvents(bot) {
   const eventsPath = path.join(__dirname, "public", "events");

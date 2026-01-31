@@ -350,8 +350,11 @@ bot.on("messageCreate", function (msg) {
   // No Guild means DM
   if (msg.guild == null) {
     console.log("It's recognised as a DM");
-    if (msg.content.toLowerCase() == "gghelp") {
+    const content = msg.content.trim();
+    const lowerContent = content.toLowerCase();
+    if (lowerContent === "gghelp") {
       SendGuessingGameInstructionDm(msg);
+      return;
     }
   }
 });
@@ -382,6 +385,12 @@ const listener = app.listen(process.env.PORT, () => {
 
 bot.on(Events.InteractionCreate, (interaction) => {
   console.log(interaction.customId);
+  if (interaction.isStringSelectMenu() && interaction.customId === "domo-help-topic") {
+    const requesterId = interaction.user?.id;
+    if (requesterId) {
+      return HandleDomoHelpTopicSelect(interaction);
+    }
+  }
   var isUserMatch =
     new String(interaction.customId).trim() ==
     new String("album-dropdown-" + String(interaction.user.id)).trim();

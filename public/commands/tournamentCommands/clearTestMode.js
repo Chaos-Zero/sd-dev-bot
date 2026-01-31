@@ -5,7 +5,7 @@ eval(fs.readFileSync("./public/main.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("clear-test-mode")
+    .setName("tournament-clear-test-mode")
     .setDescription("Disable test mode routing for tournament messages."),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });

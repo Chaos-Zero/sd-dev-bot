@@ -1,6 +1,625 @@
-const { EmbedBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+} = require("discord.js");
 const fs = require("fs");
 eval(fs.readFileSync("./public/collections/roles.js") + "");
+
+const domoHelpThumb = "http://91.99.239.6/files/assets/bowtie.png";
+
+const domoHelpCategoryColors = {
+  tournamentAdmin: 0x8e44ad,
+  tournamentAnalytics: 0x2ecc71,
+  tracks: 0x8b0000,
+  youtube: 0xFF0000,
+  guessingGame: 0xffd700,
+  misc: 0xffffff,
+};
+
+const domoHelpCategoryThumbs = {
+  tournamentAdmin: "http://91.99.239.6/files/assets/guess/admin2.png",
+  tournamentAnalytics: "http://91.99.239.6/files/assets/guess/ggplaying.png",
+  tracks: "http://91.99.239.6/files/assets/guess/ggstarted.png",
+  youtube: "http://91.99.239.6/files/assets/guess/ggame.png",
+  guessingGame: "http://91.99.239.6/files/assets/guess/ggpoints.png",
+  misc: "http://91.99.239.6/files/assets/guess/misc.png",
+};
+
+const domoHelpFoot = {
+  text: "Supradarky's VGM Club",
+  iconURL: "http://91.99.239.6/files/assets/sd-img.png",
+};
+
+function getDomoHelpCategories() {
+  return [
+    {
+      id: "tournament-admin",
+      title: "Tournament Setup & Admin",
+      summary: "Create, manage, and resend tournament matches.",
+      color: domoHelpCategoryColors.tournamentAdmin,
+      thumbnail: domoHelpCategoryThumbs.tournamentAdmin,
+      commands: [
+        {
+          name: "/tournament-dm-instructions",
+          desc: "DM detailed instructions for setting up a tournament (owner/admin only).",
+        },
+        {
+          name: "/tournament-register",
+          desc: "Register a new tournament using a CSV file.",
+          args:
+            "tournament-name*, tournament-format*, matches-per-day*, csv-file*, post-time (UTC hourly, confirm with timezone prompt), include-weekends, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role, notes: <fill-in>",
+        },
+        {
+          name: "/tournament-start-match",
+          desc: "Manually start a day's worth of matches for the current tournament.",
+          
+        },
+        {
+          name: "/tournament-set-matches-per-day",
+          desc: "Change matches-per-day for the current tournament.",
+          args: "matches-per-day* (1/2/4)",
+        },
+        {
+          name: "/tournament-resend-matches",
+          desc: "Resend currently active matches without DB changes.",
+          args: "include-results, include-logs",
+        },
+        {
+          name: "/tournament-remove",
+          desc: "Remove a tournament from the DB (confirmation required).",
+          args: "tournament-name*",
+        },
+        {
+          name: "/tournament-set-test-mode",
+          desc: "Route all tournament messages/logs to a test channel.",
+          args: "channel*",
+        },
+        {
+          name: "/tournament-clear-test-mode",
+          desc: "Disable test mode routing.",
+          
+        },
+        {
+          name: "/tournament-add-match-art",
+          desc: "Upload artwork for a match embed.",
+          args: "match-number*, artist-name*, image*",
+        },
+        {
+          name: "/tournament-edit-embeds",
+          desc: "Edit an embed by message ID.",
+          args: "channel*, message-id*",
+        },
+        {
+          name: "/tournament-update-entrant",
+          desc: "Interactively update an entrant field.",
+          args: "interactive prompts",
+        },
+        {
+          name: "/tournament-toggle-dm-receipts",
+          desc: "Toggle DM vote receipts.",
+          
+        },
+        {
+          name: "/tournament-manage-admin",
+          desc: "Add or remove Domo Admins (owner/admin only).",
+          args: "action* (add-user/remove-user/add-role/remove-role), user (required for add-user), role (required for add-role)",
+        },
+        {
+          name: "/tournament-set-time",
+          desc: "Set the daily tournament post time (UTC, 24-hour).",
+          args: "time* (UTC hourly)",
+        },
+        {
+          name: "/tournament-set-weekends",
+          desc: "Enable or disable weekend tournament posting.",
+          args: "include-weekends*",
+        },
+      ],
+    },
+    {
+      id: "tournament-analytics",
+      title: "Tournament Analytics",
+      summary: "Compatibility and voting insights.",
+      color: domoHelpCategoryColors.tournamentAnalytics,
+      thumbnail: domoHelpCategoryThumbs.tournamentAnalytics,
+      commands: [
+        {
+          name: "/tournament-most-compatible",
+          desc: "Find your most compatible voter based on shared votes.",
+          args: "make-public, specify-participation-percentage, search-all-tournaments",
+        },
+        {
+          name: "/tournament-user-compatibility",
+          desc: "Compare your votes with another user.",
+          args: "other-member*, make-public, search-all-tournaments",
+        },
+        {
+          name: "/tournament-taste-makers",
+          desc: "Find who most often voted for winners.",
+          args: "make-public, include-low-participation",
+        },
+        {
+          name: "/tournament-iconoclast",
+          desc: "Find who most often voted against winners.",
+          args: "make-public, include-low-participation",
+        },
+      ],
+    },
+    {
+      id: "tracks",
+      title: "Tracks & Playlists",
+      summary: "Pull tracks or generate playlists.",
+      color: domoHelpCategoryColors.tracks,
+      thumbnail: domoHelpCategoryThumbs.tracks,
+      commands: [
+        {
+          name: "/sd-track",
+          desc: "Get a SupraDarky track (random or filtered).",
+          args: "track-number, series, year, make-public",
+        },
+        {
+          name: "/community-track",
+          desc: "Get a community track (random or filtered).",
+          args: "contributor, track-number, series, year, include-supra, make-public",
+        },
+        {
+          name: "/generate-playlist",
+          desc: "Generate a 10-track playlist.",
+          args: "contributor, series, year, make-public",
+        },
+      ],
+    },
+    {
+      id: "youtube",
+      title: "YouTube & Playlist Tracking",
+      summary: "Manage playlist tracking and user themes.",
+      color: domoHelpCategoryColors.youtube,
+      thumbnail: domoHelpCategoryThumbs.youtube,
+      commands: [
+        {
+          name: "/toggle-playlist-channel",
+          desc: "Toggle a channel for playlist tracking.",
+          args: "channel-name*, channel-type* (permanent/spotlight), new-playlist-frequency",
+        },
+        {
+          name: "/list-yt-channels",
+          desc: "List registered playlist tracking channels.",
+          
+        },
+        {
+          name: "/yt-register-user-theme",
+          desc: "Set your personal listening party theme song.",
+          args: "youtube-url*",
+        },
+      ],
+    },
+    {
+      id: "guessing-game",
+      title: "Guessing Game",
+      summary: "Host and manage guessing games.",
+      color: domoHelpCategoryColors.guessingGame,
+      thumbnail: domoHelpCategoryThumbs.guessingGame,
+      commands: [
+        {
+          name: "/gg-host-guessing-game",
+          desc: "Start a guessing game session.",
+          args: "add-cohosts",
+        },
+        {
+          name: "/gg-register-cohost",
+          desc: "Add cohosts to the current game.",
+          args: "cohosts*",
+        },
+        {
+          name: "/gg-show-guessing-game-scores",
+          desc: "Show current guessing game scores.",
+          
+        },
+        {
+          name: "/gg-end-guessing-game",
+          desc: "End the guessing game and post results.",
+          
+        },
+      ],
+    },
+    {
+      id: "misc",
+      title: "Misc",
+      summary: "Utility commands.",
+      color: domoHelpCategoryColors.misc,
+      thumbnail: domoHelpCategoryThumbs.misc,
+      commands: [
+        {
+          name: "/ping",
+          desc: "Check if the bot is alive.",
+          
+        },
+        {
+          name: "/echo",
+          desc: "Have the bot repeat a message.",
+          args: "input*",
+        },
+        {
+          name: "/help",
+          desc: "Show this help menu.",
+          args: "topic",
+        },
+      ],
+    },
+  ];
+}
+
+function buildHelpTopicSelectMenu() {
+  const categories = getDomoHelpCategories();
+  const options = categories.map((category) => ({
+    label: category.title,
+    description: category.summary.slice(0, 100),
+    value: category.id,
+  }));
+
+  return new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId("domo-help-topic")
+      .setPlaceholder("Select a help topic")
+      .addOptions(options)
+  );
+}
+
+function normalizeHelpTopic(input) {
+  if (!input) return "";
+  return input.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function findHelpCategory(topic) {
+  const normalized = normalizeHelpTopic(topic);
+  if (!normalized) return null;
+
+  const categories = getDomoHelpCategories();
+  for (const category of categories) {
+    if (
+      normalized === category.id ||
+      normalized === category.title.toLowerCase()
+    ) {
+      return category;
+    }
+  }
+
+  const aliases = {
+    "tournaments": "tournament-admin",
+    "tournament": "tournament-admin",
+    "tournament admin": "tournament-admin",
+    "tournament setup": "tournament-admin",
+    "tournament analytics": "tournament-analytics",
+    "analytics": "tournament-analytics",
+    "compatibility": "tournament-analytics",
+    "tracks": "tracks",
+    "playlists": "tracks",
+    "youtube": "youtube",
+    "playlist tracking": "youtube",
+    "guessing game": "guessing-game",
+    "guessing games": "guessing-game",
+    "misc": "misc",
+  };
+
+  const alias = aliases[normalized];
+  if (!alias) return null;
+  return categories.find((category) => category.id === alias) || null;
+}
+
+function findHelpCommand(topic) {
+  const normalized = normalizeHelpTopic(topic).replace(/\//g, "");
+  if (!normalized) return null;
+  const categories = getDomoHelpCategories();
+  for (const category of categories) {
+    for (const command of category.commands) {
+      const commandName = command.name.replace("/", "").toLowerCase();
+      if (normalized === commandName) {
+        return { command, category };
+      }
+    }
+  }
+  return null;
+}
+
+function buildHelpIntroEmbed() {
+  const categories = getDomoHelpCategories();
+  const descriptionLines = [
+    "Hi! Here are the command categories available:",
+    "",
+    ...categories.map(
+      (category) => `• **${category.title}** — ${category.summary}`
+    ),
+    "",
+  ];
+
+  return new EmbedBuilder()
+    .setTitle("MajorDomo Help")
+    .setColor(0x5865f2)
+    .setThumbnail(domoHelpThumb)
+    .setDescription(descriptionLines.join("\n"))
+    .setFooter(domoHelpFoot);
+}
+
+function buildHelpCategoryEmbed(category) {
+  const lines = category.commands.map((command) => {
+    if (command.args) {
+      return `**${command.name}** — ${command.desc}\nOptions: \`${command.args}\``;
+    }
+    return `**${command.name}** — ${command.desc}`;
+  });
+
+  return new EmbedBuilder()
+    .setTitle(category.title)
+    .setColor(category.color || 0x4aa3df)
+    .setThumbnail(category.thumbnail || domoHelpThumb)
+    .setDescription(lines.join("\n\n"))
+    .setFooter(domoHelpFoot);
+}
+
+function buildHelpCommandEmbed(command, category) {
+  const descriptionLines = [`**What it does:** ${command.desc}`];
+  if (command.args) {
+    descriptionLines.push(`**Options:** \`${command.args}\``);
+  }
+  return new EmbedBuilder()
+    .setTitle(`${command.name} — ${category.title}`)
+    .setColor(category.color || 0x43b581)
+    .setThumbnail(category.thumbnail || domoHelpThumb)
+    .setDescription(descriptionLines.join("\n"))
+    .setFooter(domoHelpFoot);
+}
+
+async function SendDomoHelpIntroDm(user) {
+  const embed = buildHelpIntroEmbed();
+  const row = buildHelpTopicSelectMenu();
+  return await user
+    .send({ embeds: [embed], components: [row] })
+    .catch(console.error);
+}
+
+async function SendDomoHelpDetailsDm(user, topic) {
+  const category = findHelpCategory(topic);
+  if (category) {
+    const embed = buildHelpCategoryEmbed(category);
+    return await user.send({ embeds: [embed] }).catch(console.error);
+  }
+
+  const commandMatch = findHelpCommand(topic);
+  if (commandMatch) {
+    const embed = buildHelpCommandEmbed(
+      commandMatch.command,
+      commandMatch.category
+    );
+    return await user.send({ embeds: [embed] }).catch(console.error);
+  }
+
+  const fallbackEmbed = new EmbedBuilder()
+    .setTitle("Help Topic Not Found")
+    .setColor(0xffc107)
+    .setThumbnail(domoHelpThumb)
+    .setDescription(
+      "I couldn't find that category or command. Try **`Domo help`** to see the available categories."
+    )
+    .setFooter(domoHelpFoot);
+
+  return await user.send({ embeds: [fallbackEmbed] }).catch(console.error);
+}
+
+async function SendTournamentHelpDm(message) {
+  const introEmbed = new EmbedBuilder()
+    .setTitle("Tournament Setup — Quick Start")
+    .setColor(0x8e44ad)
+    .setThumbnail(
+      "http://91.99.239.6/files/assets/domo_smarty_pants_face.png"
+    )
+    .setDescription(
+      [
+        "**Welcome!** This is a quick guide to getting an automated tournament running using the options available with the `/tournament-register` slash command.",
+        "",
+        "",
+      ].join("\n")
+    )
+    .setFooter(domoHelpFoot);
+
+  const csvEmbed = new EmbedBuilder()
+    .setTitle("Step 1 — Prepare Your CSV")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/help/headers.png")
+    .setDescription(
+      [
+        "Tournaments require a CSV file uploaded with key columns `title`, `name`, and `link` to be read correctly. This can be easily achieved by exporting any type of spreadsheet to the CSV format (as seen in the image on the right).",
+        "You can also include an option column of 'type' to add an aditional 'Type' field into the embed.",
+        "",
+        "Below is an example using Google Sheets to download a CSV file for use with the bot: `File` > `Download` > `Comma Seperated Values (.csv)`",
+      ].join("\n")
+    )
+    .setImage("http://91.99.239.6/files/assets/help/export.png")
+    .setFooter(domoHelpFoot);
+
+  const registerEmbed = new EmbedBuilder()
+    .setTitle("Step 2 — Register the Tournament (Required Options)")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/help/match.png")
+    .setDescription(
+      [
+        "Setting up tournaments can be achieved by using the **`/tournament-register`** command with your downloaded CSV file.",
+        "When running the slash command, you can enter your information into the options that appear, pressing tab to move on to the next. Some options will give expected entries that you can click on to make naivagation easier.",
+        "Tournaments will not start immediately (defaults to starting at 19:00 UTC on weekdays) and there is a suite of slash commands you can use to change options made when setting up the tournament, so don't worry if you make any mistakes.",
+        "",
+        "With the amount of options. this can appear slightly daunting at first, but you can read what each option does here:",
+        "",
+        "**tournament-name** - ***[Required]***",
+        "  - The title of your tournament which will show on embeds while running. This needs to be unique and you will be informed if you need to change your title.",
+        "**tournament-format** - ***[Required]***",
+        "  - You can choose if you want simple 1v1 matches or more complicated variations such as 3v3, ranked matches.",
+        "**matches-per-day** - ***[Required]***",
+        "  - You can choose how many matches you would like to play per day (1, 2 or 4 currently).",
+        "  - Match for 3rd place and Finals will always take place on a day of their own (sinlge match)",
+        "  - If ties occur, these will be highlighted and reposted so you may see more than the specified amount of matches appearing on any given day (tie matches are red in colour)",
+        "  - Note: If there are not enough outstanding entrants to make up your selected daily amount, the bot will still make as many as it can (e.g. if a tie match means there is only three matches available in the next round, the bot will still continue to post the maximum amount it can while posting less than 4).",
+        "**csv-file** - ***[Required]***",
+        "  - This is the **Tournament Spreadsheet** that you generated and downloaded as a **CSV file** from Step 1",
+        "  - You can drag and drop your file directly into the box in the message",
+        "",
+        "If a tournament is incorrectly set, you can always remove it by using the **`/tournament-remove`** command with the name of the tournament.",
+      ].join("\n")
+    )
+    .setImage("http://91.99.239.6/files/assets/help/setup.png")
+    .setFooter(domoHelpFoot);
+
+  const registerOptionsEmbed = new EmbedBuilder()
+    .setTitle("Step 2 — Register the Tournament (Additional Options)")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/help/challonge.png")
+    .setDescription(
+      [
+        "Optional settings let you customize timing, bracket behavior, and notifications.",
+        "",
+        "**post-time** - ***[Optional - Default: 19:00 UTC]***",
+        "  - The time you would like the bot to daily post matches, results and logs.",
+        "  - The bot offers slots on the hour and expects the user to select the time based in **`UTC`** time",
+        "  - Once the slash command is sent, **the user will be asked to confirm the time and offered a chance to change** alongside a list of timezones with the corresponding local times",
+        "**include-weekends** - ***[Optional - Default: False]***",
+        "  - Setting this to `True` will allow the bot to post matches on a Saturday and Sunday",
+        "**randomise-tournament** - ***[Optional - Default: False]***",
+        "  - Setting this option to `True` will randomise the bracket provided and mix everything up automatically",
+        "  - Your tournament will remain in the same order if this is set to `False` (default setting)",
+        "**create-challonge-bracket** - ***[Optional - Default: False]***",
+        "  - Setting this to `True` will create and update a Bracket on the Challonge website to accompany the tournament, with the URL appearing in embeds alongside matches.",
+        "**set-challonge-hidden** - ***[Optional - Default: True]***",
+        "  - This option will hide the names of entrants in the Challonge bracket until they appear in a match in the first round. It is set to `True` by default",
+        "**participant-role** - ***[Optional]***",
+        "  - Select an existing role from the server and the bot will make sure to ping that role whenever a new match is sent",
+      ].join("\n")
+    )
+    .setImage("http://91.99.239.6/files/assets/help/time.png")
+    .setFooter(domoHelpFoot);
+
+  const runEmbed = new EmbedBuilder()
+    .setTitle("Step 3 — Run Daily Matches")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/help/results.png")
+    .setDescription(
+      [
+        "Matches occur automatically daily at the time you stipulated in the setup stage (excluding weekends unless this option is changed). After setting up your tournament, you will be informed as to when the first set of matches is to take place in the confirmation message",
+        "",
+        "If you want to start the tournament right away, you can use **`/tournament-start-match`** to immediately end any outstanding matches, send results and logs, and begin the next set.",
+        "The match embeds include the time as to when the next match will occur, and if one is started with **`/tournament-start-match`**, this time will reflect your chosen, established time when setting up (this can be changed at any time using **`/tournament-set-time`**).",
+        "",
+      ].join("\n")
+    )
+    .setImage("http://91.99.239.6/files/assets/help/logs.png")
+    .setFooter(domoHelpFoot);
+
+  const adminEmbed = new EmbedBuilder()
+    .setTitle("Tips & Admin Tools")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/help/domocommand.png")
+    .setDescription(
+      [
+        "With any tournament, there may be some options to change or corrections to make, so here is a detailed list of slash commands and their functions:",
+        "",  
+        "**/tournament-start-match**",
+          "  - This forces matches to end and new ones begin after running the command.",
+          "  - Previous match results and logs will be sent as well",
+          "",
+          "**/tournament-set-matches-per-day**",
+          "  - Change matches-per-day for the current tournament.",
+          "",
+          "**/tournament-resend-matches**",
+          "  - Resends currently active matches without DB changes.",
+          "  - This can be used if there is a Discord issue or matches aren't appearing.",
+          "  - You can choose to resend results and logs as well.",
+          "  - This will not resend previous days; only the cuirrent matches running.",
+          "",
+          "**/tournament-remove**",
+          "  - Completely remove a tournament from the DB.",
+          "  - You can use this to try setting a tournament up again.",
+          "",
+          "**/tournament-set-test-mode**",
+          "  - This puts the bot into a test mode where all tournament messages/logs are sent to a channel you select.",
+          "",
+          "**/tournament-clear-test-mode**",
+          "  - This disables the test options and starts sending messages to the correct channels again.",
+          "  - If you clear a test tournament running, make sure to either remove the tournamnet as well (**`/tournament-remove`**), otherwise it will continue from where it was during testing in the correct channels.",
+          "",
+          "**/tournament-dm-instructions**",
+          "  - Send this!",
+          "",
+          "**/tournament-add-match-art**",
+          "  - This lets you add an image to a match embed by uploading a picture and selecting which match number you want it to appear on.",
+          "  - Add the username of the person submitting to have them accredited in the footer of the message.",
+          "",
+          "**/tournament-edit-embeds**",
+          "  - If there's a problem with a message sent by the bot, you can use this edit the contents of the embed sent",
+          "  - You will need to supply the channel the message was sent in, and the message ID (right click on the message to find this)",
+          "",
+          "**/tournament-update-entrant**",
+          "  - This lets you update an entrant of the tournament (typos, broken links etc)",
+          "  - Interactive prompts appear to lead you through this command.",
+          "",
+          "**/tournament-toggle-dm-receipts**",
+          "  - When voting, you can opt in to receive DMs to personally keep track of your voting records.",
+          "",
+          "**/tournament-manage-admin**",
+          "  - Tournament setup and management is locked down to server owners, admins and groups. This options allows you to add more people for management.",
+          "  - Options: action* (add-user/remove-user/add-role/remove-role), user (required for add-user), role (required for add-role)",
+          "",
+          "**/tournament-set-time**",
+          "  - If you want to change when the daily messages are sent, you can update the time using this command.",
+          "  - This is set in UTC time.",
+          "",
+          "**/tournament-set-weekends**",
+          "  - Enable or disable weekend tournament posting.",
+          "  - Options: include-weekends*",
+        "",
+      ].join("\n")
+    )
+    .setFooter(domoHelpFoot);
+
+  const embeds = [
+    introEmbed,
+    csvEmbed,
+    registerEmbed,
+    registerOptionsEmbed,
+    runEmbed,
+    adminEmbed,
+  ];
+
+  for (let i = 0; i < embeds.length; i += 2) {
+    const chunk = embeds.slice(i, i + 2);
+    const sent = await message.author
+      .send({ embeds: chunk })
+      .catch(console.error);
+    if (!sent) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+async function HandleDomoHelpTopicSelect(interaction) {
+  const selected = interaction.values?.[0];
+  if (!selected) {
+    return interaction.reply({
+      content: "Please choose a valid help topic.",
+      ephemeral: true,
+    });
+  }
+  const category = getDomoHelpCategories().find(
+    (item) => item.id === selected
+  );
+  if (!category) {
+    return interaction.reply({
+      content: "That help topic is no longer available.",
+      ephemeral: true,
+    });
+  }
+  const embed = buildHelpCategoryEmbed(category);
+  return interaction.reply({ embeds: [embed], ephemeral: true });
+}
 
 async function SendGuessingGameHelpDmMessage(user) {
   const description =
@@ -26,12 +645,10 @@ async function SendGuessingGameHelpDmMessage(user) {
 
 async function SendGuessingGameInstructionDm(message) {
   const startDescription =
-    `Starting a game is already underway and guessing game followers will have been alerted in the **"#guessing-games"** channel.\n\n` +
-    `Once you\'re ready to start playing, join the **"VGM Station"** voice channel and then use the \`/yt-play\` slash command in the **"#listening-parties-host"** text channel.\n\n**All playback commands should be used in the **"#listening-parties-host"** channel**.\n\n` +
-    `Paste your **YouTube playlist url** into the \`song-url\` option which appears automatically once the \`/yt-play\` slash command is selected.\n\n` +
-    `**This will start MajorDomo-Bot playback automatically** and your pre-game or main game can start!\n\n` +
-    `You can start playlists and wait until completion or continue to use the \`/yt-play\` slash command to queue up more music.\n\n` + 
-`When using \`/gg-host-guessing-game\`, there is an option called \`add-cohosts\` that will allow other users the same permissions as the main host. Cohosts can also be added at any time using \`gg-register-cohost\`.\n\n`;
+    `Starting a game (/gg-host-guessing-game) is simple and when underway guessing game followers will have been alerted in the **"#guessing-games"** channel.\n\n` +
+    
+`When using \`/gg-host-guessing-game\`, there is an option called \`add-cohosts\` that will allow other users the same permissions as the main host. Cohosts can also be added at any time using \`gg-register-cohost\`.\n\n` + 
+"**Once you are finished with your guessing game, please ensure you run `/end-guessing-game` to send totals and allow users to use the bot again**!";
 
   var startEmbed = new EmbedBuilder()
     .setTitle(`How to start your list`)
@@ -100,7 +717,7 @@ async function SendGuessingGameInstructionDm(message) {
         "http://91.99.239.6/files/assets/sd-img.png",
     });
 
-  var embeds = [startEmbed, changeEmbed, pointsTrackerEmbed];
+  var embeds = [startEmbed, pointsTrackerEmbed];
 
   await message.author.send({ embeds: embeds });
 }

@@ -41,7 +41,7 @@ function getAttachmentExtension(attachment) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("add-match-art")
+    .setName("tournament-add-match-art")
     .setDescription("Upload artwork to be used in a match embed.")
     .addIntegerOption((option) =>
       option

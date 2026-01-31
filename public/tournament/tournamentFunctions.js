@@ -94,9 +94,53 @@ async function registerTournament(
   try {
     const readStream = await downloadFile(csvFilePath);
     return await new Promise((resolve) => {
+      let resolved = false;
+      const finish = (result) => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        resolve(result);
+      };
+      const requiredHeaders = ["Name", "Title", "Link"];
+      const headerAliases = new Map([
+        ["name", "Name"],
+        ["title", "Title"],
+        ["link", "Link"],
+        ["type", "Type"],
+      ]);
+      const parser = csvParser({
+        mapHeaders: ({ header }) => {
+          if (!header) {
+            return header;
+          }
+          const normalized = header.trim().toLowerCase();
+          return headerAliases.get(normalized) || header.trim();
+        },
+      });
+
+      parser.on("headers", (headers) => {
+        const headerSet = new Set(
+          (headers || []).map((header) => (header || "").trim())
+        );
+        const missing = requiredHeaders.filter(
+          (header) => !headerSet.has(header)
+        );
+        if (missing.length > 0) {
+          const message =
+            `CSV missing required columns: ${missing.join(", ")}. ` +
+            "Required columns: Name, Title, Link (Type optional).";
+          finish({ ok: false, reason: "missing_headers", message });
+          readStream.destroy();
+        }
+      });
+
       readStream
-        .pipe(csvParser())
+        .pipe(parser)
         .on("data", (row) => {
+          if (resolved) {
+            return;
+          }
           participants.push({
             name: row.Name,
             title: row.Title,
@@ -106,11 +150,14 @@ async function registerTournament(
           });
         })
         .on("end", async () => {
+          if (resolved) {
+            return;
+          }
           console.log(`Processed ${participants.length} participants.`);
 
           if (participants.length === 0) {
             console.error("No participants found in CSV.");
-            resolve({ ok: false, reason: "no_participants" });
+            finish({ ok: false, reason: "no_participants" });
             return;
           }
 
@@ -166,7 +213,7 @@ async function registerTournament(
                 error?.message ||
                 "Unknown error";
               console.warn("Challonge integration error:", challongeErrors);
-              resolve({
+              finish({
                 ok: false,
                 reason: "challonge_failed",
                 message:
@@ -230,11 +277,14 @@ async function registerTournament(
             .write();
         }
 
-          resolve({ ok: true });
+          finish({ ok: true });
         })
         .on("error", (error) => {
+          if (resolved) {
+            return;
+          }
           console.error("Error processing CSV file:", error);
-          resolve({ ok: false, reason: "csv_error" });
+          finish({ ok: false, reason: "csv_error" });
         });
     });
   } catch (error) {

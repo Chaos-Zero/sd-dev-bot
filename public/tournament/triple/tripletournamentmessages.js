@@ -43,7 +43,8 @@ async function SendTripleBattleMessage(
   bot = "",
   tripleDb,
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
   //interaction = ""
 ) {
   //,
@@ -61,11 +62,13 @@ async function SendTripleBattleMessage(
   var sleepMultiplier =
     previousMatches.length == 0 ? 1 : previousMatches.length;
   var sleepTime = 4500 * sleepMultiplier;
-  if (!secondOfDay) {
+  const skipPreviousResults = options?.skipPreviousResults === true;
+  if (!secondOfDay && !skipPreviousResults) {
     await SendPreviousTripleDayResultsEmbeds(
       guildObject,
       previousMatches,
-      matchData
+      matchData,
+      options
     );
   }
   //);
@@ -108,7 +111,8 @@ async function SendTripleBattleMessage(
 async function SendPreviousTripleDayResultsEmbeds(
   guild,
   previousMatches,
-  matchData
+  matchData,
+  options = {}
 ) {
   console.log("We're in previous day stuff");
   if (previousMatches.length < 1 || previousMatches[0].length < 1) {
@@ -123,6 +127,9 @@ async function SendPreviousTripleDayResultsEmbeds(
   const members = await guild.members.fetch();
   const currentTournamentName = await getCurrentTournamentNameFromDb();
 
+  const includeResults = options?.includeResults === true;
+  const includeLogs = options?.includeLogs !== false;
+  const advanceWinners = options?.advanceWinners !== false;
   var previousEmbedsToSend = [];
   var logsEmbedsToSend = [];
   var links = [];
@@ -314,7 +321,9 @@ async function SendPreviousTripleDayResultsEmbeds(
 
           .setDescription("**Points: " + firstPlaceEntrant.points + "**")
           .setImage(previousWinnerPath);
-        previousEmbedsToSend.push(prevEmbed);
+        if (includeResults) {
+          previousEmbedsToSend.push(prevEmbed);
+        }
 
         ////////////////////////////////////////////////////////////////////
 
@@ -453,24 +462,29 @@ async function SendPreviousTripleDayResultsEmbeds(
             iconURL:
               "http://91.99.239.6/files/assets/sd-img.png",
           });
-        await logsEmbedsToSend.push(resultLogEmbed);
-        await AddWinnerToNextRound(firstPlaceEntrant);
+        if (includeLogs) {
+          await logsEmbedsToSend.push(resultLogEmbed);
+        }
+        if (advanceWinners) {
+          await AddWinnerToNextRound(firstPlaceEntrant);
+        }
       });
     }
   }
 
   console.log("Sending previous day stuff");
-  //channel.send({ embeds: previousEmbedsToSend });
-  //botLogChannel.send({ embeds: logsEmbedsToSend });
+  if (includeResults) {
+    for (var i = 0; i < previousEmbedsToSend.length; i++) {
+      await channel.send({ embeds: [previousEmbedsToSend[i]] });
+      await sleep(250);
+    }
+  }
 
-  /*for (var i = 0; i < previousEmbedsToSend.length; i++) {
-    await channel.send({ embeds: [previousEmbedsToSend[i]] });
-    await sleep(250);
-  }*/
-
-  for (var i = 0; i < logsEmbedsToSend.length; i++) {
-    await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
-    await sleep(250);
+  if (includeLogs) {
+    for (var i = 0; i < logsEmbedsToSend.length; i++) {
+      await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
+      await sleep(250);
+    }
   }
 }
 
@@ -487,11 +501,7 @@ async function SendTripleDailyEmbed(
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
 
-  const d = new Date();
-  let day = d.getDay();
-
-  var timeUntilNextRound =
-    day == 5 ? GetTimeInEpochStamp(72) : GetTimeInEpochStamp(24);
+  var timeUntilNextRound = GetNextTournamentScheduleEpoch();
 
   var todaysSheetCell = "";
 
@@ -586,10 +596,10 @@ async function SendTripleDailyEmbed(
   const tournamentDetails = db.get("tournaments").nth(0).value();
   const tournament = tournamentDetails?.[currentTournamentName];
   const roleId = tournament?.roleId;
-  const rolePing = roleId ? `<@&${roleId}>` : "<@&1193953209019007106>";
+  const rolePing = roleId ? `<@&${roleId}>` : "";
 
   var embedsToSend = [embed];
-  var welcomeString = `Hello all and ${rolePing}`;
+  var welcomeString = roleId ? `Hello all and ${rolePing}` : "Hello all!";
   if (previousMatches.length > 0 && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {
