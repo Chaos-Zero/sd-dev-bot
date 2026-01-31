@@ -181,7 +181,7 @@ function buildTripleResults(matches) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("tournament-resend-current-matches")
+    .setName("tournament-resend-matches")
     .setDescription(
       "Resend the currently active matches without changing tournament state."
     )

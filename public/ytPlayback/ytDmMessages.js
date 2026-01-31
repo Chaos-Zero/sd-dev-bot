@@ -52,12 +52,12 @@ function getDomoHelpCategories() {
           args: "none",
         },
         {
-          name: "/tournament-change-match-per-round",
+          name: "/tournament-set-matches-per-day",
           desc: "Change matches-per-day for the current tournament.",
           args: "matches-per-day* (1/2/4)",
         },
         {
-          name: "/tournament-resend-current-matches",
+          name: "/tournament-resend-matches",
           desc: "Resend currently active matches without DB changes.",
           args: "include-results, include-logs",
         },
@@ -463,7 +463,7 @@ async function SendTournamentHelpDm(message) {
       [
         "_TODO: Add tips about test mode, resending, match art, and edits._",
         "",
-        "Useful commands: `/tournament-set-test-mode`, `/tournament-resend-current-matches`, `/tournament-add-match-art`.",
+        "Useful commands: `/tournament-set-test-mode`, `/tournament-resend-matches`, `/tournament-add-match-art`.",
       ].join("\n")
     )
     .setFooter(domoHelpFoot);
