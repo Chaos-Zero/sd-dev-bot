@@ -41,9 +41,8 @@ function getDomoHelpCategories() {
       thumbnail: domoHelpCategoryThumbs.tournamentAdmin,
       commands: [
         {
-          name: "If you would like step by step instructios on how to set up a tournament, you can send **`tournament-help`** in a DM directly to the bot",
-          desc: "Further details on the commands below are also included in the DM",
-          
+          name: "/tournament-dm-instructions",
+          desc: "DM detailed instructions for setting up a tournament (owner/admin only).",
         },
         {
           name: "/tournament-register",
@@ -67,7 +66,7 @@ function getDomoHelpCategories() {
           args: "include-results, include-logs",
         },
         {
-          name: "/tournament-remove-tournament",
+          name: "/tournament-remove",
           desc: "Remove a tournament from the DB (confirmation required).",
           args: "tournament-name*",
         },
@@ -439,7 +438,7 @@ async function SendTournamentHelpDm(message) {
     .setFooter(domoHelpFoot);
 
   const registerEmbed = new EmbedBuilder()
-    .setTitle("Step 2 — Register the Tournament")
+    .setTitle("Step 2 — Register the Tournament (Required Options)")
     .setColor(0x8e44ad)
     .setThumbnail("http://91.99.239.6/files/assets/bowtie.png")
     .setDescription(
@@ -448,38 +447,49 @@ async function SendTournamentHelpDm(message) {
         "When running the slash command, you can enter your information into the options that appear, pressing tab to move on to the next. Some options will give expected entries that you can click on to make naivagation easier.",
         "Tournaments will not start immediately (defaults to starting at 19:00 UTC on weekdays) and there is a suite of slash commands you can use to change options made when setting up the tournament, so don't worry if you make any mistakes.",
         "",
-        "With the ammount of options. this can appear slightly daunting at first, but you can read what each option does here:",
+        "With the amount of options. this can appear slightly daunting at first, but you can read what each option does here:",
         "",
-          "**tournament-name** - ***[Required]***",
-          "  - The title of your tournament which will show on embeds while running. This needs to be unique and you will be informed if you need to change your title.",
-          "**tournament-format - ***[Required]***",
-          "  - You can choose if you want simple 1v1 matches or more complicated variations such as 3v3, ranked matches.",
-          "**matches-per-day** - ***[Required]***",
-          "  - You can choose how many matches you would like to play per day (1, 2 or 4 currently).",
-          "  - Match for 3rd place and Finals will always take place on a day of their own (sinlge match)",
-          "  - If ties occur, these will be highlighted and reposted so you may see more than the specified amount of matches appearing on any given day (tie matches are red in colour)",
-          "  - Note: If there are not enough outstanding entrants to make up your selected daily amount, the bot will still make as many as it can (e.g. if a tie match means there is only three matches available in the next round, the bot will still continue to post the maximum amount it can while posting less than 4).",
-          "**csv-file** - ***[Required]***",
-          "  - This is the **Tournament Spreadsheet** that you generated and downloaded as a **CSV file** from Step 1",
-          "  - You can drag and drop your file directly into the box in the message",
-          "",
-          "**post-time** - ***[Optional - Default: 19:00 UTC]***",
-          "  - The time you would like the bot to daily post matches, results and logs.",
-          "  - The bot offers slots on the hour and expects the user to select the time based in **`UTC`** time",
-          "  - Once the slash command is sent, **the user will be asked to confirm the time and offered a chance to change** alongside a list of timezones with the corresponding local times",
-          "**include-weekends** - ***[Optional - Default: False]***",
-          "  - Setting this to `True` will allow the bot to post matches on a Saturday and Sunday",
-          "**randomise-tournament** - ***[Optional - Default: False]***",
-          "  - Setting this option to `True` will randomise the bracket provided and mix everything up automatically",
-          "  - Your tournament will remain in the same order if this is set to `False` (default setting)",
-          "**create-challonge-bracket** - ***[Optional - Default: False]***",
-          "  - Setting this to `True` will create and update a Bracket on the Challonge website to accompany the tournament, with the URL appearing in embeds alongside matches.",
-          "**set-challonge-hidden** - ***[Optional - Default: True]***",
-          "  - This option will hide the names of entrants in the Challonge bracket until they appear in a match in the first round. It is set to `True` by default",      
-          "**participant-role** - ***[Optional]***",
-          "  - Select and existing roie from the server and the bot will make sure to ping that role whenever a new match is sent",      
+        "**tournament-name** - ***[Required]***",
+        "  - The title of your tournament which will show on embeds while running. This needs to be unique and you will be informed if you need to change your title.",
+        "**tournament-format** - ***[Required]***",
+        "  - You can choose if you want simple 1v1 matches or more complicated variations such as 3v3, ranked matches.",
+        "**matches-per-day** - ***[Required]***",
+        "  - You can choose how many matches you would like to play per day (1, 2 or 4 currently).",
+        "  - Match for 3rd place and Finals will always take place on a day of their own (sinlge match)",
+        "  - If ties occur, these will be highlighted and reposted so you may see more than the specified amount of matches appearing on any given day (tie matches are red in colour)",
+        "  - Note: If there are not enough outstanding entrants to make up your selected daily amount, the bot will still make as many as it can (e.g. if a tie match means there is only three matches available in the next round, the bot will still continue to post the maximum amount it can while posting less than 4).",
+        "**csv-file** - ***[Required]***",
+        "  - This is the **Tournament Spreadsheet** that you generated and downloaded as a **CSV file** from Step 1",
+        "  - You can drag and drop your file directly into the box in the message",
         "",
-        "If a tournament is incorrectly set, you can always remove it by using the **`/tournament-remove-tournament`** command with the name of the tournament.",
+        "If a tournament is incorrectly set, you can always remove it by using the **`/tournament-remove`** command with the name of the tournament.",
+      ].join("\n")
+    )
+    .setFooter(domoHelpFoot);
+
+  const registerOptionsEmbed = new EmbedBuilder()
+    .setTitle("Step 2 — Register the Tournament (Additional Options)")
+    .setColor(0x8e44ad)
+    .setThumbnail("http://91.99.239.6/files/assets/bowtie.png")
+    .setDescription(
+      [
+        "Optional settings let you customize timing, bracket behavior, and notifications.",
+        "",
+        "**post-time** - ***[Optional - Default: 19:00 UTC]***",
+        "  - The time you would like the bot to daily post matches, results and logs.",
+        "  - The bot offers slots on the hour and expects the user to select the time based in **`UTC`** time",
+        "  - Once the slash command is sent, **the user will be asked to confirm the time and offered a chance to change** alongside a list of timezones with the corresponding local times",
+        "**include-weekends** - ***[Optional - Default: False]***",
+        "  - Setting this to `True` will allow the bot to post matches on a Saturday and Sunday",
+        "**randomise-tournament** - ***[Optional - Default: False]***",
+        "  - Setting this option to `True` will randomise the bracket provided and mix everything up automatically",
+        "  - Your tournament will remain in the same order if this is set to `False` (default setting)",
+        "**create-challonge-bracket** - ***[Optional - Default: False]***",
+        "  - Setting this to `True` will create and update a Bracket on the Challonge website to accompany the tournament, with the URL appearing in embeds alongside matches.",
+        "**set-challonge-hidden** - ***[Optional - Default: True]***",
+        "  - This option will hide the names of entrants in the Challonge bracket until they appear in a match in the first round. It is set to `True` by default",
+        "**participant-role** - ***[Optional]***",
+        "  - Select an existing role from the server and the bot will make sure to ping that role whenever a new match is sent",
       ].join("\n")
     )
     .setFooter(domoHelpFoot);
@@ -493,7 +503,7 @@ async function SendTournamentHelpDm(message) {
         "Matches occur automatically daily at the time you stipulated in the setup stage (excluding weekends unless this option is changed). After setting up your tournament, you will be informed as to when the first set of matches is to take place in the confirmation message",
         "",
         "If you want to start the tournament right away, you can use **`/tournament-start-match`** to immediately end any outstanding matches, send results and logs, and begin the next set.",
-        "The match embeds include the time as to when the next match will occur, and if one is started with **`/tournament-start-match`**, this time will reflect your chosen, established time when setting up (this can be changed at any time using **`/tournament-set-match-time`**).",
+        "The match embeds include the time as to when the next match will occur, and if one is started with **`/tournament-start-match`**, this time will reflect your chosen, established time when setting up (this can be changed at any time using **`/tournament-set-time`**).",
         "",
       ].join("\n")
     )
@@ -517,13 +527,16 @@ async function SendTournamentHelpDm(message) {
           "  - Resend currently active matches without DB changes.",
           "  - Options: include-results, include-logs",
           "",
-          "**/tournament-remove-tournament**",
+          "**/tournament-remove**",
           "  - Remove a tournament from the DB (confirmation required).",
           "  - Options: tournament-name*",
           "",
           "**/tournament-set-test-mode**",
           "  - Route all tournament messages/logs to a test channel.",
           "  - Options: channel*",
+          "",
+          "**/tournament-dm-instructions**",
+          "  - DM detailed tournament setup instructions (owner/admin only).",
           "",
           "**/tournament-clear-test-mode**",
           "  - Disable test mode routing.",
@@ -553,7 +566,7 @@ async function SendTournamentHelpDm(message) {
           "",
           "**/tournament-set-weekends**",
           "  - Enable or disable weekend tournament posting.",
-"  - Options: include-weekends*",
+          "  - Options: include-weekends*",
         "",
       ].join("\n")
     )
@@ -563,6 +576,7 @@ async function SendTournamentHelpDm(message) {
     introEmbed,
     csvEmbed,
     registerEmbed,
+    registerOptionsEmbed,
     runEmbed,
     adminEmbed,
   ];
