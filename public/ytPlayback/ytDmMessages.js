@@ -581,7 +581,17 @@ async function SendTournamentHelpDm(message) {
     adminEmbed,
   ];
 
-  return await message.author.send({ embeds }).catch(console.error);
+  for (let i = 0; i < embeds.length; i += 2) {
+    const chunk = embeds.slice(i, i + 2);
+    const sent = await message.author
+      .send({ embeds: chunk })
+      .catch(console.error);
+    if (!sent) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 async function HandleDomoHelpTopicSelect(interaction) {
