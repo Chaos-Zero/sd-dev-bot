@@ -289,7 +289,7 @@ module.exports = {
     .addRoleOption((option) =>
       option
         .setName("participant-role")
-        .setDescription("Role to ping for match updates (optional).")
+        .setDescription("Role to ping for match updates).")
         .setRequired(false)
     ),
 

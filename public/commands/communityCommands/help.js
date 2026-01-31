@@ -38,7 +38,6 @@ function buildHelpIntroEmbedForCategories(categories) {
       (category) => `• **${category.title}** — ${category.summary}`
     ),
     "",
-    "Use `/help topic:<category or /command>` to see details.",
   ];
 
   return new EmbedBuilder()
