@@ -84,7 +84,7 @@ function getDomoHelpCategories() {
         {
           name: "/tournament-edit-embeds",
           desc: "Edit an embed by message ID.",
-          args: "channel-name*, message-id*",
+          args: "channel*, message-id*",
         },
         {
           name: "/tournament-update-entrant",

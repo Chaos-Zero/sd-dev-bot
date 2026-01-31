@@ -12,10 +12,10 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("tournament-edit-embeds")
     .setDescription("Edit an embed by the message ID")
-    .addStringOption((option) =>
+    .addChannelOption((option) =>
       option
-        .setName("channel-name")
-        .setDescription("The name of the channel where the message is")
+        .setName("channel")
+        .setDescription("Channel containing the message")
         .setRequired(true)
     )
     .addStringOption((option) =>
@@ -25,13 +25,9 @@ module.exports = {
         .setRequired(true)
     ),
   async execute(interaction) {
-    const channelName = interaction.options.getString("channel-name");
+    const channel = interaction.options.getChannel("channel");
     const messageId = interaction.options.getString("message-id");
 
-    // Retrieve the channel by its name
-    const channel = interaction.guild.channels.cache.find(
-      (c) => c.name === channelName
-    );
     if (!channel) {
       return interaction.reply({
         content: "Channel not found.",
