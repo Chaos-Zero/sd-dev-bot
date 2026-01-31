@@ -515,7 +515,7 @@ async function SendTournamentHelpDm(message) {
   const adminEmbed = new EmbedBuilder()
     .setTitle("Tips & Admin Tools")
     .setColor(0x8e44ad)
-    .setThumbnail("http://91.99.239.6/files/assets/album_art.png")
+    .setThumbnail("http://91.99.239.6/files/assets/domocommand.png")
     .setDescription(
       [
         "With any tournament, there may be some options to change or corrections to make, so here is a detailed list of slash commands and their functions:",
