@@ -22,6 +22,7 @@ const fs = require("fs");
 const { Events, EmbedBuilder } = require("discord.js");
 const cron = require("cron");
 const sleep = require("util").promisify(setTimeout);
+const updateEntrantHandlers = require("./public/commands/tournamentCommands/updateEntrant.js");
 
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/api/openai/chat.js") + "");
@@ -385,6 +386,30 @@ const listener = app.listen(process.env.PORT, () => {
 
 bot.on(Events.InteractionCreate, (interaction) => {
   console.log(interaction.customId);
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId === "update-entrant-select"
+  ) {
+    return updateEntrantHandlers.handleEntrantSelect(interaction);
+  }
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId.startsWith("update-entrant-field:")
+  ) {
+    return updateEntrantHandlers.handleFieldSelect(interaction);
+  }
+  if (
+    interaction.isModalSubmit() &&
+    interaction.customId.startsWith("update-entrant-modal:")
+  ) {
+    return updateEntrantHandlers.handleModalSubmit(interaction);
+  }
+  if (
+    interaction.isButton() &&
+    interaction.customId.startsWith("update-entrant-page:")
+  ) {
+    return updateEntrantHandlers.handleEntrantPage(interaction);
+  }
   if (interaction.isStringSelectMenu() && interaction.customId === "domo-help-topic") {
     const requesterId = interaction.user?.id;
     if (requesterId) {
