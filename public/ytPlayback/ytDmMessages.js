@@ -440,7 +440,7 @@ async function SendTournamentHelpDm(message) {
   const registerEmbed = new EmbedBuilder()
     .setTitle("Step 2 — Register the Tournament (Required Options)")
     .setColor(0x8e44ad)
-    .setThumbnail("http://91.99.239.6/files/assets/bowtie.png")
+    .setThumbnail("http://91.99.239.6/files/assets/match.png")
     .setDescription(
       [
         "Setting up tournaments can be achieved by using the **`/tournament-register`** command with your downloaded CSV file.",
@@ -465,12 +465,13 @@ async function SendTournamentHelpDm(message) {
         "If a tournament is incorrectly set, you can always remove it by using the **`/tournament-remove`** command with the name of the tournament.",
       ].join("\n")
     )
+    .setImage("http://91.99.239.6/files/assets/help/setup.png")
     .setFooter(domoHelpFoot);
 
   const registerOptionsEmbed = new EmbedBuilder()
     .setTitle("Step 2 — Register the Tournament (Additional Options)")
     .setColor(0x8e44ad)
-    .setThumbnail("http://91.99.239.6/files/assets/bowtie.png")
+    .setThumbnail("http://91.99.239.6/files/assets/challonge.png")
     .setDescription(
       [
         "Optional settings let you customize timing, bracket behavior, and notifications.",
@@ -492,12 +493,13 @@ async function SendTournamentHelpDm(message) {
         "  - Select an existing role from the server and the bot will make sure to ping that role whenever a new match is sent",
       ].join("\n")
     )
+    .setImage("http://91.99.239.6/files/assets/help/time.png")
     .setFooter(domoHelpFoot);
 
   const runEmbed = new EmbedBuilder()
     .setTitle("Step 3 — Run Daily Matches")
     .setColor(0x8e44ad)
-    .setThumbnail("http://91.99.239.6/files/assets/Next.png")
+    .setThumbnail("http://91.99.239.6/files/assets/results.png")
     .setDescription(
       [
         "Matches occur automatically daily at the time you stipulated in the setup stage (excluding weekends unless this option is changed). After setting up your tournament, you will be informed as to when the first set of matches is to take place in the confirmation message",
@@ -507,6 +509,7 @@ async function SendTournamentHelpDm(message) {
         "",
       ].join("\n")
     )
+    .setImage("http://91.99.239.6/files/assets/help/logs.png")
     .setFooter(domoHelpFoot);
 
   const adminEmbed = new EmbedBuilder()
@@ -516,53 +519,56 @@ async function SendTournamentHelpDm(message) {
     .setDescription(
       [
         "With any tournament, there may be some options to change or corrections to make, so here is a detailed list of slash commands and their functions:",
-          "**/tournament-start-match**",
-          "  - Manually start a day's worth of matches for the current tournament.",
+        "",  
+        "**/tournament-start-match**",
+          "  - This forces matches to end and new ones begin after running the command.",
+          "  - Previous match results and logs will be sent as well",
           "",
           "**/tournament-set-matches-per-day**",
           "  - Change matches-per-day for the current tournament.",
-          "  - Options: matches-per-day* (1/2/4)",
           "",
           "**/tournament-resend-matches**",
-          "  - Resend currently active matches without DB changes.",
-          "  - Options: include-results, include-logs",
+          "  - Resends currently active matches without DB changes.",
+          "  - This can be used if there is a Discord issue or matches aren't appearing.",
+          "  - You can choose to resend results and logs as well.",
+          "  - This will not resend previous days; only the cuirrent matches running.",
           "",
           "**/tournament-remove**",
-          "  - Remove a tournament from the DB (confirmation required).",
-          "  - Options: tournament-name*",
+          "  - Completely remove a tournament from the DB.",
+          "  - You can use this to try setting a tournament up again.",
           "",
           "**/tournament-set-test-mode**",
-          "  - Route all tournament messages/logs to a test channel.",
-          "  - Options: channel*",
-          "",
-          "**/tournament-dm-instructions**",
-          "  - DM detailed tournament setup instructions (owner/admin only).",
+          "  - This puts the bot into a test mode where all tournament messages/logs are sent to a channel you select.",
           "",
           "**/tournament-clear-test-mode**",
-          "  - Disable test mode routing.",
+          "  - This disables the test options and starts sending messages to the correct channels again.",
+          "  - If you clear a test tournament running, make sure to either remove the tournamnet as well (**`/tournament-remove`**), otherwise it will continue from where it was during testing in the correct channels.",
+          "",
+          "**/tournament-dm-instructions**",
+          "  - Send this!",
           "",
           "**/tournament-add-match-art**",
-          "  - Upload artwork for a match embed.",
-          "  - Options: match-number*, artist-name*, image*",
+          "  - This lets you add an image to a match embed by uploading a picture and selecting which match number you want it to appear on.",
+          "  - Add the username of the person submitting to have them accredited in the footer of the message.",
           "",
           "**/tournament-edit-embeds**",
-          "  - Edit an embed by message ID.",
-          "  - Options: channel*, message-id*",
+          "  - If there's a problem with a message sent by the bot, you can use this edit the contents of the embed sent",
+          "  - You will need to supply the channel the message was sent in, and the message ID (right click on the message to find this)",
           "",
           "**/tournament-update-entrant**",
-          "  - Interactively update an entrant field.",
-          "  - Options: interactive prompts",
+          "  - This lets you update an entrant of the tournament (typos, broken links etc)",
+          "  - Interactive prompts appear to lead you through this command.",
           "",
           "**/tournament-toggle-dm-receipts**",
-          "  - Toggle DM vote receipts.",
+          "  - When voting, you can opt in to receive DMs to personally keep track of your voting records.",
           "",
           "**/tournament-manage-admin**",
-          "  - Add or remove Domo Admins (owner/admin only).",
+          "  - Tournament setup and management is locked down to server owners, admins and groups. This options allows you to add more people for management.",
           "  - Options: action* (add-user/remove-user/add-role/remove-role), user (required for add-user), role (required for add-role)",
           "",
           "**/tournament-set-time**",
-          "  - Set the daily tournament post time (UTC, 24-hour).",
-          "  - Options: time* (UTC hourly)",
+          "  - If you want to change when the daily messages are sent, you can update the time using this command.",
+          "  - This is set in UTC time.",
           "",
           "**/tournament-set-weekends**",
           "  - Enable or disable weekend tournament posting.",
