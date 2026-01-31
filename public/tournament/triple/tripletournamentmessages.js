@@ -596,10 +596,10 @@ async function SendTripleDailyEmbed(
   const tournamentDetails = db.get("tournaments").nth(0).value();
   const tournament = tournamentDetails?.[currentTournamentName];
   const roleId = tournament?.roleId;
-  const rolePing = roleId ? `<@&${roleId}>` : "<@&1193953209019007106>";
+  const rolePing = roleId ? `<@&${roleId}>` : "";
 
   var embedsToSend = [embed];
-  var welcomeString = `Hello all and ${rolePing}`;
+  var welcomeString = roleId ? `Hello all and ${rolePing}` : "Hello all!";
   if (previousMatches.length > 0 && previousMatches[1].length > 0) {
     var roundsToCheck = "";
     for (var entry of previousMatches[1]) {

@@ -286,10 +286,10 @@ module.exports = {
         )
         .setRequired(false)
     )
-    .addStringOption((option) =>
+    .addRoleOption((option) =>
       option
-        .setName("participant-role-id")
-        .setDescription("Role ID to ping for match updates (optional).")
+        .setName("participant-role")
+        .setDescription("Role to ping for match updates (optional).")
         .setRequired(false)
     ),
 
@@ -305,13 +305,12 @@ module.exports = {
       interaction.options.getBoolean("randomise-tournament") || false;
     const isChallonge =
       interaction.options.getBoolean("create-challonge-bracket") || false;
-    const isHiddenBracket =
-      interaction.options.getBoolean("set-challonge-hidden") || false;
+    const isHiddenBracketOption =
+      interaction.options.getBoolean("set-challonge-hidden");
+    const isHiddenBracket = isHiddenBracketOption ?? true;
     const csvAttachment = interaction.options.getAttachment("csv-file");
-    const rawRoleId = interaction.options.getString("participant-role-id");
-    const participantRoleId = rawRoleId
-      ? rawRoleId.replace(/\D/g, "")
-      : "";
+    const participantRole = interaction.options.getRole("participant-role");
+    const participantRoleId = participantRole?.id || "";
 
     const dbInstance = GetDb();
     await dbInstance.read();

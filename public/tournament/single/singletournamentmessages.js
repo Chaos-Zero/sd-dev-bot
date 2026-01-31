@@ -656,8 +656,8 @@ async function SendSingleDailyEmbed(
 
   var embedsToSend = [embed];
   const roleId = single?.roleId;
-  const rolePing = roleId ? `<@&${roleId}>` : "<@&1326256775262896290>";
-  var welcomeString = `Hello all and ${rolePing}`;
+  const rolePing = roleId ? `<@&${roleId}>` : "";
+  var welcomeString = roleId ? `Hello all and ${rolePing}` : "Hello all!";
   if (
     Array.isArray(previousMatches) &&
     Array.isArray(previousMatches[1]) &&

@@ -105,87 +105,17 @@ function isRestrictedHelpTopic(topic, isAdmin) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("help")
-    .setDescription("Show MajorDomo command categories and details.")
-    .addStringOption((option) =>
-      option
-        .setName("topic")
-        .setDescription("Category or command (e.g. tournament setup, /tournament-register).")
-        .setRequired(false)
-    ),
+    .setDescription("Show MajorDomo command categories and details."),
   async execute(interaction) {
     const isAdmin = getDomoAdminStatus(interaction);
-    const topic = interaction.options.getString("topic");
-    let embed;
-
-    if (!topic) {
-      const categories = filterHelpCategoriesForUser(
-        getDomoHelpCategories(),
-        isAdmin
-      );
-      embed = buildHelpIntroEmbedForCategories(categories);
-      const row = buildHelpTopicSelectMenuFromCategories(categories);
-      return interaction.reply({
-        embeds: [embed],
-        components: [row],
-        ephemeral: true,
-      });
-    }
-
-    if (isRestrictedHelpTopic(topic, isAdmin)) {
-      return interaction.reply({
-        content: "Sorry, these commands are only for Domo Admins.",
-        ephemeral: true,
-      });
-    }
-
-    const category = findHelpCategory(topic);
-    if (category) {
-      if (category.id === "tournament-admin" && !isAdmin) {
-        return interaction.reply({
-          content: "Sorry, these commands are only for Domo Admins.",
-          ephemeral: true,
-        });
-      }
-      const categories = filterHelpCategoriesForUser([category], isAdmin);
-      embed = buildHelpCategoryEmbed(categories[0]);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
-    }
-
-    const commandMatch = findHelpCommand(topic);
-    if (commandMatch) {
-      const restrictedCommands = new Set([
-        "/toggle-playlist-channel",
-        "/list-yt-channels",
-      ]);
-      if (!isAdmin && restrictedCommands.has(commandMatch.command.name)) {
-        return interaction.reply({
-          content: "Sorry, these commands are only for Domo Admins.",
-          ephemeral: true,
-        });
-      }
-      embed = buildHelpCommandEmbed(
-        commandMatch.command,
-        commandMatch.category
-      );
-      return interaction.reply({ embeds: [embed], ephemeral: true });
-    }
-
-    const fallbackEmbed = new EmbedBuilder()
-      .setTitle("Help Topic Not Found")
-      .setColor(0xffc107)
-      .setThumbnail(domoHelpThumb)
-      .setDescription(
-        "I couldn't find that category or command. Try `/help` to see the available categories."
-      )
-      .setFooter(domoHelpFoot);
-
     const categories = filterHelpCategoriesForUser(
       getDomoHelpCategories(),
       isAdmin
     );
+    const embed = buildHelpIntroEmbedForCategories(categories);
     const row = buildHelpTopicSelectMenuFromCategories(categories);
     return interaction.reply({
-      embeds: [fallbackEmbed],
+      embeds: [embed],
       components: [row],
       ephemeral: true,
     });
