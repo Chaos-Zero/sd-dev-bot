@@ -12,6 +12,10 @@ const fs = require("fs");
 eval(fs.readFileSync("./public/main.js") + "");
 fs.readFileSync("./public/tournament/tournamentFunctions.js") + "";
 
+const loadingEmbed = new EmbedBuilder().setImage(
+  "http://91.99.239.6/files/assets/Domo_load.gif"
+);
+
 function formatOffsetTime(time, offsetMinutes) {
   const [hour, minute] = time.split(":").map((part) => Number(part));
   if (Number.isNaN(hour) || Number.isNaN(minute)) {
@@ -69,6 +73,10 @@ function buildTimeActionRow(confirmId, cancelId) {
   );
 }
 
+function buildChallongeUrlName(name) {
+  return name.replace(/-/g, " ").replace(/ /g, "_");
+}
+
 async function promptTimeConfirmation(interaction, initialTime) {
   let selectedTime = initialTime;
   const selectId = "register-tournament-time-select";
@@ -112,10 +120,7 @@ async function promptTimeConfirmation(interaction, initialTime) {
       }
       if (i.customId === confirmId) {
         collector.stop("confirm");
-        await i.update({
-          embeds: [buildTimeConfirmationEmbed(selectedTime)],
-          components: [],
-        });
+        await i.deferUpdate();
         finish({ status: "confirm", time: selectedTime });
         return;
       }
@@ -289,7 +294,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply();
     const tournamentName = interaction.options.getString("tournament-name");
     const tournamentFormat = interaction.options.getString("tournament-format");
     const matchesPerDay = interaction.options.getString("matches-per-day");
@@ -354,6 +359,12 @@ module.exports = {
           selectedPostTime = confirmation.time;
         }
 
+        await interaction.editReply({
+          content: "Setting up tournament...",
+          embeds: [loadingEmbed],
+          components: [],
+        });
+
         const scheduleUpdates = {};
         if (selectedPostTime) {
           scheduleUpdates.tournamentPostTime = selectedPostTime;
@@ -411,7 +422,14 @@ module.exports = {
           `**Matches per day:** ${matchesPerDay}`,
           `**Randomised:** ${isRandom ? "yes" : "no"}`,
           `**Challonge:** ${isChallonge ? "enabled" : "disabled"}`,
-          `**Hidden Challonge bracket:** ${isHiddenBracket ? "yes" : "no"}`,
+          ...(isChallonge
+            ? [
+                `**Challonge bracket:** https://challonge.com/${buildChallongeUrlName(
+                  tournamentName
+                )}`,
+                `**Hidden Challonge bracket:** ${isHiddenBracket ? "yes" : "no"}`,
+              ]
+            : []),
           `**Participant role:** ${
             participantRoleId ? `<@&${participantRoleId}>` : "none"
           }`,
