@@ -570,7 +570,7 @@ async function SendTripleDailyEmbed(
       value:
         "[Tournament Bracket](" +
         todaysSheetCell +
-        ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tfGylkXkwQtfWMhMpofo8TR&si=YiT1oMf3lmQASl5J)",
+        ")",// - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tfGylkXkwQtfWMhMpofo8TR&si=YiT1oMf3lmQASl5J)",
       inline: false,
     });
   } else {

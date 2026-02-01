@@ -48,7 +48,7 @@ function getDomoHelpCategories() {
           name: "/tournament-register",
           desc: "Register a new tournament using a CSV file.",
           args:
-            "tournament-name*, tournament-format*, matches-per-day*, csv-file*, post-time (UTC hourly, confirm with timezone prompt), include-weekends, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role, notes: <fill-in>",
+            "tournament-name*, tournament-format*, matches-per-day*, csv-file*, channel*, post-time (UTC hourly, confirm with timezone prompt), include-weekends, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role, notes: <fill-in>",
         },
         {
           name: "/tournament-start-match",
@@ -73,6 +73,11 @@ function getDomoHelpCategories() {
         {
           name: "/tournament-set-test-mode",
           desc: "Route all tournament messages/logs to a test channel.",
+          args: "channel*",
+        },
+        {
+          name: "/tournament-set-channel",
+          desc: "Set or change the channel for tournament matches/results.",
           args: "channel*",
         },
         {
@@ -461,6 +466,8 @@ async function SendTournamentHelpDm(message) {
         "**csv-file** - ***[Required]***",
         "  - This is the **Tournament Spreadsheet** that you generated and downloaded as a **CSV file** from Step 1",
         "  - You can drag and drop your file directly into the box in the message",
+        "**channel** - ***[Required]***",
+        "  - The channel where matches and results will be posted (logs are separate).",
         "",
         "If a tournament is incorrectly set, you can always remove it by using the **`/tournament-remove`** command with the name of the tournament.",
       ].join("\n")
@@ -539,6 +546,10 @@ async function SendTournamentHelpDm(message) {
           "",
           "**/tournament-set-test-mode**",
           "  - This puts the bot into a test mode where all tournament messages/logs are sent to a channel you select.",
+          "",
+          "**/tournament-set-channel**",
+          "  - Set or change the channel for tournament matches/results.",
+          "  - Options: channel*",
           "",
           "**/tournament-clear-test-mode**",
           "  - This disables the test options and starts sending messages to the correct channels again.",

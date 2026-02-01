@@ -66,7 +66,9 @@ async function registerTournament(
   isHiddenBracket,
   csvFilePath,
   roundsPerTurn = 1,
-  participantRoleId = ""
+  participantRoleId = "",
+  tournamentChannelId = "",
+  tournamentChannelName = ""
 ) {
   console.log("Received CSV file path (URL):", csvFilePath);
   var db = GetDb();
@@ -252,6 +254,9 @@ async function registerTournament(
                 eliminated: [],
                 final: [],
                 isChallonge: isChallonge,
+                channelId: tournamentChannelId,
+                channelName: tournamentChannelName,
+                participantRoleId: participantRoleId,
               },
             })
             .write();
@@ -272,6 +277,9 @@ async function registerTournament(
                 eliminated: [],
                 final: [],
                 isChallonge: isChallonge,
+                channelId: tournamentChannelId,
+                channelName: tournamentChannelName,
+                participantRoleId: participantRoleId,
               },
             })
             .write();
@@ -327,7 +335,7 @@ async function StartMatch(
   switch (tournament.tournamentFormat) {
     case "Single Elimination":
       console.log("Starting Single Match");
-      if (!secondOfDay && maxMatchesPerDay > 1) {
+      if (!secondOfDay) {
         return await StartSingleMatchBatch(
           interaction,
           bot,

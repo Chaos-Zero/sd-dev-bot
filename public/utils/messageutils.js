@@ -55,6 +55,33 @@ async function GetChannelByName(guild, channelString) {
   return await channel;
 }
 
+async function GetTournamentChannel(
+  guild,
+  tournamentChannelId,
+  tournamentChannelName
+) {
+  const overrideChannel = await getTestModeChannelOverride(guild);
+  if (overrideChannel) {
+    return overrideChannel;
+  }
+  let channel = null;
+  if (tournamentChannelId) {
+    channel = guild.channels.cache.get(tournamentChannelId) || null;
+  }
+  if (!channel && tournamentChannelName) {
+    channel = guild.channels.cache.find(
+      (ch) => ch.name === tournamentChannelName
+    );
+  }
+  if (!channel && process.env.TOURNAMENT_CHANNEL) {
+    channel =
+      guild.channels.cache.find(
+        (ch) => ch.name === process.env.TOURNAMENT_CHANNEL
+      ) || null;
+  }
+  return channel;
+}
+
 async function GetLastMessageInChannel(channel) {
   let lastMessages = await channel.messages.fetch({ limit: 2 });
   // this is the last message sent before this command
