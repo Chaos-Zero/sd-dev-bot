@@ -410,7 +410,7 @@ async function SendPreviousSingleDayResultsEmbeds(
             value:
               "[Tournament Bracket](" +
               currentChallongeUrl +
-              ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tdOKEvLDRj_gkosnD3FGQWC&si=nbIBmK4cO2zqQpXp)",
+              ")",// - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tdOKEvLDRj_gkosnD3FGQWC&si=nbIBmK4cO2zqQpXp)",
             inline: false,
           }
         )
