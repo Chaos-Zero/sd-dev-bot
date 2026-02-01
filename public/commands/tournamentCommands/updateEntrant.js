@@ -9,9 +9,6 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
-const fs = require("fs");
-
-eval(fs.readFileSync("./public/main.js") + "");
 
 const PAGE_SIZE = 25;
 
