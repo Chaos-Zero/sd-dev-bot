@@ -38,7 +38,9 @@ const QueueManager = require(path.join(
 var FileSync = require("lowdb/adapters/FileSync");
 var adapter = new FileSync(".data/db.json");
 var low = require("lowdb");
-var db = new low(adapter);
+if (typeof db === "undefined") {
+  db = new low(adapter);
+}
 var botAccess;
 let sendDailyEmbed;
 
