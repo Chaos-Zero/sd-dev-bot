@@ -190,11 +190,6 @@ async function SendPreviousSingleDayResultsEmbeds(
   ) {
     return 0;
   }
-  const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
-  const botLogChannel = await GetChannelByName(
-    guild,
-    process.env.BOT_LOG_CHANEL
-  );
 
   let members = [];
   try {
@@ -212,6 +207,15 @@ async function SendPreviousSingleDayResultsEmbeds(
   console.log(matchData.round + " " + tournamentDetails.isChallonge);
 
   let single = tournamentDetails[currentTournamentName];
+  const channel = await GetTournamentChannel(
+    guild,
+    single?.channelId,
+    single?.channelName
+  );
+  const botLogChannel = await GetChannelByName(
+    guild,
+    process.env.BOT_LOG_CHANEL
+  );
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
     currentTournamentName.replace(/-/g, " ")
   );
@@ -507,8 +511,6 @@ async function SendSingleDailyEmbed(
   previousMatches = [],
   options = {}
 ) {
-  const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
-
   var db = GetDb();
   db.read();
 
@@ -518,6 +520,11 @@ async function SendSingleDailyEmbed(
   console.log(matchData.round + " " + tournamentDetails.isChallonge);
 
   let single = tournamentDetails[currentTournamentName];
+  const channel = await GetTournamentChannel(
+    guild,
+    single?.channelId,
+    single?.channelName
+  );
   const challongeTournamentUrlName = replaceSpacesWithUnderlines(
     currentTournamentName.replace(/-/g, " ")
   );
