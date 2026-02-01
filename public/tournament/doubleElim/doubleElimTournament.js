@@ -12,12 +12,6 @@ eval(fs.readFileSync("./public/utils/compatibilityStore.js") + "");
 eval(fs.readFileSync("./public/tournament/challonge/challongeClient.js") + "");
 eval(fs.readFileSync("./public/tournament/doubleElim/doubleelimtournamentmessages.js") + "");
 
-const low = require("lowdb");
-const FileSync = require("lowdb/adapters/FileSync");
-
-const adapter = new FileSync("db.json");
-const db = low(adapter);
-
 async function getCurrentTournament(db) {
   return db.get("tournaments[0].currentTournament").value();
 }
