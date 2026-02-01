@@ -228,12 +228,6 @@ module.exports = {
         )
         .setRequired(true)
     )
-    .addChannelOption((option) =>
-      option
-        .setName("channel")
-        .setDescription("Channel where matches/results will be posted.")
-        .setRequired(true)
-    )
     .addStringOption((option) =>
       option
         .setName("post-time")
@@ -315,11 +309,8 @@ module.exports = {
       interaction.options.getBoolean("set-challonge-hidden");
     const isHiddenBracket = isHiddenBracketOption ?? true;
     const csvAttachment = interaction.options.getAttachment("csv-file");
-    const tournamentChannel = interaction.options.getChannel("channel");
     const participantRole = interaction.options.getRole("participant-role");
     const participantRoleId = participantRole?.id || "";
-    const tournamentChannelId = tournamentChannel?.id || "";
-    const tournamentChannelName = tournamentChannel?.name || "";
 
     const dbInstance = GetDb();
     await dbInstance.read();
@@ -337,12 +328,6 @@ module.exports = {
     const attachment = csvAttachment?.url;
     console.log(attachment);
     if (attachment && attachment.toLowerCase().includes(".csv")) {
-      if (!tournamentChannelId) {
-        await interaction.editReply(
-          "Please provide a valid channel for tournament matches."
-        );
-        return;
-      }
       let currentTournament = dbInstance
         .get("tournaments[0].currentTournament")
         .value();
@@ -405,9 +390,7 @@ module.exports = {
           isHiddenBracket,
           attachment,
           parseInt(matchesPerDay),
-          participantRoleId,
-          tournamentChannelId,
-          tournamentChannelName
+          participantRoleId
         );
         if (!result?.ok) {
           await interaction.editReply({
@@ -451,9 +434,6 @@ module.exports = {
             : []),
           `**Participant role:** ${
             participantRoleId ? `<@&${participantRoleId}>` : "none"
-          }`,
-          `**Match channel:** ${
-            tournamentChannelId ? `<#${tournamentChannelId}>` : "unknown"
           }`,
           `**Weekends:** ${includeWeekends ? "enabled" : "disabled"}`,
           `**Next scheduled match:** ${

@@ -118,21 +118,14 @@ async function SendPreviousTripleDayResultsEmbeds(
   if (previousMatches.length < 1 || previousMatches[0].length < 1) {
     return 0;
   }
-  const members = await guild.members.fetch();
-  const currentTournamentName = await getCurrentTournamentNameFromDb();
-  const db = GetDb();
-  await db.read();
-  const tournamentDetails = db.get("tournaments").nth(0).value();
-  const tournament = tournamentDetails?.[currentTournamentName];
-  const channel = await GetTournamentChannel(
-    guild,
-    tournament?.channelId,
-    tournament?.channelName
-  );
+  const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
   const botLogChannel = await GetChannelByName(
     guild,
     process.env.BOT_LOG_CHANEL
   );
+
+  const members = await guild.members.fetch();
+  const currentTournamentName = await getCurrentTournamentNameFromDb();
 
   const includeResults = options?.includeResults === true;
   const includeLogs = options?.includeLogs !== false;
@@ -503,16 +496,7 @@ async function SendTripleDailyEmbed(
   secondOfDay = false,
   previousMatches = []
 ) {
-  const currentTournamentName = await getCurrentTournamentNameFromDb();
-  const db = GetDb();
-  await db.read();
-  const tournamentDetails = db.get("tournaments").nth(0).value();
-  const tournament = tournamentDetails?.[currentTournamentName];
-  const channel = await GetTournamentChannel(
-    guild,
-    tournament?.channelId,
-    tournament?.channelName
-  );
+  const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
