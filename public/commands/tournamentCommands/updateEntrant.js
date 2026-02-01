@@ -43,14 +43,14 @@ function getEntrants(tournament) {
 
 function buildEntrantKey(entry, index) {
   if (entry?.challongeSeed !== undefined && entry?.challongeSeed !== null) {
-    return `seed:${entry.challongeSeed}`;
+    return `seed|${entry.challongeSeed}`;
   }
-  return `idx:${index}`;
+  return `idx|${index}`;
 }
 
 function findEntrantByKey(entrants, key) {
   if (!key) return null;
-  const [type, value] = key.split(":");
+  const [type, value] = key.split("|");
   if (type === "seed") {
     const seed = parseInt(value, 10);
     return entrants.find((entry) => entry?.challongeSeed === seed) || null;
