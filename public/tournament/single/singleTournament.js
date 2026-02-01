@@ -812,6 +812,9 @@ async function StartSingleMatchBatch(
       });
     tieMatchesToSend.push(...tiedMatches);
   }
+  console.log(
+    `TP_SYNC: StartSingleMatchBatch ties=${tieMatchesToSend.length} plannedMax=${maxMatchesPerDay}`
+  );
   const simulated = JSON.parse(JSON.stringify(single));
   const planned = collectStartableSingleMatches(simulated, 1).slice(
     0,

@@ -335,7 +335,7 @@ async function StartMatch(
   switch (tournament.tournamentFormat) {
     case "Single Elimination":
       console.log("Starting Single Match");
-      if (!secondOfDay && maxMatchesPerDay > 1) {
+      if (!secondOfDay) {
         return await StartSingleMatchBatch(
           interaction,
           bot,
