@@ -257,6 +257,7 @@ async function registerTournament(
                 channelId: tournamentChannelId,
                 channelName: tournamentChannelName,
                 participantRoleId: participantRoleId,
+                roleId: participantRoleId,
               },
             })
             .write();
@@ -280,6 +281,7 @@ async function registerTournament(
                 channelId: tournamentChannelId,
                 channelName: tournamentChannelName,
                 participantRoleId: participantRoleId,
+                roleId: participantRoleId,
               },
             })
             .write();
