@@ -595,7 +595,7 @@ async function SendTripleDailyEmbed(
   const currentTournamentName = await getCurrentTournamentNameFromDb();
   const tournamentDetails = db.get("tournaments").nth(0).value();
   const tournament = tournamentDetails?.[currentTournamentName];
-  const roleId = tournament?.roleId;
+  const roleId = tournament?.roleId || tournament?.participantRoleId;
   const rolePing = roleId ? `<@&${roleId}>` : "";
 
   var embedsToSend = [embed];

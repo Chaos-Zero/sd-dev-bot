@@ -662,7 +662,7 @@ async function SendSingleDailyEmbed(
   }*/
 
   var embedsToSend = [embed];
-  const roleId = single?.roleId;
+  const roleId = single?.roleId || single?.participantRoleId;
   const rolePing = roleId ? `<@&${roleId}>` : "";
   var welcomeString = roleId ? `Hello all and ${rolePing}` : "Hello all!";
   if (
