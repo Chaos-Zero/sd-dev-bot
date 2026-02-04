@@ -1,4 +1,9 @@
-const { Client, ButtonBuilder, EmbedBuilder } = require("discord.js");
+const {
+  Client,
+  ButtonBuilder,
+  EmbedBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
 const { ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
@@ -334,6 +339,10 @@ async function SendDoubleElimDailyEmbed(
 
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
+  const gifFileName = gifName + ".gif";
+  const gifFilePath = path.join("public/commands/gif/output", gifFileName);
+  const hasLocalGif = fs.existsSync(gifFilePath);
+  const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
 
   var timeUntilNextRound = GetNextTournamentScheduleEpoch();
 
@@ -390,7 +399,7 @@ async function SendDoubleElimDailyEmbed(
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
-    .setThumbnail(gifPath);
+    .setThumbnail(embedGifPath);
   //}
 
       embed.setImage('https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/Tetrace.png?v=1698940221642')
@@ -429,7 +438,13 @@ async function SendDoubleElimDailyEmbed(
     channel.send(welcomeString);
   }
 
-  channel.send({ embeds: embedsToSend }).then((embedMessage) => {
+  const messagePayload = { embeds: embedsToSend };
+  if (hasLocalGif) {
+    messagePayload.files = [
+      new AttachmentBuilder(gifFilePath, { name: gifFileName }),
+    ];
+  }
+  channel.send(messagePayload).then((embedMessage) => {
     var buttonVotes = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()

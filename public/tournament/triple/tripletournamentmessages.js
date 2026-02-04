@@ -1,4 +1,9 @@
-const { Client, ButtonBuilder, EmbedBuilder } = require("discord.js");
+const {
+  Client,
+  ButtonBuilder,
+  EmbedBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
 const { ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
@@ -500,6 +505,10 @@ async function SendTripleDailyEmbed(
 
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
+  const gifFileName = gifName + ".gif";
+  const gifFilePath = path.join("public/commands/gif/output", gifFileName);
+  const hasLocalGif = fs.existsSync(gifFilePath);
+  const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
 
   var timeUntilNextRound = GetNextTournamentScheduleEpoch();
 
@@ -561,7 +570,7 @@ async function SendTripleDailyEmbed(
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
-    .setThumbnail(gifPath);
+    .setThumbnail(embedGifPath);
 
   console.log("todaysSheetCell: " + todaysSheetCell);
   if (todaysSheetCell != "") {
@@ -624,7 +633,13 @@ async function SendTripleDailyEmbed(
   }
 
   await sleep(1500);
-  channel.send({ embeds: embedsToSend }).then((embedMessage) => {
+  const messagePayload = { embeds: embedsToSend };
+  if (hasLocalGif) {
+    messagePayload.files = [
+      new AttachmentBuilder(gifFilePath, { name: gifFileName }),
+    ];
+  }
+  channel.send(messagePayload).then((embedMessage) => {
     var aButtonVotes = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()

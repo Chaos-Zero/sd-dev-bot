@@ -1,5 +1,10 @@
 //HAS CHANGED
-const { Client, ButtonBuilder, EmbedBuilder } = require("discord.js");
+const {
+  Client,
+  ButtonBuilder,
+  EmbedBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
 const { ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
@@ -537,6 +542,10 @@ async function SendSingleDailyEmbed(
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
+  const gifFileName = gifName + ".gif";
+  const gifFilePath = path.join("public/commands/gif/output", gifFileName);
+  const hasLocalGif = fs.existsSync(gifFilePath);
+  const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
   const matchArtEntry = single?.matchArt?.[matchData.match?.toString()];
   const matchArtUrl = matchArtEntry?.filename
     ? "http://91.99.239.6/files/userImages/" + matchArtEntry.filename
@@ -626,7 +635,7 @@ async function SendSingleDailyEmbed(
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
-    .setThumbnail(gifPath);
+    .setThumbnail(embedGifPath);
 
   if (matchArtUrl) {
     embed.setImage(matchArtUrl);
@@ -712,7 +721,13 @@ async function SendSingleDailyEmbed(
     channel.send(welcomeString);
   }
   await sleep(1500);
-  channel.send({ embeds: embedsToSend }).then((embedMessage) => {
+  const messagePayload = { embeds: embedsToSend };
+  if (hasLocalGif) {
+    messagePayload.files = [
+      new AttachmentBuilder(gifFilePath, { name: gifFileName }),
+    ];
+  }
+  channel.send(messagePayload).then((embedMessage) => {
     var buttonVotes = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
