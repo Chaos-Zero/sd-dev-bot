@@ -196,6 +196,12 @@ module.exports = {
         .setName("include-logs")
         .setDescription("Resend the previous log embeds.")
         .setRequired(false)
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName("send-hello-ping")
+        .setDescription("Send the welcome message with role ping.")
+        .setRequired(false)
     ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
@@ -203,6 +209,9 @@ module.exports = {
       interaction.options.getBoolean("include-results") === true;
     const includeLogs =
       interaction.options.getBoolean("include-logs") === true;
+    const sendHelloPingOption =
+      interaction.options.getBoolean("send-hello-ping");
+    const skipWelcomeMessage = sendHelloPingOption === false;
 
     const db = GetDb();
     await db.read();
@@ -325,6 +334,7 @@ module.exports = {
             skipPreviousResults: true,
             skipChallongeUpdates: true,
             isTieResend: match?.progress === "tie",
+            skipWelcomeMessage,
           }
         );
       } else if (tournamentDb.tournamentFormat === "Double Elimination") {
@@ -334,7 +344,10 @@ module.exports = {
           "",
           secondOfDay,
           previousMatchesForWarning,
-          { skipPreviousResults: true }
+          {
+            skipPreviousResults: true,
+            skipWelcomeMessage,
+          }
         );
       } else if (tournamentDb.tournamentFormat === "3v3 Ranked") {
         await SendTripleBattleMessage(
@@ -344,7 +357,10 @@ module.exports = {
           tournamentDb,
           secondOfDay,
           previousMatchesForWarning,
-          { skipPreviousResults: true }
+          {
+            skipPreviousResults: true,
+            skipWelcomeMessage,
+          }
         );
       }
 

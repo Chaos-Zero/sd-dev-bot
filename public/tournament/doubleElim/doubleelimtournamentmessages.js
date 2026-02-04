@@ -93,7 +93,8 @@ async function SendDoubleElimBattleMessage(
         matchData,
         gifName,
         secondOfDay,
-        previousMatches
+        previousMatches,
+        options
       );
     });
     //CreateDailyEmbedContent(tournamentRoundDetails, reactionDetails);
@@ -351,7 +352,8 @@ async function SendDoubleElimDailyEmbed(
   matchData,
   gifName,
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
 ) {
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
@@ -359,7 +361,11 @@ async function SendDoubleElimDailyEmbed(
     "http://91.99.239.6/files/output/" + gifName + ".gif";
   const gifFileName = gifName + ".gif";
   const gifFilePath = path.join("public/commands/gif/output", gifFileName);
-  const hasLocalGif = fs.existsSync(gifFilePath);
+  let hasLocalGif = fs.existsSync(gifFilePath);
+  if (!hasLocalGif) {
+    await sleep(1500);
+    hasLocalGif = fs.existsSync(gifFilePath);
+  }
   const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
 
   var timeUntilNextRound = GetNextTournamentScheduleEpoch();
@@ -452,9 +458,23 @@ async function SendDoubleElimDailyEmbed(
       roundsToCheck;
   }
 
-  if (!secondOfDay) {
+  if (!secondOfDay && options?.skipWelcomeMessage !== true) {
     channel.send(welcomeString);
   }
+
+  var buttonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`doubleElim-A-${matchData.match}`)
+        .setLabel("A")
+        .setStyle("4")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`doubleElim-B-${matchData.match}`)
+        .setLabel("B")
+        .setStyle("1")
+    );
 
   const messagePayload = { embeds: embedsToSend };
   if (hasLocalGif) {
@@ -462,24 +482,8 @@ async function SendDoubleElimDailyEmbed(
       new AttachmentBuilder(gifFilePath, { name: gifFileName }),
     ];
   }
-  channel.send(messagePayload).then((embedMessage) => {
-    var buttonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`doubleElim-A-${matchData.match}`)
-          .setLabel("A")
-          .setStyle("4")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`doubleElim-B-${matchData.match}`)
-          .setLabel("B")
-          .setStyle("1")
-      );
-    embedMessage.edit({
-      components: [buttonVotes],
-    });
-  });
+  messagePayload.components = [buttonVotes];
+  await channel.send(messagePayload);
 
   // populatedDb.map((item) => {
   //    if (item.round == tournamentRoundDetails[3]) {

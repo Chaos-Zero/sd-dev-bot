@@ -106,7 +106,8 @@ async function SendTripleBattleMessage(
         gifName,
         youtubeUrls,
         secondOfDay,
-        previousMatches
+        previousMatches,
+        options
       );
     });
     //CreateDailyEmbedContent(tournamentRoundDetails, reactionDetails);
@@ -517,7 +518,8 @@ async function SendTripleDailyEmbed(
   gifName,
   youtubeUrls,
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
 ) {
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
@@ -525,7 +527,11 @@ async function SendTripleDailyEmbed(
     "http://91.99.239.6/files/output/" + gifName + ".gif";
   const gifFileName = gifName + ".gif";
   const gifFilePath = path.join("public/commands/gif/output", gifFileName);
-  const hasLocalGif = fs.existsSync(gifFilePath);
+  let hasLocalGif = fs.existsSync(gifFilePath);
+  if (!hasLocalGif) {
+    await sleep(1500);
+    hasLocalGif = fs.existsSync(gifFilePath);
+  }
   const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
 
   var timeUntilNextRound = GetNextTournamentScheduleEpoch();
@@ -646,63 +652,60 @@ async function SendTripleDailyEmbed(
       roundsToCheck;
   }
 
-  if (!secondOfDay) {
+  if (!secondOfDay && options?.skipWelcomeMessage !== true) {
     channel.send(welcomeString);
   }
 
   await sleep(1500);
+  var aButtonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-A>B>C-${matchData.match}-${matchData.round}`)
+        .setLabel("A>B>C")
+        .setStyle("4")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-A>C>B-${matchData.match}-${matchData.round}`)
+        .setLabel("A>C>B")
+        .setStyle("4")
+    );
+
+  var bButtonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-B>A>C-${matchData.match}-${matchData.round}`)
+        .setLabel("B>A>C")
+        .setStyle("1")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-B>C>A-${matchData.match}-${matchData.round}`)
+        .setLabel("B>C>A")
+        .setStyle("1")
+    );
+  var cButtonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-C>A>B-${matchData.match}-${matchData.round}`)
+        .setLabel("C>A>B")
+        .setStyle("3")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-C>B>A-${matchData.match}-${matchData.round}`)
+        .setLabel("C>B>A")
+        .setStyle("3")
+    );
+
   const messagePayload = { embeds: embedsToSend };
   if (hasLocalGif) {
     messagePayload.files = [
       new AttachmentBuilder(gifFilePath, { name: gifFileName }),
     ];
   }
-  channel.send(messagePayload).then((embedMessage) => {
-    var aButtonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-A>B>C-${matchData.match}-${matchData.round}`)
-          .setLabel("A>B>C")
-          .setStyle("4")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-A>C>B-${matchData.match}-${matchData.round}`)
-          .setLabel("A>C>B")
-          .setStyle("4")
-      );
-
-    var bButtonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-B>A>C-${matchData.match}-${matchData.round}`)
-          .setLabel("B>A>C")
-          .setStyle("1")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-B>C>A-${matchData.match}-${matchData.round}`)
-          .setLabel("B>C>A")
-          .setStyle("1")
-      );
-    var cButtonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-C>A>B-${matchData.match}-${matchData.round}`)
-          .setLabel("C>A>B")
-          .setStyle("3")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-C>B>A-${matchData.match}-${matchData.round}`)
-          .setLabel("C>B>A")
-          .setStyle("3")
-      );
-
-    embedMessage.edit({
-      components: [aButtonVotes, bButtonVotes, cButtonVotes],
-    });
-  });
+  messagePayload.components = [aButtonVotes, bButtonVotes, cButtonVotes];
+  await channel.send(messagePayload);
 
   // Add songs to YTPlaylist
   //await AddTournamentSongsToTournamentPlaylist(youtubeUrls);

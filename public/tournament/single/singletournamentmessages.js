@@ -564,7 +564,11 @@ async function SendSingleDailyEmbed(
     "http://91.99.239.6/files/output/" + gifName + ".gif";
   const gifFileName = gifName + ".gif";
   const gifFilePath = path.join("public/commands/gif/output", gifFileName);
-  const hasLocalGif = fs.existsSync(gifFilePath);
+  let hasLocalGif = fs.existsSync(gifFilePath);
+  if (!hasLocalGif) {
+    await sleep(1500);
+    hasLocalGif = fs.existsSync(gifFilePath);
+  }
   const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
   const matchArtEntry = single?.matchArt?.[matchData.match?.toString()];
   const matchArtUrl = matchArtEntry?.filename
@@ -737,34 +741,31 @@ async function SendSingleDailyEmbed(
     }
   }
 
-  if (!secondOfDay) {
+  if (!secondOfDay && options?.skipWelcomeMessage !== true) {
     channel.send(welcomeString);
   }
   await sleep(1500);
+  var buttonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`single-A-${matchData.match}`)
+        .setLabel("A")
+        .setStyle("4")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`single-B-${matchData.match}`)
+        .setLabel("B")
+        .setStyle("1")
+    );
   const messagePayload = { embeds: embedsToSend };
   if (hasLocalGif) {
     messagePayload.files = [
       new AttachmentBuilder(gifFilePath, { name: gifFileName }),
     ];
   }
-  channel.send(messagePayload).then((embedMessage) => {
-    var buttonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`single-A-${matchData.match}`)
-          .setLabel("A")
-          .setStyle("4")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`single-B-${matchData.match}`)
-          .setLabel("B")
-          .setStyle("1")
-      );
-    embedMessage.edit({
-      components: [buttonVotes],
-    });
-  }); 
+  messagePayload.components = [buttonVotes];
+  await channel.send(messagePayload);
   //const sheetUrl =
   //  "https://docs.google.com/spreadsheets/d/14R4XTkML8aoDx8ENPPWPyaWE_hhUPDlzYX6mqsytoX4/";
   //if round 1, we need to fill in the days match
