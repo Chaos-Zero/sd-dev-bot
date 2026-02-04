@@ -189,6 +189,15 @@ async function SendPreviousTripleDayResultsEmbeds(
         matchData.round,
         previousMatches[0][i].match
       );
+      const logGifFileName = gifName + ".gif";
+      const logGifFilePath = path.join(
+        "public/commands/gif/output",
+        logGifFileName
+      );
+      const hasLocalLogGif = fs.existsSync(logGifFilePath);
+      const logGifDisplayPath = hasLocalLogGif
+        ? "attachment://" + logGifFileName
+        : "http://91.99.239.6/files/output/" + gifName + ".gif";
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];
@@ -394,11 +403,7 @@ async function SendPreviousTripleDayResultsEmbeds(
           //.setThumbnail(
           //  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-voting-result.gif?v=1681088448448"
           //)
-          .setImage(
-            "https://sd-dev-bot.glitch.me/commands/gif/output/" +
-              gifName +
-              ".gif"
-          )
+          .setImage(logGifDisplayPath)
           .addFields(
             {
               //name: "<:ABC:1090369448185172028>",
@@ -468,7 +473,11 @@ async function SendPreviousTripleDayResultsEmbeds(
               "http://91.99.239.6/files/assets/sd-img.png",
           });
         if (includeLogs) {
-          await logsEmbedsToSend.push(resultLogEmbed);
+          await logsEmbedsToSend.push({
+            embed: resultLogEmbed,
+            gifFileName: hasLocalLogGif ? logGifFileName : null,
+            gifFilePath: hasLocalLogGif ? logGifFilePath : null,
+          });
         }
         if (advanceWinners) {
           await AddWinnerToNextRound(firstPlaceEntrant);
@@ -487,7 +496,16 @@ async function SendPreviousTripleDayResultsEmbeds(
 
   if (includeLogs) {
     for (var i = 0; i < logsEmbedsToSend.length; i++) {
-      await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
+      const logEntry = logsEmbedsToSend[i];
+      const logPayload = { embeds: [logEntry.embed] };
+      if (logEntry.gifFilePath && fs.existsSync(logEntry.gifFilePath)) {
+        logPayload.files = [
+          new AttachmentBuilder(logEntry.gifFilePath, {
+            name: logEntry.gifFileName,
+          }),
+        ];
+      }
+      await botLogChannel.send(logPayload);
       await sleep(250);
     }
   }
