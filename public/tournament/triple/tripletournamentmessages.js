@@ -1,4 +1,9 @@
-const { Client, ButtonBuilder, EmbedBuilder } = require("discord.js");
+const {
+  Client,
+  ButtonBuilder,
+  EmbedBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
 const { ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
@@ -101,7 +106,8 @@ async function SendTripleBattleMessage(
         gifName,
         youtubeUrls,
         secondOfDay,
-        previousMatches
+        previousMatches,
+        options
       );
     });
     //CreateDailyEmbedContent(tournamentRoundDetails, reactionDetails);
@@ -184,6 +190,15 @@ async function SendPreviousTripleDayResultsEmbeds(
         matchData.round,
         previousMatches[0][i].match
       );
+      const logGifFileName = gifName + ".gif";
+      const logGifFilePath = path.join(
+        "public/commands/gif/output",
+        logGifFileName
+      );
+      const hasLocalLogGif = fs.existsSync(logGifFilePath);
+      const logGifDisplayPath = hasLocalLogGif
+        ? "attachment://" + logGifFileName
+        : "http://91.99.239.6/files/output/" + gifName + ".gif";
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];
@@ -389,11 +404,7 @@ async function SendPreviousTripleDayResultsEmbeds(
           //.setThumbnail(
           //  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-voting-result.gif?v=1681088448448"
           //)
-          .setImage(
-            "https://sd-dev-bot.glitch.me/commands/gif/output/" +
-              gifName +
-              ".gif"
-          )
+          .setImage(logGifDisplayPath)
           .addFields(
             {
               //name: "<:ABC:1090369448185172028>",
@@ -463,7 +474,11 @@ async function SendPreviousTripleDayResultsEmbeds(
               "http://91.99.239.6/files/assets/sd-img.png",
           });
         if (includeLogs) {
-          await logsEmbedsToSend.push(resultLogEmbed);
+          await logsEmbedsToSend.push({
+            embed: resultLogEmbed,
+            gifFileName: hasLocalLogGif ? logGifFileName : null,
+            gifFilePath: hasLocalLogGif ? logGifFilePath : null,
+          });
         }
         if (advanceWinners) {
           await AddWinnerToNextRound(firstPlaceEntrant);
@@ -482,7 +497,16 @@ async function SendPreviousTripleDayResultsEmbeds(
 
   if (includeLogs) {
     for (var i = 0; i < logsEmbedsToSend.length; i++) {
-      await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
+      const logEntry = logsEmbedsToSend[i];
+      const logPayload = { embeds: [logEntry.embed] };
+      if (logEntry.gifFilePath && fs.existsSync(logEntry.gifFilePath)) {
+        logPayload.files = [
+          new AttachmentBuilder(logEntry.gifFilePath, {
+            name: logEntry.gifFileName,
+          }),
+        ];
+      }
+      await botLogChannel.send(logPayload);
       await sleep(250);
     }
   }
@@ -494,12 +518,21 @@ async function SendTripleDailyEmbed(
   gifName,
   youtubeUrls,
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
 ) {
   const channel = await GetChannelByName(guild, process.env.TOURNAMENT_CHANNEL);
 
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
+  const gifFileName = gifName + ".gif";
+  const gifFilePath = path.join("public/commands/gif/output", gifFileName);
+  let hasLocalGif = fs.existsSync(gifFilePath);
+  if (!hasLocalGif) {
+    await sleep(1500);
+    hasLocalGif = fs.existsSync(gifFilePath);
+  }
+  const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
 
   var timeUntilNextRound = GetNextTournamentScheduleEpoch();
 
@@ -561,7 +594,7 @@ async function SendTripleDailyEmbed(
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
-    .setThumbnail(gifPath);
+    .setThumbnail(embedGifPath);
 
   console.log("todaysSheetCell: " + todaysSheetCell);
   if (todaysSheetCell != "") {
@@ -619,57 +652,60 @@ async function SendTripleDailyEmbed(
       roundsToCheck;
   }
 
-  if (!secondOfDay) {
+  if (!secondOfDay && options?.skipWelcomeMessage !== true) {
     channel.send(welcomeString);
   }
 
   await sleep(1500);
-  channel.send({ embeds: embedsToSend }).then((embedMessage) => {
-    var aButtonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-A>B>C-${matchData.match}-${matchData.round}`)
-          .setLabel("A>B>C")
-          .setStyle("4")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-A>C>B-${matchData.match}-${matchData.round}`)
-          .setLabel("A>C>B")
-          .setStyle("4")
-      );
+  var aButtonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-A>B>C-${matchData.match}-${matchData.round}`)
+        .setLabel("A>B>C")
+        .setStyle("4")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-A>C>B-${matchData.match}-${matchData.round}`)
+        .setLabel("A>C>B")
+        .setStyle("4")
+    );
 
-    var bButtonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-B>A>C-${matchData.match}-${matchData.round}`)
-          .setLabel("B>A>C")
-          .setStyle("1")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-B>C>A-${matchData.match}-${matchData.round}`)
-          .setLabel("B>C>A")
-          .setStyle("1")
-      );
-    var cButtonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-C>A>B-${matchData.match}-${matchData.round}`)
-          .setLabel("C>A>B")
-          .setStyle("3")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`triple-C>B>A-${matchData.match}-${matchData.round}`)
-          .setLabel("C>B>A")
-          .setStyle("3")
-      );
+  var bButtonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-B>A>C-${matchData.match}-${matchData.round}`)
+        .setLabel("B>A>C")
+        .setStyle("1")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-B>C>A-${matchData.match}-${matchData.round}`)
+        .setLabel("B>C>A")
+        .setStyle("1")
+    );
+  var cButtonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-C>A>B-${matchData.match}-${matchData.round}`)
+        .setLabel("C>A>B")
+        .setStyle("3")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`triple-C>B>A-${matchData.match}-${matchData.round}`)
+        .setLabel("C>B>A")
+        .setStyle("3")
+    );
 
-    embedMessage.edit({
-      components: [aButtonVotes, bButtonVotes, cButtonVotes],
-    });
-  });
+  const messagePayload = { embeds: embedsToSend };
+  if (hasLocalGif) {
+    messagePayload.files = [
+      new AttachmentBuilder(gifFilePath, { name: gifFileName }),
+    ];
+  }
+  messagePayload.components = [aButtonVotes, bButtonVotes, cButtonVotes];
+  await channel.send(messagePayload);
 
   // Add songs to YTPlaylist
   //await AddTournamentSongsToTournamentPlaylist(youtubeUrls);

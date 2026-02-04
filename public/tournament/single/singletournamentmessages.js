@@ -1,5 +1,10 @@
 //HAS CHANGED
-const { Client, ButtonBuilder, EmbedBuilder } = require("discord.js");
+const {
+  Client,
+  ButtonBuilder,
+  EmbedBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
 const { ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
@@ -249,6 +254,15 @@ async function SendPreviousSingleDayResultsEmbeds(
         previousMatches[0][i].round,
         previousMatches[0][i].match
       );
+      const logGifFileName = gifName + ".gif";
+      const logGifFilePath = path.join(
+        "public/commands/gif/output",
+        logGifFileName
+      );
+      const hasLocalLogGif = fs.existsSync(logGifFilePath);
+      const logGifDisplayPath = hasLocalLogGif
+        ? "attachment://" + logGifFileName
+        : "http://91.99.239.6/files/output/" + gifName + ".gif";
 
       embedImg = ytLinks[0][0];
       imgName = ytLinks[0][1];
@@ -388,9 +402,7 @@ async function SendPreviousSingleDayResultsEmbeds(
         //.setThumbnail(
         //  "https://cdn.glitch.global/3f656222-6918-4bd9-9371-baaf3a2a9010/domo-voting-result.gif?v=1681088448448"
         //)
-        .setImage(
-          "http://91.99.239.6/files/output/" + gifName + ".gif"
-        )
+        .setImage(logGifDisplayPath)
 
         .addFields(
           {
@@ -425,7 +437,11 @@ async function SendPreviousSingleDayResultsEmbeds(
         previousMatches[0][i].firstPlace.points !==
           previousMatches[0][i].secondPlace.points
       ) {
-        await logsEmbedsToSend.push(resultLogEmbed);
+        await logsEmbedsToSend.push({
+          embed: resultLogEmbed,
+          gifFileName: hasLocalLogGif ? logGifFileName : null,
+          gifFilePath: hasLocalLogGif ? logGifFilePath : null,
+        });
       }
       if (advanceWinners) {
         await AddSingleWinnerToNextRound(
@@ -451,7 +467,16 @@ async function SendPreviousSingleDayResultsEmbeds(
 
   if (includeLogs) {
     for (var i = 0; i < logsEmbedsToSend.length; i++) {
-      await botLogChannel.send({ embeds: [logsEmbedsToSend[i]] });
+      const logEntry = logsEmbedsToSend[i];
+      const logPayload = { embeds: [logEntry.embed] };
+      if (logEntry.gifFilePath && fs.existsSync(logEntry.gifFilePath)) {
+        logPayload.files = [
+          new AttachmentBuilder(logEntry.gifFilePath, {
+            name: logEntry.gifFileName,
+          }),
+        ];
+      }
+      await botLogChannel.send(logPayload);
       await sleep(250);
     }
   }
@@ -537,6 +562,14 @@ async function SendSingleDailyEmbed(
     "https://challonge.com/" + challongeTournamentUrlName;
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
+  const gifFileName = gifName + ".gif";
+  const gifFilePath = path.join("public/commands/gif/output", gifFileName);
+  let hasLocalGif = fs.existsSync(gifFilePath);
+  if (!hasLocalGif) {
+    await sleep(1500);
+    hasLocalGif = fs.existsSync(gifFilePath);
+  }
+  const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
   const matchArtEntry = single?.matchArt?.[matchData.match?.toString()];
   const matchArtUrl = matchArtEntry?.filename
     ? "http://91.99.239.6/files/userImages/" + matchArtEntry.filename
@@ -626,7 +659,7 @@ async function SendSingleDailyEmbed(
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
-    .setThumbnail(gifPath);
+    .setThumbnail(embedGifPath);
 
   if (matchArtUrl) {
     embed.setImage(matchArtUrl);
@@ -708,28 +741,31 @@ async function SendSingleDailyEmbed(
     }
   }
 
-  if (!secondOfDay) {
+  if (!secondOfDay && options?.skipWelcomeMessage !== true) {
     channel.send(welcomeString);
   }
   await sleep(1500);
-  channel.send({ embeds: embedsToSend }).then((embedMessage) => {
-    var buttonVotes = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`single-A-${matchData.match}`)
-          .setLabel("A")
-          .setStyle("4")
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`single-B-${matchData.match}`)
-          .setLabel("B")
-          .setStyle("1")
-      );
-    embedMessage.edit({
-      components: [buttonVotes],
-    });
-  }); 
+  var buttonVotes = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`single-A-${matchData.match}`)
+        .setLabel("A")
+        .setStyle("4")
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`single-B-${matchData.match}`)
+        .setLabel("B")
+        .setStyle("1")
+    );
+  const messagePayload = { embeds: embedsToSend };
+  if (hasLocalGif) {
+    messagePayload.files = [
+      new AttachmentBuilder(gifFilePath, { name: gifFileName }),
+    ];
+  }
+  messagePayload.components = [buttonVotes];
+  await channel.send(messagePayload);
   //const sheetUrl =
   //  "https://docs.google.com/spreadsheets/d/14R4XTkML8aoDx8ENPPWPyaWE_hhUPDlzYX6mqsytoX4/";
   //if round 1, we need to fill in the days match
