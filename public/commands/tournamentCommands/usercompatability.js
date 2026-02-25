@@ -19,12 +19,10 @@ module.exports = {
     .setDescription(
       "Compare yourself and another user to see how compatible your votes have been"
     )
-    .addStringOption((option) =>
+    .addUserOption((option) =>
       option
         .setName("other-member")
-        .setDescription(
-          "The taggeed user you want to compare with. e.g. @MajorDomo-Bot"
-        )
+        .setDescription("The user you want to compare with.")
         .setRequired(true)
     )
     .addBooleanOption((option) =>
@@ -49,20 +47,11 @@ module.exports = {
     let tournamentDb = tournamentDetails[tournamentName];
 
     const checkingUser = interaction.user.id;
-    const userToCompare = interaction.options.getString("other-member");
+    const selectedUser = interaction.options.getUser("other-member");
     const isPublic = interaction.options.getBoolean("make-public") || false;
     const searchAll =
       interaction.options.getBoolean("search-all-tournaments") || false;
-
-    if (!userToCompare.includes("<@")) {
-      return interaction.reply({
-        content:
-          "Please use a tag for the other member identification.\ne.g. `/tournament-user-compatibility` `other-member`**@MajorDomo-Bot**",
-        ephemeral: true,
-      });
-    }
-    var userNumb = userToCompare.match(/\d/g);
-    var userId = userNumb.join("").trim();
+    const userId = selectedUser?.id;
 
     //await interaction.reply({
     //  content: "Testing in the backend",
