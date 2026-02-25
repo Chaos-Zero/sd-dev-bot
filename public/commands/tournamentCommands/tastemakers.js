@@ -97,6 +97,7 @@ module.exports = {
     if (!isPublic) {
       return await interaction
         .editReply({
+          content: null,
           embeds: embeds,
           ephemeral: true,
         })
@@ -105,6 +106,7 @@ module.exports = {
     } else {
       return await interaction
         .editReply({
+          content: null,
           embeds: embeds,
         })
         .then(() => console.log("Reply sent."))
@@ -172,7 +174,7 @@ function compareUsersAndReturnTasteMakers(
   let iterations = 0;
 
   let tiedValues = 0;
-  let highestValue = 0;
+  let highestRate = Number.NEGATIVE_INFINITY;
   let tasteMakers = [];
 
   if (playedMatches.length < 1) {
@@ -227,10 +229,15 @@ function compareUsersAndReturnTasteMakers(
         continue;
       }
     }
+    if (iterations < 1) {
+      continue;
+    }
     var isUserInServer = guildUsers.has(voter);
+    const winnerRate = totalWeight / iterations;
+    const rateDelta = winnerRate - highestRate;
 
-    if (highestValue < totalWeight && isUserInServer) {
-      highestValue = totalWeight;
+    if (rateDelta > Number.EPSILON && isUserInServer) {
+      highestRate = winnerRate;
       if (tasteMakers.length > 0) {
         tasteMakers.splice(0, 1 + parseInt(tiedValues));
       }
@@ -240,9 +247,10 @@ function compareUsersAndReturnTasteMakers(
         totalWeight,
         maxWeight,
         iterations,
+        winnerRate,
       });
       tiedValues = 0;
-    } else if (highestValue == totalWeight && isUserInServer) {
+    } else if (Math.abs(rateDelta) <= Number.EPSILON && isUserInServer) {
       tiedValues += 1;
 
       tasteMakers.push({
@@ -250,6 +258,7 @@ function compareUsersAndReturnTasteMakers(
         totalWeight,
         maxWeight,
         iterations,
+        winnerRate,
       });
     }
   }

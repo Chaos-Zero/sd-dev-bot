@@ -134,6 +134,21 @@ module.exports = {
         m.delete();
 
         let updatedEmbed = EmbedBuilder.from(embed); // Clone the original embed
+        const attachments = [...message.attachments.values()];
+        const attachmentByUrl = new Map(
+          attachments.flatMap((a) => [
+            [a.url, a],
+            [a.proxyURL, a],
+          ])
+        );
+
+        const restoreAttachmentUrl = (url) => {
+          if (!url || url.startsWith("attachment://")) {
+            return null;
+          }
+          const match = attachmentByUrl.get(url);
+          return match ? `attachment://${match.name}` : null;
+        };
 
         // Update the selected part of the embed
         if (selectedOption === "title") {
@@ -152,8 +167,21 @@ module.exports = {
           updatedEmbed.setFields(updatedFields); // Reapply fields
         }
 
+        const restoredThumbnail = restoreAttachmentUrl(embed.thumbnail?.url);
+        if (restoredThumbnail) {
+          updatedEmbed.setThumbnail(restoredThumbnail);
+        }
+
+        const restoredImage = restoreAttachmentUrl(embed.image?.url);
+        if (restoredImage) {
+          updatedEmbed.setImage(restoredImage);
+        }
+
         // Edit the message to update the embed
-        await message.edit({ embeds: [updatedEmbed] });
+        await message.edit({
+          embeds: [updatedEmbed],
+          attachments: attachments.map((a) => ({ id: a.id })),
+        });
 
         // Confirm the update to the user
         await interaction.followUp({

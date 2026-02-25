@@ -226,6 +226,7 @@ module.exports = {
     if (!isPublic) {
       return await interaction
         .editReply({
+          content: null,
           //content: "Score attained: " + userResults.totalWeight  + "\nMax Score possible: " + userResults.maxScore + "\nTracks checked: " + userResults.iterations,
           embeds: embeds,
           ephemeral: true,
@@ -235,6 +236,7 @@ module.exports = {
     } else {
       return await interaction
         .editReply({
+          content: null,
           //content: "Score attained: " + userResults.totalWeight  + "\nMax Score possible: " + userResults.maxScore + "\nTracks checked: " + userResults.iterations,
           embeds: embeds,
         })

@@ -97,6 +97,7 @@ module.exports = {
     if (!isPublic) {
       return await interaction
         .editReply({
+          content: null,
           embeds: embeds,
           ephemeral: true,
         })
@@ -105,6 +106,7 @@ module.exports = {
     } else {
       return await interaction
         .editReply({
+          content: null,
           embeds: embeds,
         })
         .then(() => console.log("Reply sent."))
@@ -172,7 +174,7 @@ function compareUsersAndReturnIconoclast(
   let iterations = 0;
 
   let tiedValues = 0;
-  let lowestValue = 100;
+  let lowestRate = Number.POSITIVE_INFINITY;
   let iconoclasts = [];
 
   if (playedMatches.length < 1) {
@@ -227,10 +229,15 @@ function compareUsersAndReturnIconoclast(
         continue;
       }
     }
+    if (iterations < 1) {
+      continue;
+    }
     var isUserInServer = guildUsers.has(voter);
+    const winnerRate = totalWeight / iterations;
+    const rateDelta = winnerRate - lowestRate;
 
-    if (lowestValue > totalWeight && isUserInServer) {
-      lowestValue = totalWeight;
+    if (rateDelta < -Number.EPSILON && isUserInServer) {
+      lowestRate = winnerRate;
       if (iconoclasts.length > 0) {
         iconoclasts.splice(0, 1 + parseInt(tiedValues));
       }
@@ -240,9 +247,10 @@ function compareUsersAndReturnIconoclast(
         totalWeight,
         maxWeight,
         iterations,
+        winnerRate,
       });
       tiedValues = 0;
-    } else if (lowestValue == totalWeight && isUserInServer) {
+    } else if (Math.abs(rateDelta) <= Number.EPSILON && isUserInServer) {
       tiedValues += 1;
 
       iconoclasts.push({
@@ -250,6 +258,7 @@ function compareUsersAndReturnIconoclast(
         totalWeight,
         maxWeight,
         iterations,
+        winnerRate,
       });
     }
   }
