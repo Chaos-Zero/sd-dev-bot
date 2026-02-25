@@ -830,12 +830,14 @@ function createSelfWinnerRateEmbed(stats, userInfo, tournamentName) {
   const winnerPercent = Math.ceil((stats.totalWeight / stats.iterations) * 100);
 
   return new EmbedBuilder()
-    .setTitle("Contest Tastemakers")
+    .setTitle("Your Contest Stats")
     .setAuthor({
       name: tournamentName,
     })
     .setDescription(
-      "You have voted on winners with a success rate of **" +
+      "**" +
+        userInfo.username +
+        "** has voted on winners with a success rate of **" +
         winnerPercent +
         "%**\n\nHere's the breakdown of votes:"
     )
