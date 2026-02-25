@@ -61,6 +61,38 @@ function sortMatchesByRoundAndNumber(matches) {
   });
 }
 
+function collectTrackLinksFromMatch(match) {
+  if (!match) {
+    return [];
+  }
+  const links = [];
+  const entrants = [match.entrant1, match.entrant2, match.entrant3];
+  for (const entrant of entrants) {
+    if (!entrant || typeof entrant.link !== "string" || entrant.link.length < 1) {
+      continue;
+    }
+    links.push(entrant.link);
+  }
+  return links;
+}
+
+function buildPlaylistUrlForResentMatches(matches) {
+  if (!Array.isArray(matches) || matches.length < 1) {
+    return "";
+  }
+  const trackLinks = [];
+  for (const match of matches) {
+    trackLinks.push(...collectTrackLinksFromMatch(match));
+  }
+  if (trackLinks.length < 1) {
+    return "";
+  }
+  if (typeof buildWatchPlaylistUrlFromTrackLinks !== "function") {
+    return "";
+  }
+  return buildWatchPlaylistUrlFromTrackLinks(trackLinks);
+}
+
 function buildSingleResults(matches) {
   const results = [];
   for (const match of matches) {
@@ -318,6 +350,7 @@ module.exports = {
     } else {
       orderedMatches = sortMatchesByRoundAndNumber(activeMatches);
     }
+    const dailyPlaylistUrl = buildPlaylistUrlForResentMatches(orderedMatches);
 
     for (let i = 0; i < orderedMatches.length; i++) {
       const match = orderedMatches[i];
@@ -335,6 +368,7 @@ module.exports = {
             skipChallongeUpdates: true,
             isTieResend: match?.progress === "tie",
             skipWelcomeMessage,
+            dailyPlaylistUrl,
           }
         );
       } else if (tournamentDb.tournamentFormat === "Double Elimination") {
@@ -347,6 +381,7 @@ module.exports = {
           {
             skipPreviousResults: true,
             skipWelcomeMessage,
+            dailyPlaylistUrl,
           }
         );
       } else if (tournamentDb.tournamentFormat === "3v3 Ranked") {
@@ -360,6 +395,7 @@ module.exports = {
           {
             skipPreviousResults: true,
             skipWelcomeMessage,
+            dailyPlaylistUrl,
           }
         );
       }
