@@ -71,7 +71,6 @@ module.exports = {
           .catch((_) => null);
       }
     }
-    const compatibilityDb = LoadCompatibilityDb();
 
     const embeds = [];
     const userInfo = await getUserInfoFromId(interaction.guild, userId);
@@ -81,6 +80,69 @@ module.exports = {
         ephemeral: true,
       });
     }
+
+    if (userId === checkingUser) {
+      if (searchAll) {
+        const allEmbeds = buildSelfWinnerRateEmbedsForAllTournaments(
+          tournamentDetails,
+          checkingUser,
+          userInfo
+        );
+        if (allEmbeds.length < 1) {
+          return interaction.reply({
+            content: "No voting data found for your votes yet.",
+            ephemeral: true,
+          });
+        }
+        if (!isPublic) {
+          return interaction
+            .reply({
+              embeds: allEmbeds,
+              ephemeral: true,
+            })
+            .then(() => console.log("Reply sent."))
+            .catch((_) => null);
+        }
+        return interaction
+          .reply({
+            embeds: allEmbeds,
+          })
+          .then(() => console.log("Reply sent."))
+          .catch((_) => null);
+      }
+
+      const selfEmbed = buildSelfWinnerRateEmbedForTournament(
+        tournamentName,
+        tournamentDb,
+        checkingUser,
+        userInfo
+      );
+      if (!selfEmbed) {
+        return interaction.reply({
+          content:
+            "It appears you have not voted in any completed matches for this tournament yet.",
+          ephemeral: true,
+        });
+      }
+
+      if (!isPublic) {
+        return interaction
+          .reply({
+            embeds: [selfEmbed],
+            ephemeral: true,
+          })
+          .then(() => console.log("Reply sent."))
+          .catch((_) => null);
+      }
+      return interaction
+        .reply({
+          embeds: [selfEmbed],
+        })
+        .then(() => console.log("Reply sent."))
+        .catch((_) => null);
+    }
+
+    const compatibilityDb = LoadCompatibilityDb();
 
     if (searchAll) {
       const globalSingle = compatibilityDb.global?.singleDouble;
@@ -533,4 +595,272 @@ function CreateCompatibilityEmbed(
     );
   }
   return compatEmbed;
+}
+
+function buildSelfWinnerRateEmbedsForAllTournaments(
+  tournamentDetails,
+  userId,
+  userInfo
+) {
+  const allTournaments = getAllTournamentEntries(tournamentDetails);
+  const embeds = [];
+
+  const nonTripleTournaments = allTournaments.filter(
+    (tournament) => tournament.data?.tournamentFormat != "3v3 Ranked"
+  );
+  const nonTripleStats = calculateWinnerRateStatsForTournamentList(
+    nonTripleTournaments,
+    userId
+  );
+  const nonTripleEmbed = createSelfWinnerRateEmbed(
+    nonTripleStats,
+    userInfo,
+    "All Tournaments - Single/Double Elimination"
+  );
+  if (nonTripleEmbed) {
+    embeds.push(nonTripleEmbed);
+  }
+
+  const tripleTournaments = allTournaments.filter(
+    (tournament) => tournament.data?.tournamentFormat == "3v3 Ranked"
+  );
+  const tripleStats = calculateWinnerRateStatsForTournamentList(
+    tripleTournaments,
+    userId
+  );
+  const tripleEmbed = createSelfWinnerRateEmbed(
+    tripleStats,
+    userInfo,
+    "All Tournaments - 3v3 Ranked"
+  );
+  if (tripleEmbed) {
+    embeds.push(tripleEmbed);
+  }
+
+  return embeds;
+}
+
+function buildSelfWinnerRateEmbedForTournament(
+  tournamentName,
+  tournamentDb,
+  userId,
+  userInfo
+) {
+  const stats = calculateWinnerRateStatsForTournament(tournamentDb, userId);
+  return createSelfWinnerRateEmbed(stats, userInfo, tournamentName);
+}
+
+function calculateWinnerRateStatsForTournamentList(tournaments, userId) {
+  const stats = {
+    totalWeight: 0,
+    maxWeight: 0,
+    iterations: 0,
+  };
+  for (const tournament of tournaments) {
+    const tournamentStats = calculateWinnerRateStatsForTournament(
+      tournament.data,
+      userId
+    );
+    stats.totalWeight += tournamentStats.totalWeight;
+    stats.maxWeight += tournamentStats.maxWeight;
+    stats.iterations += tournamentStats.iterations;
+  }
+  return stats;
+}
+
+function calculateWinnerRateStatsForTournament(tournamentDb, userId) {
+  const stats = {
+    totalWeight: 0,
+    maxWeight: 0,
+    iterations: 0,
+  };
+  if (!tournamentDb || !Array.isArray(tournamentDb.matches)) {
+    return stats;
+  }
+
+  const isTriple = tournamentDb.tournamentFormat == "3v3 Ranked";
+
+  for (const match of tournamentDb.matches) {
+    if (!match || match.progress !== "complete") {
+      continue;
+    }
+
+    const outcome = isTriple
+      ? getTripleWinnerVoteOutcome(match, userId)
+      : getSingleDoubleWinnerVoteOutcome(match, userId);
+    if (!outcome.isValid) {
+      continue;
+    }
+
+    stats.maxWeight += 1;
+    if (!outcome.participated) {
+      continue;
+    }
+
+    stats.iterations += 1;
+    if (outcome.hit) {
+      stats.totalWeight += 1;
+    }
+  }
+
+  return stats;
+}
+
+function getSingleDoubleWinnerVoteOutcome(match, userId) {
+  const entrant1Voters = match?.entrant1?.voters;
+  const entrant2Voters = match?.entrant2?.voters;
+  if (!Array.isArray(entrant1Voters) || !Array.isArray(entrant2Voters)) {
+    return { isValid: false, participated: false, hit: false };
+  }
+
+  const pointsOne = Number(match?.entrant1?.points);
+  const pointsTwo = Number(match?.entrant2?.points);
+  if (
+    !Number.isFinite(pointsOne) ||
+    !Number.isFinite(pointsTwo) ||
+    pointsOne === pointsTwo
+  ) {
+    return { isValid: true, participated: false, hit: false };
+  }
+
+  const participated =
+    entrant1Voters.includes(userId) || entrant2Voters.includes(userId);
+  if (!participated) {
+    return { isValid: true, participated: false, hit: false };
+  }
+
+  const winnerVoters = pointsOne > pointsTwo ? entrant1Voters : entrant2Voters;
+  return {
+    isValid: true,
+    participated: true,
+    hit: winnerVoters.includes(userId),
+  };
+}
+
+function getTripleWinnerVoteOutcome(match, userId) {
+  const entrant1First = match?.entrant1?.voters?.first;
+  const entrant1Second = match?.entrant1?.voters?.second;
+  const entrant2First = match?.entrant2?.voters?.first;
+  const entrant2Second = match?.entrant2?.voters?.second;
+  const entrant3First = match?.entrant3?.voters?.first;
+  const entrant3Second = match?.entrant3?.voters?.second;
+
+  if (
+    !Array.isArray(entrant1First) ||
+    !Array.isArray(entrant1Second) ||
+    !Array.isArray(entrant2First) ||
+    !Array.isArray(entrant2Second) ||
+    !Array.isArray(entrant3First) ||
+    !Array.isArray(entrant3Second)
+  ) {
+    return { isValid: false, participated: false, hit: false };
+  }
+
+  const pointsOne = Number(match?.entrant1?.points);
+  const pointsTwo = Number(match?.entrant2?.points);
+  const pointsThree = Number(match?.entrant3?.points);
+  if (
+    !Number.isFinite(pointsOne) ||
+    !Number.isFinite(pointsTwo) ||
+    !Number.isFinite(pointsThree)
+  ) {
+    return { isValid: true, participated: false, hit: false };
+  }
+
+  const winnerIndex = getUniqueWinnerIndex([pointsOne, pointsTwo, pointsThree]);
+  if (winnerIndex === null) {
+    return { isValid: true, participated: false, hit: false };
+  }
+
+  const entrantVoterGroups = [
+    { first: entrant1First, second: entrant1Second },
+    { first: entrant2First, second: entrant2Second },
+    { first: entrant3First, second: entrant3Second },
+  ];
+
+  let participated = false;
+  for (const entrant of entrantVoterGroups) {
+    if (entrant.first.includes(userId) || entrant.second.includes(userId)) {
+      participated = true;
+      break;
+    }
+  }
+  if (!participated) {
+    return { isValid: true, participated: false, hit: false };
+  }
+
+  const winnerVoters = entrantVoterGroups[winnerIndex];
+  return {
+    isValid: true,
+    participated: true,
+    hit:
+      winnerVoters.first.includes(userId) ||
+      winnerVoters.second.includes(userId),
+  };
+}
+
+function getUniqueWinnerIndex(points) {
+  let bestValue = Number.NEGATIVE_INFINITY;
+  let bestIndex = null;
+  let tieFound = false;
+
+  for (let i = 0; i < points.length; i++) {
+    const value = points[i];
+    if (value > bestValue) {
+      bestValue = value;
+      bestIndex = i;
+      tieFound = false;
+    } else if (value === bestValue) {
+      tieFound = true;
+    }
+  }
+
+  if (bestIndex === null || tieFound) {
+    return null;
+  }
+  return bestIndex;
+}
+
+function createSelfWinnerRateEmbed(stats, userInfo, tournamentName) {
+  if (!stats || stats.iterations < 1) {
+    return null;
+  }
+
+  const disagreeCount = stats.iterations - stats.totalWeight;
+  const winnerPercent = Math.ceil((stats.totalWeight / stats.iterations) * 100);
+
+  return new EmbedBuilder()
+    .setTitle("Contest Tastemakers")
+    .setAuthor({
+      name: tournamentName,
+    })
+    .setDescription(
+      "You have voted on winners with a success rate of **" +
+        winnerPercent +
+        "%**\n\nHere's the breakdown of votes:"
+    )
+    .setThumbnail(String(userInfo.avatarURL))
+    .addFields(
+      {
+        name: "Hits:",
+        value: String(stats.totalWeight) + " times",
+        inline: true,
+      },
+      {
+        name: "Misses: ",
+        value: String(disagreeCount) + " times",
+        inline: true,
+      },
+      {
+        name: "Competed in: ",
+        value: String(stats.iterations) + "/" + String(stats.maxWeight) + " matches",
+        inline: false,
+      }
+    )
+    .setColor(0xffd700)
+    .setFooter({
+      text: "Supradarky's VGM Club",
+      iconURL:
+        "http://91.99.239.6/files/assets/sd-img.png",
+    });
 }
