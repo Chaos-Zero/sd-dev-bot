@@ -369,6 +369,7 @@ async function SendDoubleElimDailyEmbed(
   const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
 
   var timeUntilNextRound = GetNextTournamentScheduleEpoch();
+  const dailyPlaylistUrl = options?.dailyPlaylistUrl || "";
 
   var embed = new EmbedBuilder();
 
@@ -406,15 +407,6 @@ async function SendDoubleElimDailyEmbed(
         name:
           `B. ` + matchData.entrant2.title + ` - ` + matchData.entrant2.name,
         value: matchData.entrant2.link,
-      },
-      //{
-      //  name: "\u200B",
-      //  value: "\u200B",
-      //},
-      {
-        name: `------------------------------------`,
-        value: `\u200B`, //` by reacting to this post:`,
-        //value: `Ranked Order for voting purposes:`,
       }
     )
     .setFooter({
@@ -422,11 +414,14 @@ async function SendDoubleElimDailyEmbed(
       iconURL:
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
-
-    .setThumbnail(embedGifPath);
+    ;
   //}
 
-      embed.setImage('https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/Tetrace.png?v=1698940221642')
+  embed.setImage(
+    "https://cdn.glitch.global/bc159225-9a66-409e-9e5f-5467f5cfd19b/Tetrace.png?v=1698940221642"
+  );
+  // Keep the gif referenced so the attachment stays hidden.
+  embed.setThumbnail(embedGifPath);
     
       
   const db = GetDb();
@@ -434,6 +429,25 @@ async function SendDoubleElimDailyEmbed(
   const currentTournamentName = await getCurrentTournamentNameFromDb();
   const tournamentDetails = db.get("tournaments").nth(0).value();
   const tournament = tournamentDetails?.[currentTournamentName];
+  const challongeTournamentUrlName = replaceSpacesWithUnderlines(
+    currentTournamentName.replace(/-/g, " ")
+  );
+  const tournamentLinks = [];
+  if (tournament?.isChallonge !== false) {
+    tournamentLinks.push(
+      "[Tournament Bracket](https://challonge.com/" +
+        challongeTournamentUrlName +
+        ")"
+    );
+  }
+  if (dailyPlaylistUrl) {
+    tournamentLinks.push("[Daily Playlist](" + dailyPlaylistUrl + ")");
+  }
+  embed.addFields({
+    name: "------------------------------------\nTournament Links",
+    value: tournamentLinks.length > 0 ? tournamentLinks.join(" | ") : "\u200B",
+    inline: false,
+  });
   const roleId = tournament?.roleId || tournament?.participantRoleId;
   const rolePing = roleId ? `<@&${roleId}>` : "";
 

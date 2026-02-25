@@ -321,7 +321,8 @@ async function StartSingleMatch(
   secondOfDay = false,
   previousMatches = [],
   hasStartedMatchThisRun = false,
-  forcedMatchNumber = null
+  forcedMatchNumber = null,
+  options = {}
 ) {
   var db = GetDb();
   await db.read();
@@ -488,7 +489,8 @@ async function StartSingleMatch(
           true,
           [],
           true,
-          alternateMatch.matchNumber
+          alternateMatch.matchNumber,
+          options
         );
       }
     }
@@ -525,7 +527,8 @@ async function StartSingleMatch(
         true,
         [],
         true,
-        alternateMatch.matchNumber
+        alternateMatch.matchNumber,
+        options
       );
     }
     console.log(
@@ -596,7 +599,7 @@ async function StartSingleMatch(
               single,
               true,
               [],
-              { isTieResend: true }
+              { ...options, isTieResend: true }
             );
           }
         }
@@ -743,7 +746,8 @@ async function StartSingleMatch(
     bot,
     single,
     secondOfDay,
-    previousMatches
+    previousMatches,
+    options
   );
   if (matchNumber === thirdPlaceMatchNumber) {
     console.log("Third place match posted; stopping further matches for today.");
@@ -756,7 +760,8 @@ async function StartSingleMatchBatch(
   interaction,
   bot = "",
   previousMatches = [],
-  maxMatchesPerDay = 1
+  maxMatchesPerDay = 1,
+  options = {}
 ) {
   const db = GetDb();
   await db.read();
@@ -798,6 +803,20 @@ async function StartSingleMatchBatch(
     single = refreshed[currentTournamentName];
     ensureThirdPlaceState(single);
   }
+  let batchDailyPlaylistUrl = options?.dailyPlaylistUrl || "";
+  if (typeof buildDailyPlaylistUrlForTournament === "function") {
+    const recalculatedDailyPlaylistUrl = buildDailyPlaylistUrlForTournament(
+      single,
+      maxMatchesPerDay
+    );
+    if (recalculatedDailyPlaylistUrl) {
+      batchDailyPlaylistUrl = recalculatedDailyPlaylistUrl;
+    }
+  }
+  const batchOptions = {
+    ...options,
+    dailyPlaylistUrl: batchDailyPlaylistUrl,
+  };
   const tieMatchesToSend = [];
   if (Array.isArray(single.matches)) {
     const tiedMatches = single.matches
@@ -827,7 +846,9 @@ async function StartSingleMatchBatch(
       bot,
       false,
       previousMatches,
-      false
+      false,
+      null,
+      batchOptions
     );
   }
 
@@ -842,7 +863,7 @@ async function StartSingleMatchBatch(
         single,
         !firstTie,
         firstTie ? previousMatches : [],
-        { isTieResend: true }
+        { ...batchOptions, isTieResend: true }
       );
       firstTie = false;
     }
@@ -861,7 +882,8 @@ async function StartSingleMatchBatch(
         secondOfDay,
         includePreviousMatches,
         true,
-        planned[i].matchNumber
+        planned[i].matchNumber,
+        batchOptions
       );
       if (lastResult?.blocked || lastResult?.stopForDay) {
         break;

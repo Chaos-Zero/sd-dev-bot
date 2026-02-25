@@ -58,6 +58,237 @@ function getAdjustedMatchesPerDay(tournamentDb) {
   return 1;
 }
 
+function extractYouTubeVideoIdFromUrl(url) {
+  if (!url || typeof url !== "string") {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.searchParams.has("v")) {
+      const id = parsedUrl.searchParams.get("v");
+      if (id && id.length === 11) {
+        return id;
+      }
+    }
+
+    if (parsedUrl.hostname.includes("youtu.be")) {
+      const shortMatch = parsedUrl.pathname.match(/^\/([\w-]{11})$/);
+      if (shortMatch) {
+        return shortMatch[1];
+      }
+    }
+
+    const embedMatch = parsedUrl.pathname.match(/embed\/([\w-]{11})/);
+    if (embedMatch) {
+      return embedMatch[1];
+    }
+  } catch (_) {
+    const fallbackMatch = url.match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/);
+    if (fallbackMatch) {
+      return fallbackMatch[1];
+    }
+  }
+
+  return null;
+}
+
+function buildWatchPlaylistUrlFromTrackLinks(trackLinks) {
+  if (!Array.isArray(trackLinks) || trackLinks.length < 1) {
+    return "";
+  }
+
+  const videoIds = [];
+  const seenIds = new Set();
+  for (const trackLink of trackLinks) {
+    const videoId = extractYouTubeVideoIdFromUrl(trackLink);
+    if (!videoId || seenIds.has(videoId)) {
+      continue;
+    }
+    seenIds.add(videoId);
+    videoIds.push(videoId);
+    if (videoIds.length >= 50) {
+      break;
+    }
+  }
+
+  if (videoIds.length < 1) {
+    return "";
+  }
+
+  return (
+    "https://www.youtube.com/watch_videos?video_ids=" +
+    videoIds.join(",")
+  );
+}
+
+function collectDailyTrackLinksForSingle(tournamentDb, matchesPerDay) {
+  const links = [];
+  if (!tournamentDb) {
+    return links;
+  }
+
+  const tieMatches = Array.isArray(tournamentDb.matches)
+    ? tournamentDb.matches
+        .filter((match) => match?.progress === "tie")
+        .sort((a, b) => {
+          const roundA = parseInt(a?.round || 0, 10);
+          const roundB = parseInt(b?.round || 0, 10);
+          if (roundA !== roundB) {
+            return roundA - roundB;
+          }
+          return parseInt(a?.match || 0, 10) - parseInt(b?.match || 0, 10);
+        })
+    : [];
+
+  for (const tieMatch of tieMatches) {
+    if (tieMatch?.entrant1?.link) {
+      links.push(tieMatch.entrant1.link);
+    }
+    if (tieMatch?.entrant2?.link) {
+      links.push(tieMatch.entrant2.link);
+    }
+  }
+
+  const simulatedTournament = JSON.parse(JSON.stringify(tournamentDb));
+  const plannedMatches = collectStartableSingleMatches(simulatedTournament, 1).slice(
+    0,
+    matchesPerDay
+  );
+  for (const plannedMatch of plannedMatches) {
+    const validEntries = (plannedMatch?.entries || []).filter(
+      (entry) => entry?.name && entry.name !== "TBD" && !entry?.isPlaceholder
+    );
+    for (const entry of validEntries.slice(0, 2)) {
+      if (entry?.link) {
+        links.push(entry.link);
+      }
+    }
+  }
+
+  return links;
+}
+
+function collectDailyTrackLinksForDouble(tournamentDb, matchesPerDay) {
+  const links = [];
+  if (!tournamentDb) {
+    return links;
+  }
+
+  const currentMatchCount = Array.isArray(tournamentDb.matches)
+    ? tournamentDb.matches.length
+    : 0;
+  const nextMatchNumber = currentMatchCount + 1;
+  const bracketEntries = Array.isArray(tournamentDb.brackets)
+    ? tournamentDb.brackets
+    : [];
+
+  for (let i = 0; i < matchesPerDay; i++) {
+    const matchNumber = nextMatchNumber + i;
+    const entries = bracketEntries.filter(
+      (entry) => parseInt(entry?.match || 0, 10) === matchNumber
+    );
+    if (entries.length < 2) {
+      break;
+    }
+    if (entries[0]?.link) {
+      links.push(entries[0].link);
+    }
+    if (entries[1]?.link) {
+      links.push(entries[1].link);
+    }
+  }
+
+  return links;
+}
+
+function collectDailyTrackLinksForTriple(tournamentDb, matchesPerDay) {
+  const links = [];
+  if (!tournamentDb) {
+    return links;
+  }
+
+  const simulatedTournament = JSON.parse(JSON.stringify(tournamentDb));
+  if (!Array.isArray(simulatedTournament.matches)) {
+    simulatedTournament.matches = [];
+  }
+
+  for (let i = 0; i < matchesPerDay; i++) {
+    const matchNumber = simulatedTournament.matches.length + 1;
+    let thisRound = 0;
+    let foundEntries = [];
+
+    const currentRoundEntries = Array.isArray(
+      simulatedTournament?.rounds?.[simulatedTournament.round]
+    )
+      ? simulatedTournament.rounds[simulatedTournament.round]
+      : [];
+    for (const entry of currentRoundEntries) {
+      if (parseInt(entry?.match || 0, 10) === matchNumber) {
+        foundEntries.push(entry);
+        thisRound = simulatedTournament.round;
+      }
+    }
+
+    if (foundEntries.length < 1 && thisRound === 0) {
+      const nextRound = parseInt(simulatedTournament.round || 0, 10) + 1;
+      const nextRoundEntries = Array.isArray(simulatedTournament?.rounds?.[nextRound])
+        ? simulatedTournament.rounds[nextRound]
+        : [];
+      for (const entry of nextRoundEntries) {
+        if (parseInt(entry?.match || 0, 10) === matchNumber) {
+          foundEntries.push(entry);
+          thisRound = nextRound;
+        }
+      }
+    }
+
+    const validEntries = foundEntries.filter(
+      (entry) => entry?.name && entry.name !== "TBD" && !entry?.isPlaceholder
+    );
+    if (validEntries.length < 3) {
+      break;
+    }
+
+    for (const entry of validEntries.slice(0, 3)) {
+      if (entry?.link) {
+        links.push(entry.link);
+      }
+    }
+
+    simulatedTournament.round = thisRound || simulatedTournament.round;
+    simulatedTournament.matchNumber = matchNumber;
+    simulatedTournament.matches.push({ match: matchNumber });
+  }
+
+  return links;
+}
+
+function buildDailyPlaylistUrlForTournament(tournamentDb, matchesPerDay = 1) {
+  if (!tournamentDb) {
+    return "";
+  }
+
+  const maxMatchesPerDay = Math.max(1, parseInt(matchesPerDay || 1, 10));
+  let trackLinks = [];
+
+  switch (tournamentDb.tournamentFormat) {
+    case "Single Elimination":
+      trackLinks = collectDailyTrackLinksForSingle(tournamentDb, maxMatchesPerDay);
+      break;
+    case "Double Elimination":
+      trackLinks = collectDailyTrackLinksForDouble(tournamentDb, maxMatchesPerDay);
+      break;
+    case "3v3 Ranked":
+      trackLinks = collectDailyTrackLinksForTriple(tournamentDb, maxMatchesPerDay);
+      break;
+    default:
+      trackLinks = [];
+  }
+
+  return buildWatchPlaylistUrlFromTrackLinks(trackLinks);
+}
+
 async function registerTournament(
   tournamentTitle,
   tournamentFormat,
@@ -311,7 +542,8 @@ async function StartMatch(
   secondOfDay = false,
   previousMatches = [],
   hasStartedMatchThisRun = false,
-  maxMatchesPerDay = 1
+  maxMatchesPerDay = 1,
+  options = {}
 ) {
   var db = GetDb();
   await db.write();
@@ -342,7 +574,8 @@ async function StartMatch(
           interaction,
           bot,
           previousMatches,
-          maxMatchesPerDay
+          maxMatchesPerDay,
+          options
         );
       }
       return await StartSingleMatch(
@@ -350,12 +583,26 @@ async function StartMatch(
         bot,
         secondOfDay,
         previousMatches,
-        hasStartedMatchThisRun
+        hasStartedMatchThisRun,
+        null,
+        options
       );
     case "Double Elimination":
-      return await StartDoubleElimMatch(interaction, bot, secondOfDay, previousMatches);
+      return await StartDoubleElimMatch(
+        interaction,
+        bot,
+        secondOfDay,
+        previousMatches,
+        options
+      );
     case "3v3 Ranked":
-      return await StartTripleMatch(interaction, bot, secondOfDay, previousMatches);
+      return await StartTripleMatch(
+        interaction,
+        bot,
+        secondOfDay,
+        previousMatches,
+        options
+      );
   }
 }
 

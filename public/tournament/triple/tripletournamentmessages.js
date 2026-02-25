@@ -535,6 +535,7 @@ async function SendTripleDailyEmbed(
   const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
 
   var timeUntilNextRound = GetNextTournamentScheduleEpoch();
+  const dailyPlaylistUrl = options?.dailyPlaylistUrl || "";
 
   var todaysSheetCell = "";
 
@@ -594,25 +595,20 @@ async function SendTripleDailyEmbed(
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
     })
 
-    .setThumbnail(embedGifPath);
+      .setThumbnail(embedGifPath);
 
-  console.log("todaysSheetCell: " + todaysSheetCell);
-  if (todaysSheetCell != "") {
-    embed.addFields({
-      name: `------------------------------------`,
-      value:
-        "[Tournament Bracket](" +
-        todaysSheetCell +
-        ")",// - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tfGylkXkwQtfWMhMpofo8TR&si=YiT1oMf3lmQASl5J)",
-      inline: false,
-    });
-  } else {
-    embed.addFields({
-      name: `------------------------------------`,
-      value: `\u200B`, //` by reacting to this post:`,
-      //value: `Ranked Order for voting purposes:`,
-    });
+  const tournamentLinks = [];
+  if (todaysSheetCell) {
+    tournamentLinks.push("[Tournament Bracket](" + todaysSheetCell + ")");
   }
+  if (dailyPlaylistUrl) {
+    tournamentLinks.push("[Daily Playlist](" + dailyPlaylistUrl + ")");
+  }
+  embed.addFields({
+    name: "------------------------------------\nTournament Links",
+    value: tournamentLinks.length > 0 ? tournamentLinks.join(" | ") : "\u200B",
+    inline: false,
+  });
 
   //}
 

@@ -24,6 +24,10 @@ module.exports = {
     }
     const tournamentDb = tournamentDetails[currentTournamentName];
     const matchesPerDay = getAdjustedMatchesPerDay(tournamentDb);
+    const dailyPlaylistUrl = buildDailyPlaylistUrlForTournament(
+      tournamentDb,
+      matchesPerDay
+    );
 
     const loopCount =
       tournamentDb?.tournamentFormat === "Single Elimination"
@@ -36,7 +40,8 @@ module.exports = {
         i > 0,
         i === 0 ? previousMatches : [],
         i > 0,
-        matchesPerDay
+        matchesPerDay,
+        { dailyPlaylistUrl }
       );
       if (result?.reason) {
         console.log("StartMatch halted:", result.reason);
