@@ -598,11 +598,11 @@ async function SendTripleDailyEmbed(
       .setThumbnail(embedGifPath);
 
   const tournamentLinks = [];
-  if (todaysSheetCell) {
-    tournamentLinks.push("[Tournament Bracket](" + todaysSheetCell + ")");
-  }
   if (dailyPlaylistUrl) {
     tournamentLinks.push("[Daily Playlist](" + dailyPlaylistUrl + ")");
+  }
+  if (todaysSheetCell) {
+    tournamentLinks.push("[Tournament Bracket](" + todaysSheetCell + ")");
   }
   embed.addFields({
     name: "------------------------------------\nTournament Links",

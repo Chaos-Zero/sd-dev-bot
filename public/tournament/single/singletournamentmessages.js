@@ -562,11 +562,11 @@ async function SendSingleDailyEmbed(
     "https://challonge.com/" + challongeTournamentUrlName;
   const dailyPlaylistUrl = options?.dailyPlaylistUrl || "";
   const tournamentLinks = [];
-  if (single?.isChallonge !== false) {
-    tournamentLinks.push("[Tournament Bracket](" + currentChallongeUrl + ")");
-  }
   if (dailyPlaylistUrl) {
     tournamentLinks.push("[Daily Playlist](" + dailyPlaylistUrl + ")");
+  }
+  if (single?.isChallonge !== false) {
+    tournamentLinks.push("[Tournament Bracket](" + currentChallongeUrl + ")");
   }
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";

@@ -433,15 +433,15 @@ async function SendDoubleElimDailyEmbed(
     currentTournamentName.replace(/-/g, " ")
   );
   const tournamentLinks = [];
+  if (dailyPlaylistUrl) {
+    tournamentLinks.push("[Daily Playlist](" + dailyPlaylistUrl + ")");
+  }
   if (tournament?.isChallonge !== false) {
     tournamentLinks.push(
       "[Tournament Bracket](https://challonge.com/" +
         challongeTournamentUrlName +
         ")"
     );
-  }
-  if (dailyPlaylistUrl) {
-    tournamentLinks.push("[Daily Playlist](" + dailyPlaylistUrl + ")");
   }
   embed.addFields({
     name: "------------------------------------\nTournament Links",
