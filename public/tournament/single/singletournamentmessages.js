@@ -560,6 +560,14 @@ async function SendSingleDailyEmbed(
   );
   const currentChallongeUrl =
     "https://challonge.com/" + challongeTournamentUrlName;
+  const dailyPlaylistUrl = options?.dailyPlaylistUrl || "";
+  const tournamentLinks = [];
+  if (single?.isChallonge !== false) {
+    tournamentLinks.push("[Tournament Bracket](" + currentChallongeUrl + ")");
+  }
+  if (dailyPlaylistUrl) {
+    tournamentLinks.push("[Daily Playlist](" + dailyPlaylistUrl + ")");
+  }
   const gifPath =
     "http://91.99.239.6/files/output/" + gifName + ".gif";
   const gifFileName = gifName + ".gif";
@@ -635,10 +643,7 @@ async function SendSingleDailyEmbed(
       },
       {
         name: "------------------------------------\nTournament Links",
-        value:
-          "[Tournament Bracket](" +
-          currentChallongeUrl + ")",// +
-         // ") - [Tournament Playlist](https://youtube.com/playlist?list=PLaHaXWMJA7tdOKEvLDRj_gkosnD3FGQWC&si=nbIBmK4cO2zqQpXp)",
+        value: tournamentLinks.length > 0 ? tournamentLinks.join(" | ") : "\u200B",
         inline: false,
       }
       // {

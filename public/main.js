@@ -215,6 +215,10 @@ async function runDailyTournamentMatches() {
   console.log("Finished with previous Matches");
   //await SendPreviousSingleDayResultsEmbeds(guildObject, previousMatches, []);
   const matchesPerDay = getAdjustedMatchesPerDay(tournamentDb);
+  const dailyPlaylistUrl = buildDailyPlaylistUrlForTournament(
+    tournamentDb,
+    matchesPerDay
+  );
   const loopCount =
     tournamentDb?.tournamentFormat === "Single Elimination" ? 1 : matchesPerDay;
   for (let matchIndex = 0; matchIndex < loopCount; matchIndex++) {
@@ -226,7 +230,8 @@ async function runDailyTournamentMatches() {
       isSecondOfDay,
       shouldIncludePreviousMatches ? previousMatches : [],
       matchIndex > 0,
-      matchesPerDay
+      matchesPerDay,
+      { dailyPlaylistUrl }
     );
     if (result?.reason) {
       console.log("StartMatch halted:", result.reason);

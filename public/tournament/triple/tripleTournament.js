@@ -51,7 +51,8 @@ async function StartTripleMatch(
   interaction,
   bot = "",
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
 ) {
   var db = GetDb();
   await db.read();
@@ -190,7 +191,8 @@ async function StartTripleMatch(
     bot,
     triple,
     secondOfDay,
-    previousMatches
+    previousMatches,
+    options
   );
 }
 

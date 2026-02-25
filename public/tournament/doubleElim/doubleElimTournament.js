@@ -46,7 +46,8 @@ async function StartDoubleElimMatch(
   interaction,
   bot = "",
   secondOfDay = false,
-  previousMatches = []
+  previousMatches = [],
+  options = {}
 ) {
   var db = GetDb();
   await db.read();
@@ -166,7 +167,8 @@ async function StartDoubleElimMatch(
     matchData,
     bot,
     secondOfDay,
-    previousMatches
+    previousMatches,
+    options
   );
 }
 

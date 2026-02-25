@@ -24,6 +24,11 @@ function dedupeMatches(matches) {
   return Array.from(seen.values());
 }
 
+function parseMatchValue(value) {
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 function getActiveMatches(matches) {
   if (!Array.isArray(matches)) {
     return [];
@@ -31,18 +36,46 @@ function getActiveMatches(matches) {
   return matches.filter((match) => match?.progress !== "complete");
 }
 
-function getResultsRound(matches, minActiveRound) {
-  if (!Array.isArray(matches) || !Number.isFinite(minActiveRound)) {
-    return null;
+function getPreviousCompletedMatches(matches, activeMatches, maxCount = 1) {
+  if (
+    !Array.isArray(matches) ||
+    !Array.isArray(activeMatches) ||
+    activeMatches.length < 1
+  ) {
+    return [];
   }
-  const completedRounds = matches
-    .filter((match) => match?.progress === "complete")
-    .map((match) => parseRoundValue(match.round))
-    .filter((round) => round > 0 && round <= minActiveRound);
-  if (completedRounds.length === 0) {
-    return null;
+  const cap = Math.max(1, parseInt(maxCount || 1, 10));
+  const maxActiveMatchNumber = Math.max(
+    ...activeMatches.map((match) => parseMatchValue(match?.match))
+  );
+  if (!Number.isFinite(maxActiveMatchNumber) || maxActiveMatchNumber < 1) {
+    return [];
   }
-  return Math.max(...completedRounds);
+  const activeKeys = new Set(
+    activeMatches.map(
+      (match) => `${parseRoundValue(match?.round)}-${parseMatchValue(match?.match)}`
+    )
+  );
+  const completedBeforeActive = matches.filter((match) => {
+    if (!match || match.progress !== "complete") {
+      return false;
+    }
+    const key = `${parseRoundValue(match?.round)}-${parseMatchValue(match?.match)}`;
+    if (activeKeys.has(key)) {
+      return false;
+    }
+    return parseMatchValue(match?.match) < maxActiveMatchNumber;
+  });
+  completedBeforeActive.sort((a, b) => {
+    const matchA = parseMatchValue(a?.match);
+    const matchB = parseMatchValue(b?.match);
+    if (matchA !== matchB) {
+      return matchB - matchA;
+    }
+    return parseRoundValue(b?.round) - parseRoundValue(a?.round);
+  });
+  const mostRecent = completedBeforeActive.slice(0, cap);
+  return sortMatchesByRoundAndNumber(mostRecent);
 }
 
 function sortMatchesByRoundAndNumber(matches) {
@@ -59,6 +92,38 @@ function sortMatchesByRoundAndNumber(matches) {
     }
     return matchA - matchB;
   });
+}
+
+function collectTrackLinksFromMatch(match) {
+  if (!match) {
+    return [];
+  }
+  const links = [];
+  const entrants = [match.entrant1, match.entrant2, match.entrant3];
+  for (const entrant of entrants) {
+    if (!entrant || typeof entrant.link !== "string" || entrant.link.length < 1) {
+      continue;
+    }
+    links.push(entrant.link);
+  }
+  return links;
+}
+
+function buildPlaylistUrlForResentMatches(matches) {
+  if (!Array.isArray(matches) || matches.length < 1) {
+    return "";
+  }
+  const trackLinks = [];
+  for (const match of matches) {
+    trackLinks.push(...collectTrackLinksFromMatch(match));
+  }
+  if (trackLinks.length < 1) {
+    return "";
+  }
+  if (typeof buildWatchPlaylistUrlFromTrackLinks !== "function") {
+    return "";
+  }
+  return buildWatchPlaylistUrlFromTrackLinks(trackLinks);
 }
 
 function buildSingleResults(matches) {
@@ -238,20 +303,14 @@ module.exports = {
     );
     const previousMatchesForWarning = [[], tieMatches];
 
-    const minActiveRound = Math.min(
-      ...activeMatches.map((match) => parseRoundValue(match.round))
-    );
-    const resultsRound =
-      includeResults || includeLogs
-        ? getResultsRound(tournamentDb.matches, minActiveRound)
-        : null;
+    const resultsMatchesPerDay = getAdjustedMatchesPerDay(tournamentDb);
     const resultsMatches =
-      resultsRound != null
+      includeResults || includeLogs
         ? sortMatchesByRoundAndNumber(
-            tournamentDb.matches.filter(
-              (match) =>
-                match?.progress === "complete" &&
-                parseRoundValue(match.round) === resultsRound
+            getPreviousCompletedMatches(
+              tournamentDb.matches,
+              activeMatches,
+              resultsMatchesPerDay
             )
           )
         : [];
@@ -318,6 +377,7 @@ module.exports = {
     } else {
       orderedMatches = sortMatchesByRoundAndNumber(activeMatches);
     }
+    const dailyPlaylistUrl = buildPlaylistUrlForResentMatches(orderedMatches);
 
     for (let i = 0; i < orderedMatches.length; i++) {
       const match = orderedMatches[i];
@@ -335,6 +395,7 @@ module.exports = {
             skipChallongeUpdates: true,
             isTieResend: match?.progress === "tie",
             skipWelcomeMessage,
+            dailyPlaylistUrl,
           }
         );
       } else if (tournamentDb.tournamentFormat === "Double Elimination") {
@@ -347,6 +408,7 @@ module.exports = {
           {
             skipPreviousResults: true,
             skipWelcomeMessage,
+            dailyPlaylistUrl,
           }
         );
       } else if (tournamentDb.tournamentFormat === "3v3 Ranked") {
@@ -360,6 +422,7 @@ module.exports = {
           {
             skipPreviousResults: true,
             skipWelcomeMessage,
+            dailyPlaylistUrl,
           }
         );
       }
