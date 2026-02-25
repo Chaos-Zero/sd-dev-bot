@@ -253,7 +253,7 @@ function buildCompatibilityEmbedFromStore(
     const iterations = stats.iterations || 0;
     userResults = {
       totalWeight: stats.matched || 0,
-      maxWeight: totalMatches,
+      maxWeight: iterations,
       iterations,
       disagreementWeight: 0,
       matchCount: iterations,
