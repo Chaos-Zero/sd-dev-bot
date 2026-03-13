@@ -262,7 +262,7 @@ function ResetTournamentSchedule() {
     },
     null,
     false,
-    "Etc/UTC"
+    "UTC"
   );
   if (botAccess) {
     sendDailyEmbed.start();
