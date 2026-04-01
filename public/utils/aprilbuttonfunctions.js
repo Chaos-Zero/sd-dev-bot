@@ -21,7 +21,7 @@ async function handleFoolButtonPress(interaction) {
   await interaction
     .reply({
       content:
-        "**GOTEM**\n\n**April fools!**\n\nHahaha. Aw, just look at your face! Egg all over it!\nIn all seriousness, you **can still vote for matches 101-104** until <t:1743537600:R>.\nPlease vote on them if you have not done so yet.",
+        "**GOTEM**\n\n**April fools!**\n\nHahaha. Aw, just look at your face! Egg all over it!\nIn all seriousness, you **can still vote for matches 101-104** until <t:1775070000:R>.\nPlease vote on them if you have not done so yet.",
       ephemeral: true,
     })
     .then(() => console.log("Reply sent."))
