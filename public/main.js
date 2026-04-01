@@ -40,7 +40,7 @@ var adapter = new FileSync(".data/db.json");
 var low = require("lowdb");
 var db = new low(adapter);
 var botAccess;
-let sendDailyEmbed;
+global.sendDailyEmbed = null;
 
 //runningTournament.updateScore(32, 40);
 //runningTournament.updateScore(25, 21);
@@ -252,20 +252,20 @@ function ResetTournamentSchedule() {
     schedule.time,
     schedule.includeWeekends
   );
-  if (sendDailyEmbed) {
-    sendDailyEmbed.stop();
+  if (global.sendDailyEmbed) {
+    global.sendDailyEmbed.stop();
   }
-  sendDailyEmbed = new cron.CronJob(
+  global.sendDailyEmbed = new cron.CronJob(
     cronExpression,
     async () => {
       await runDailyTournamentMatches();
     },
     null,
     false,
-    "Etc/UTC"
+    "UTC"
   );
   if (botAccess) {
-    sendDailyEmbed.start();
+    global.sendDailyEmbed.start();
   }
   return { ...schedule, cronExpression };
 }
