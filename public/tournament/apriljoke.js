@@ -209,7 +209,7 @@ async function CreateAprilFools(bot = "") {
 
   channel.send({
     content:
-      "Hello all and jabronis, I'm taking a mental health day, so no results",
+      "Hello jabronis and <@&1457830210689958130>, I'm taking a mental health day, so no results",
     files: [image],
   });
   await sleep(1500);
