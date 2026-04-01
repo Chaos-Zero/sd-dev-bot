@@ -7,7 +7,7 @@ const path = require("path");
 const sleep = require("util").promisify(setTimeout);
 
 const image = new AttachmentBuilder(
-  "http://91.99.239.6/files/assets/all_ties.png"
+  "https://imgur.com/wMRIci1"
 );
 //let oneOffJoke = new cron.CronJob("00 30 17 * * *", () => {
 //"25 32 00 * * 1-6"
@@ -27,9 +27,9 @@ async function CreateAprilFools() {
 
   var embed1 = new EmbedBuilder()
     //.setTimestamp(Date.now() + 1)
-    .setTitle("Round ツ゚ - Match Iron Fist")
+    .setTitle("Round -2 - Metacritic bloodbath")
     .setAuthor({
-      name: "Best VGM Twenty Exty Five Awards",
+      name: "Best VGM Twenty Fiveten Awards",
       iconURL:
         "http://91.99.239.6/files/assets/sd_logo.png",
     })
@@ -43,16 +43,16 @@ async function CreateAprilFools() {
         name:
           "**Voting for this match ends <t:" +
           GetTimeInEpochStamp(-0) +
-          ":R>**\n*Ah, you just missed it :(*",
+          ":R>**\n*Ah, you just missed it :(. Pretty sure you missed it last year too!*",
 
         value: "------------------------------------", //"\u200B",
       },
       {
-        name: `A. Dragon Ball ~~Sparking~~ **GOKU** - Kakarot Cha La`,
+        name: `A. No Mind Seye - Even Sean Murray Couldn't Fix This One`,
         value: "https://youtu.be/DwUOPLwEFrQ?si=eTi7kgQC_FBidrTw",
       },
       {
-        name: `B. Tekken 8 the Coolaid - Heihachi Mishima is Dead. Like, dead for real this time. No really. He's DEAD.`,
+        name: `B. TamaNotchi ZZZZZzzzz.. - Should have stayed in the keychain`,
         value: "https://youtu.be/aNgq_80QnJk?si=dCpgq4N6SmVuJDA1",
       },
       //{
@@ -62,7 +62,7 @@ async function CreateAprilFools() {
       {
         name: "------------------------------------\nTournament Links",
         value:
-          "[Tournament Bracket](https://challonge.com/ji7dvn9c) - [Tournament Playlist](https://youtu.be/dQw4w9WgXcQ?si=HdLZxmQ05u-iwOtj)",
+          "[Daily Playlist](https://youtu.be/eioYulMp_5k?si=DTXuGyUnnZyTEnO3) | [Tournament Bracket](https://challonge.com/ji7dvn9c)",
         inline: false,
       }
       //{
@@ -97,14 +97,14 @@ async function CreateAprilFools() {
       //}
     )
     .setFooter({
-      text: "Please listen to both tracks. Or else. No refunds.",
+      text: "There's something I'm supposed to say here, but I'm on holiday. Figure it out yourself.",
       iconURL:
-        "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
+        "http://91.99.239.6/files/assets/sd-img.png",
     })
     //  .setTitle(`${title1}`)
     //.setDescription("Blah blah")
     .setThumbnail(
-      "http://91.99.239.6/files/assets/dbt.gif"
+      "https://imgur.com/QGx6zN2"
       //"http://91.99.239.6/files/assets/sd-img.png"
     );
 
@@ -132,11 +132,11 @@ async function CreateAprilFools() {
         value: "------------------------------------", //"\u200B",
       },
       {
-        name: `A. Mild Bastards - Get the door, love. It's Chamomile tea for sevensies`,
+        name: `A. Persona 5 XXX - Too Hot for Consoles`,
         value: "https://youtu.be/SckcB099zrg?si=nw-b7ltkhFdkcTTy",
       },
       {
-        name: `B. Indika-AAAHHH-WTF-WHAT? - You can't lie to a nun. We gotta go in and visit the Penguin.`,
+        name: `B. Assassass Creed: Assdows - `,
         value: "https://youtu.be/JcCcj1fPn7k?si=5Ci3oKJJ3utEAnSY",
       },
       //{
@@ -146,12 +146,12 @@ async function CreateAprilFools() {
       {
         name: "------------------------------------\nTournament Links",
         value:
-          "[Tournament Bracket](https://challonge.com/ji7dvn9c) - [Tournament Playlist](https://youtu.be/dQw4w9WgXcQ?si=HdLZxmQ05u-iwOtj)",
+          "[Daily Playlist](https://youtu.be/eioYulMp_5k?si=DTXuGyUnnZyTEnO3) | [Tournament Bracket](https://challonge.com/ji7dvn9c)",
         inline: false,
       }
     )
     .setFooter({
-      text: "After having listened to all tracks, please mind the gap when alighting from this train.",
+      text: "Listen to the traaaaaaaaaaaaaaaaaaaaaaaaaAAAAAARRRRRRGGGGHHHHhhhhhaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacks.",
       iconURL:
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
       //{
@@ -188,24 +188,36 @@ async function CreateAprilFools() {
     //  .setTitle(`${title1}`)
     //.setDescription("Blah blah")
     .setThumbnail(
-      "http://91.99.239.6/files/assets/mba.gif"
+      "https://imgur.com/d97AmmC"
       //"http://91.99.239.6/files/assets/sd-img.png"
     );
 
-  embed2.setURL("https://imgur.com/a/sEcrnVT");
+  embed2.setURL("https://imgur.com/d97AmmC");
 
-  var embedsToSend = [embed1];
+  var resultsEmbed = new EmbedBuilder()
+    .setTitle("Results? What results? I ain't sayin' nothin'!")
+    .setAuthor({
+      name: "Best VGM 20025 Awards",
+      iconURL: "http://91.99.239.6/files/assets/sd_logo.png",
+    })
+    .setColor(0xffffff)
+    .setDescription("**No results today.**");
+
+  channel.send({ embeds: [resultsEmbed] });
+  await sleep(1500);
+
   channel.send({
     content:
-      "Hello all and <@&1326256775262896290>...wait, wut\n❗ It appears we have nothing but tie matches all the way down! ❗",
+      "Hello all and jabronis, I'm taking a mental health day, so no results",
     files: [image],
   });
   await sleep(1500);
+
   channel
     .send({
       content:
-        "**How could you let this happen?! Match 1 to 100. Every single one!**",
-      embeds: embedsToSend,
+        "**Fine. I'll at least send the matches...**",
+      embeds: [embed1],
     })
     .then((embedMessage) => {
       var buttonVotes = new ActionRowBuilder()
@@ -219,9 +231,10 @@ async function CreateAprilFools() {
         components: [buttonVotes],
       });
     });
+
   await sleep(1500);
-  var embedsToSend2 = [embed2];
-  channel.send({ embeds: embedsToSend2 }).then((embedMessage) => {
+
+  channel.send({ embeds: [embed2] }).then((embedMessage) => {
     var buttonVotes = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder().setCustomId(`fool-1`).setLabel("A").setStyle("4")
