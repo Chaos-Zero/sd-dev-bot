@@ -16,8 +16,8 @@ const image = new AttachmentBuilder(
 //oneOffJoke.start();
 
 async function CreateAprilFools() {
-  const guildObject = await bot.guilds.cache.get(process.env.GUILD_ID);
-  const channel = await GetChannelByName(guildObject, "best-vgm-2024-awards");
+  const guildObject = await GetBot().guilds.cache.get(process.env.GUILD_ID);
+  const channel = await GetChannelByName(guildObject, "best-vgm-2025-awards");
   console.log(channel);
 
   var prevEmbed = new EmbedBuilder();
@@ -49,11 +49,11 @@ async function CreateAprilFools() {
       },
       {
         name: `A. No Mind Seye - Even Sean Murray Couldn't Fix This One`,
-        value: "https://youtu.be/DwUOPLwEFrQ?si=eTi7kgQC_FBidrTw",
+        value: "hhttps://youtu.be/iJZmoern_GQ?si=sh3t60FlLpXOyigU",
       },
       {
         name: `B. TamaNotchi ZZZZZzzzz.. - Should have stayed in the keychain`,
-        value: "https://youtu.be/aNgq_80QnJk?si=dCpgq4N6SmVuJDA1",
+        value: "https://youtu.be/aoVaAutNJPM?si=2IklL7LBYxsNP6IX",
       },
       //{
       //  name: "\u200B",
@@ -133,11 +133,11 @@ async function CreateAprilFools() {
       },
       {
         name: `A. Persona 5 XXX - Too Hot for Consoles`,
-        value: "https://youtu.be/SckcB099zrg?si=nw-b7ltkhFdkcTTy",
+        value: "https://youtu.be/ILID_psR_sA?si=FhDWEN9inmzMuO54",
       },
       {
-        name: `B. Assassass Creed: Assdows - `,
-        value: "https://youtu.be/JcCcj1fPn7k?si=5Ci3oKJJ3utEAnSY",
+        name: `B. Assassass Creed: Assdows - Same cheeks, same ol' shit`,
+        value: "https://youtu.be/Z5LGFg6iiAU?si=ZxVJASrK-w3XPNKj",
       },
       //{
       //  name: "\u200B",
