@@ -15,8 +15,9 @@ const image = new AttachmentBuilder(
 //});
 //oneOffJoke.start();
 
-async function CreateAprilFools() {
-  const guildObject = await GetBot().guilds.cache.get(process.env.GUILD_ID);
+async function CreateAprilFools(bot = "") {
+  const botToUse = bot || GetBot();
+  const guildObject = await botToUse.guilds.cache.get(process.env.GUILD_ID);
   const channel = await GetChannelByName(guildObject, "best-vgm-2025-awards");
   console.log(channel);
 

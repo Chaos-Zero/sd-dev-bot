@@ -67,7 +67,7 @@ module.exports = {
     });
 
     try {
-      await CreateAprilFools();
+      await CreateAprilFools(interaction.client);
       await interaction.editReply({
         content: "April Fools joke messages sent successfully!",
         ephemeral: true,
