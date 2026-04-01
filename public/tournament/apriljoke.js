@@ -44,13 +44,13 @@ async function CreateAprilFools(bot = "") {
         name:
           "**Voting for this match ends <t:" +
           GetTimeInEpochStamp(-0) +
-          ":R>**\n*Ah, you just missed it :(. Pretty sure you missed it last year too!*",
+          ":R>**\n*Ah, you just missed it :(. \nPretty sure you missed it last year too!*",
 
         value: "------------------------------------", //"\u200B",
       },
       {
         name: `A. No Mind Seye - Even Sean Murray Couldn't Fix This One`,
-        value: "hhttps://youtu.be/iJZmoern_GQ?si=sh3t60FlLpXOyigU",
+        value: "https://youtu.be/iJZmoern_GQ?si=sh3t60FlLpXOyigU",
       },
       {
         name: `B. TamaNotchi ZZZZZzzzz.. - Should have stayed in the keychain`,
@@ -105,7 +105,7 @@ async function CreateAprilFools(bot = "") {
     //  .setTitle(`${title1}`)
     //.setDescription("Blah blah")
     .setThumbnail(
-      "https://imgur.com/QGx6zN2"
+      "http://91.99.239.6/files/assets/match1.gif"
       //"http://91.99.239.6/files/assets/sd-img.png"
     );
 
@@ -113,7 +113,7 @@ async function CreateAprilFools(bot = "") {
 
   var embed2 = new EmbedBuilder()
     //.setTimestamp(Date.now() + 1)
-    .setTitle("Round ऽ - Nobody blink! - FIGHT!")
+    .setTitle("Round 2 - This match will show on your credit card under another name")
     .setAuthor({
       name: "Best VGM 2025? Awards?",
       iconURL:
@@ -127,7 +127,7 @@ async function CreateAprilFools(bot = "") {
       {
         //name: "\u200B",
         name:
-          "**Voting for this thingamajig ends <t:" +
+          "**You can send a post card to the following freepost date:  <t:" +
           GetTimeInEpochStamp(-954547200) +
           ":R>**",
         value: "------------------------------------", //"\u200B",
@@ -189,11 +189,11 @@ async function CreateAprilFools(bot = "") {
     //  .setTitle(`${title1}`)
     //.setDescription("Blah blah")
     .setThumbnail(
-      "https://imgur.com/d97AmmC"
+      "http://91.99.239.6/files/assets/match2.gif"
       //"http://91.99.239.6/files/assets/sd-img.png"
     );
 
-  embed2.setURL("https://imgur.com/d97AmmC");
+  embed2.setURL("https://imgur.com/a/sEcrnVT");
 
   var resultsEmbed = new EmbedBuilder()
     .setTitle("Results? What results? I ain't sayin' nothin'!")
