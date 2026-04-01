@@ -7,7 +7,7 @@ const path = require("path");
 const sleep = require("util").promisify(setTimeout);
 
 const image = new AttachmentBuilder(
-  "https://imgur.com/wMRIci1"
+  "http://91.99.239.6/files/assets/domodayoff.jpg"
 );
 //let oneOffJoke = new cron.CronJob("00 30 17 * * *", () => {
 //"25 32 00 * * 1-6"
