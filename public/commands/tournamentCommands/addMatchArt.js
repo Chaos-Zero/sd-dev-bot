@@ -123,10 +123,25 @@ module.exports = {
     if (!tournament.matchArt) {
       tournament.matchArt = {};
     }
-    tournament.matchArt[matchNumber.toString()] = {
+
+    const matchKey = matchNumber.toString();
+    if (!tournament.matchArt[matchKey]) {
+      tournament.matchArt[matchKey] = [];
+    }
+
+    // Convert existing single object to array for backward compatibility
+    if (!Array.isArray(tournament.matchArt[matchKey])) {
+      tournament.matchArt[matchKey] = [tournament.matchArt[matchKey]];
+    }
+
+    tournament.matchArt[matchKey].push({
       username: artistName,
       filename,
-    };
+    });
+
+    console.log(
+      `Added art for Match ${matchNumber} by ${artistName}. Total art entries: ${tournament.matchArt[matchKey].length}`
+    );
 
     await db
       .get("tournaments")

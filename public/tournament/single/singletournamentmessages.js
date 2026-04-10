@@ -578,10 +578,17 @@ async function SendSingleDailyEmbed(
     hasLocalGif = fs.existsSync(gifFilePath);
   }
   const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
-  const matchArtEntry = single?.matchArt?.[matchData.match?.toString()];
-  const matchArtUrl = matchArtEntry?.filename
-    ? "http://91.99.239.6/files/userImages/" + matchArtEntry.filename
-    : "";
+  let matchArtEntries = single?.matchArt?.[matchData.match?.toString()];
+  if (matchArtEntries && !Array.isArray(matchArtEntries)) {
+    matchArtEntries = [matchArtEntries];
+  }
+  const matchArtUrls = (matchArtEntries || []).map((entry) =>
+    entry?.filename
+      ? "http://91.99.239.6/files/userImages/" + entry.filename
+      : ""
+  ).filter(url => url !== "");
+
+  console.log(`Retrieved ${matchArtUrls.length} artworks for Match ${matchData.match}`);
 
   const scheduleTime = tournamentDetails?.tournamentPostTime || "19:00";
   const includeWeekends =
@@ -657,8 +664,8 @@ async function SendSingleDailyEmbed(
     .setFooter({
       text:
         "< Please listen to both tracks before voting for your favourite." +
-        (matchArtEntry?.username
-          ? "\nArt submitted by " + matchArtEntry.username
+        (matchArtEntries?.length > 0
+          ? "\nArt submitted by " + matchArtEntries.map(e => e.username).join(", ")
           : ""),
       iconURL:
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
@@ -666,8 +673,8 @@ async function SendSingleDailyEmbed(
 
     .setThumbnail(embedGifPath);
 
-  if (matchArtUrl) {
-    embed.setImage(matchArtUrl);
+  if (matchArtUrls.length > 0) {
+    embed.setImage(matchArtUrls[0]);
   }
 
   embed.setURL("https://imgur.com/a/u46xSwV");
@@ -700,6 +707,12 @@ async function SendSingleDailyEmbed(
   }*/
 
   var embedsToSend = [embed];
+  if (matchArtUrls.length > 1) {
+    for (let i = 1; i < matchArtUrls.length; i++) {
+        const extraEmbed = new EmbedBuilder().setImage(matchArtUrls[i]).setURL("https://imgur.com/a/u46xSwV");
+        embedsToSend.push(extraEmbed);
+    }
+  }
   const roleId = single?.roleId || single?.participantRoleId;
   const rolePing = roleId ? `<@&${roleId}>` : "";
   var welcomeString = roleId ? `Hello all and ${rolePing}` : "Hello all!";
