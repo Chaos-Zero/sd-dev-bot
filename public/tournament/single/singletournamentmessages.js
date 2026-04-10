@@ -170,6 +170,14 @@ async function SendSingleBattleMessage(
   //  await createGif("neuquant", gifName).then(async () => {
   await createGif("neuquant", gifName);
 
+  const matchArtEntries = singleDb?.matchArt?.[matchData.match?.toString()];
+  if (Array.isArray(matchArtEntries) && matchArtEntries.length > 1) {
+    const artGifName = gifName + "-art";
+    const artFiles = matchArtEntries.map(e => path.join("public/commands/gif/userImages", e.filename));
+    console.log("Making artwork gif");
+    await createGif("neuquant", artGifName, artFiles, 5000);
+  }
+
   await SendSingleDailyEmbed(
     guildObject,
     matchData,
@@ -578,10 +586,22 @@ async function SendSingleDailyEmbed(
     hasLocalGif = fs.existsSync(gifFilePath);
   }
   const embedGifPath = hasLocalGif ? "attachment://" + gifFileName : gifPath;
-  const matchArtEntry = single?.matchArt?.[matchData.match?.toString()];
-  const matchArtUrl = matchArtEntry?.filename
-    ? "http://91.99.239.6/files/userImages/" + matchArtEntry.filename
-    : "";
+  let matchArtEntries = single?.matchArt?.[matchData.match?.toString()];
+  if (matchArtEntries && !Array.isArray(matchArtEntries)) {
+    matchArtEntries = [matchArtEntries];
+  }
+  const matchArtUrls = (matchArtEntries || []).map((entry) =>
+    entry?.filename
+      ? "http://91.99.239.6/files/userImages/" + entry.filename
+      : ""
+  ).filter(url => url !== "");
+
+  const artGifName = gifName + "-art";
+  const artGifFileName = artGifName + ".gif";
+  const artGifPath = "http://91.99.239.6/files/output/" + artGifName + ".gif";
+  const artGifLocalPath = path.join("public/commands/gif/output", artGifFileName);
+  const hasArtGif = fs.existsSync(artGifLocalPath);
+  const embedArtGifPath = hasArtGif ? "attachment://" + artGifFileName : artGifPath;
 
   const scheduleTime = tournamentDetails?.tournamentPostTime || "19:00";
   const includeWeekends =
@@ -657,8 +677,8 @@ async function SendSingleDailyEmbed(
     .setFooter({
       text:
         "< Please listen to both tracks before voting for your favourite." +
-        (matchArtEntry?.username
-          ? "\nArt submitted by " + matchArtEntry.username
+        (matchArtEntries?.length > 0
+          ? "\nArt submitted by " + matchArtEntries.map(e => e.username).join(", ")
           : ""),
       iconURL:
         "http://91.99.239.6/files/assets/domo_smarty_pants_face.png",
@@ -666,8 +686,10 @@ async function SendSingleDailyEmbed(
 
     .setThumbnail(embedGifPath);
 
-  if (matchArtUrl) {
-    embed.setImage(matchArtUrl);
+  if (hasArtGif) {
+    embed.setImage(embedArtGifPath);
+  } else if (matchArtUrls.length > 0) {
+    embed.setImage(matchArtUrls[0]);
   }
 
   embed.setURL("https://imgur.com/a/u46xSwV");
@@ -764,10 +786,15 @@ async function SendSingleDailyEmbed(
         .setStyle("1")
     );
   const messagePayload = { embeds: embedsToSend };
+  const files = [];
   if (hasLocalGif) {
-    messagePayload.files = [
-      new AttachmentBuilder(gifFilePath, { name: gifFileName }),
-    ];
+    files.push(new AttachmentBuilder(gifFilePath, { name: gifFileName }));
+  }
+  if (hasArtGif) {
+    files.push(new AttachmentBuilder(artGifLocalPath, { name: artGifFileName }));
+  }
+  if (files.length > 0) {
+    messagePayload.files = files;
   }
   messagePayload.components = [buttonVotes];
   await channel.send(messagePayload);
