@@ -596,12 +596,12 @@ async function SendSingleDailyEmbed(
       : ""
   ).filter(url => url !== "");
 
-  console.log(`Retrieved ${matchArtUrls.length} artworks for Match ${matchData.match}`);
-
   const artGifName = gifName + "-art";
+  const artGifFileName = artGifName + ".gif";
   const artGifPath = "http://91.99.239.6/files/output/" + artGifName + ".gif";
-  const artGifLocalPath = path.join("public/commands/gif/output", artGifName + ".gif");
+  const artGifLocalPath = path.join("public/commands/gif/output", artGifFileName);
   const hasArtGif = fs.existsSync(artGifLocalPath);
+  const embedArtGifPath = hasArtGif ? "attachment://" + artGifFileName : artGifPath;
 
   const scheduleTime = tournamentDetails?.tournamentPostTime || "19:00";
   const includeWeekends =
@@ -687,7 +687,7 @@ async function SendSingleDailyEmbed(
     .setThumbnail(embedGifPath);
 
   if (hasArtGif) {
-    embed.setImage(artGifPath);
+    embed.setImage(embedArtGifPath);
   } else if (matchArtUrls.length > 0) {
     embed.setImage(matchArtUrls[0]);
   }
@@ -786,10 +786,15 @@ async function SendSingleDailyEmbed(
         .setStyle("1")
     );
   const messagePayload = { embeds: embedsToSend };
+  const files = [];
   if (hasLocalGif) {
-    messagePayload.files = [
-      new AttachmentBuilder(gifFilePath, { name: gifFileName }),
-    ];
+    files.push(new AttachmentBuilder(gifFilePath, { name: gifFileName }));
+  }
+  if (hasArtGif) {
+    files.push(new AttachmentBuilder(artGifLocalPath, { name: artGifFileName }));
+  }
+  if (files.length > 0) {
+    messagePayload.files = files;
   }
   messagePayload.components = [buttonVotes];
   await channel.send(messagePayload);
