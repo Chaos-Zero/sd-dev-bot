@@ -23,25 +23,31 @@ let imagesOutputFolder = "public/commands/gif/jpg/";
 
 let dstPath = "public/commands/gif/output";
 
-async function createGif(algorithm, gifName) {
+async function createGif(algorithm, gifName, fileList = null, delay = 2000, repeat = 0) {
   return new Promise(async (resolve) => {
     try {
       const dstPath = path.join(
         "public/commands/gif/output/",
         gifName + ".gif"
       );
-      const files = await readdirAsync(imagesFolder);
-      console.log("Files found:", files);
+      
+      let files = fileList;
+      if (!files) {
+        const rawFiles = await readdirAsync(imagesFolder);
+        files = rawFiles.map(f => path.join(imagesFolder, f));
+      }
+      
+      console.log("Files for GIF:", files);
 
       if (existsSync(dstPath)) {
-        console.log("gif already exists");
+        console.log("gif already exists:", dstPath);
         resolve();
       } else {
         if (files.length === 0) {
-          throw new Error("No files found in the images folder.");
+          throw new Error("No files provided for GIF creation.");
         }
 
-        const firstFile = path.join(imagesFolder, files[0]);
+        const firstFile = files[0];
         console.log("First file path:", firstFile);
 
         if (!existsSync(firstFile)) {
@@ -64,27 +70,24 @@ async function createGif(algorithm, gifName) {
         }
 
         const writeStream = createWriteStream(dstPath);
-        // when stream closes GIF is created so resolve promise
         writeStream.on("close", () => {
           resolve();
         });
 
         const encoder = new GIFEncoder(width, height, algorithm, true);
-        // pipe encoder's read stream to our write stream
         encoder.createReadStream().pipe(writeStream);
         encoder.start();
-        encoder.setDelay(2000);
-        encoder.setRepeat(20);
+        encoder.setDelay(delay);
+        encoder.setRepeat(repeat);
 
         const canvas = createCanvas(width, height);
         const ctx = canvas.getContext("2d");
-        console.log("We have created the canvas");
 
-        // draw an image for each file and add frame to encoder
         for (const file of files) {
           await new Promise((resolve3) => {
             const image = new Image();
             image.onload = () => {
+              ctx.clearRect(0, 0, width, height); // Clear canvas to prevent ghosting
               ctx.drawImage(image, 0, 0);
               encoder.addFrame(ctx);
               resolve3();
@@ -93,15 +96,13 @@ async function createGif(algorithm, gifName) {
               console.error(`Error loading image ${file}:`, err);
               resolve3();
             };
-            image.src = path.join(imagesFolder, file);
-
-            // Log the image path being processed
+            image.src = file;
             console.log(`Processing file: ${image.src}`);
           });
         }
 
         encoder.finish();
-        console.log("gif created");
+        console.log("gif created:", dstPath);
         resolve();
       }
     } catch (error) {

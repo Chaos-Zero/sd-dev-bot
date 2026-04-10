@@ -170,6 +170,14 @@ async function SendSingleBattleMessage(
   //  await createGif("neuquant", gifName).then(async () => {
   await createGif("neuquant", gifName);
 
+  const matchArtEntries = singleDb?.matchArt?.[matchData.match?.toString()];
+  if (Array.isArray(matchArtEntries) && matchArtEntries.length > 1) {
+    const artGifName = gifName + "-art";
+    const artFiles = matchArtEntries.map(e => path.join("public/commands/gif/userImages", e.filename));
+    console.log("Making artwork gif");
+    await createGif("neuquant", artGifName, artFiles, 5000);
+  }
+
   await SendSingleDailyEmbed(
     guildObject,
     matchData,
@@ -590,6 +598,11 @@ async function SendSingleDailyEmbed(
 
   console.log(`Retrieved ${matchArtUrls.length} artworks for Match ${matchData.match}`);
 
+  const artGifName = gifName + "-art";
+  const artGifPath = "http://91.99.239.6/files/output/" + artGifName + ".gif";
+  const artGifLocalPath = path.join("public/commands/gif/output", artGifName + ".gif");
+  const hasArtGif = fs.existsSync(artGifLocalPath);
+
   const scheduleTime = tournamentDetails?.tournamentPostTime || "19:00";
   const includeWeekends =
     tournamentDetails?.tournamentIncludeWeekends === true;
@@ -673,7 +686,9 @@ async function SendSingleDailyEmbed(
 
     .setThumbnail(embedGifPath);
 
-  if (matchArtUrls.length > 0) {
+  if (hasArtGif) {
+    embed.setImage(artGifPath);
+  } else if (matchArtUrls.length > 0) {
     embed.setImage(matchArtUrls[0]);
   }
 
@@ -707,12 +722,6 @@ async function SendSingleDailyEmbed(
   }*/
 
   var embedsToSend = [embed];
-  if (matchArtUrls.length > 1) {
-    for (let i = 1; i < matchArtUrls.length; i++) {
-        const extraEmbed = new EmbedBuilder().setImage(matchArtUrls[i]).setURL("https://imgur.com/a/u46xSwV");
-        embedsToSend.push(extraEmbed);
-    }
-  }
   const roleId = single?.roleId || single?.participantRoleId;
   const rolePing = roleId ? `<@&${roleId}>` : "";
   var welcomeString = roleId ? `Hello all and ${rolePing}` : "Hello all!";
