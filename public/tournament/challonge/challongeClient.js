@@ -27,18 +27,28 @@ function challongeBlockedFor() {
   return Math.max(0, challongeState.blockedUntil - Date.now());
 }
 
+// The quota allowance is a rolling window, so it frees up continuously rather
+// than at a single reset time - and Challonge's retry-after on a quota 429 is a
+// fixed 30 day constant, not a real countdown. Honouring it literally would
+// park the bot for a month. Instead cap the pause: long enough to stop
+// hammering, short enough that the tournament resumes on its own as requests
+// age out of the window.
+const RATE_LIMIT_MAX_COOLDOWN_MS = 15 * 60 * 1000;
+
 function noteRateLimit(error) {
   if (error?.response?.status !== 429) return;
   const retryAfter = Number(error.response.headers?.["retry-after"]);
-  const waitMs =
+  const requested =
     Number.isFinite(retryAfter) && retryAfter > 0
       ? retryAfter * 1000
-      : 60 * 60 * 1000;
+      : RATE_LIMIT_MAX_COOLDOWN_MS;
+  // Respect a genuinely short retry-after (a burst limit), cap a long one.
+  const waitMs = Math.min(requested, RATE_LIMIT_MAX_COOLDOWN_MS);
   challongeState.blockedUntil = Date.now() + waitMs;
   console.error(
-    `Challonge request limit exceeded. Pausing all Challonge calls for ~${Math.ceil(
+    `Challonge request limit exceeded. Backing off ${Math.round(
       waitMs / 60000
-    )} minutes.`
+    )} min, then retrying (quota frees up gradually).`
   );
 }
 
@@ -66,6 +76,20 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     noteRateLimit(error);
+    // A 404/410 means we acted on an id Challonge no longer recognises, which
+    // normally means the bracket was reset or participants were changed by hand
+    // on the site. Drop the cached ids for that tournament so the next call
+    // refetches instead of reusing ids that no longer exist.
+    const status = error?.response?.status;
+    if (status === 404 || status === 410) {
+      const match = /\/tournaments\/([^/.?]+)/.exec(error?.config?.url || "");
+      if (match) {
+        console.warn(
+          `Challonge returned ${status} for tournament ${match[1]}; clearing cached ids.`
+        );
+        invalidateChallongeCache(match[1]);
+      }
+    }
     return Promise.reject(error);
   }
 );
@@ -284,8 +308,13 @@ async function updateOrder(tournamentUrl) {
 
 async function getTournamentStructure(tournamentUrl) {
   try {
-    // Fetch participants (cached per tournament)
-    const participantsData = await getChallongeParticipants(tournamentUrl);
+    // This reads volatile per-match state (current players, winner, loser) and
+    // is the "what does the bracket actually look like now" call, so it always
+    // goes to Challonge - a warm cache here would silently mask results entered
+    // by hand on the Challonge site.
+    const participantsData = await getChallongeParticipants(tournamentUrl, {
+      forceRefresh: true,
+    });
 
     // Ensure participants are fetched correctly
     if (!participantsData || participantsData.length === 0) {
@@ -297,8 +326,9 @@ async function getTournamentStructure(tournamentUrl) {
       name: p.name,
     }));
 
-    // Fetch matches (cached per tournament)
-    const matchesData = await getChallongeMatches(tournamentUrl);
+    const matchesData = await getChallongeMatches(tournamentUrl, {
+      forceRefresh: true,
+    });
 
     if (!matchesData || matchesData.length === 0) {
       throw new Error("No matches found.");
@@ -515,9 +545,15 @@ async function endChallongeMatch(
 ) {
   try {
     // Callers that already hold the match (endMatchByIdWithEntrants) pass it in
-    // rather than making us fetch the same match a second time.
+    // rather than making us fetch the same match a second time. The double elim
+    // path passes a winnerId here, which older versions of this function
+    // ignored, so only accept an actual match object.
+    const usablePrefetch =
+      prefetchedMatch && typeof prefetchedMatch === "object"
+        ? prefetchedMatch
+        : null;
     const match =
-      prefetchedMatch || (await getChallongeMatch(tournamentUrl, matchId));
+      usablePrefetch || (await getChallongeMatch(tournamentUrl, matchId));
 
     if (!match) {
       throw new Error("Match not found.");

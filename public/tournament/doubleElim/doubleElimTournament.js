@@ -147,7 +147,16 @@ async function StartDoubleElimMatch(
 
   var challongeMatchId = matchData.challongeMatchNumber;
   console.log("MatchID = " + challongeMatchId);
-  await startChallongeMatch(urlName, challongeMatchId);
+  try {
+    await startChallongeMatch(urlName, challongeMatchId);
+  } catch (error) {
+    console.error(
+      "Failed to mark Challonge match " +
+        challongeMatchId +
+        " underway; continuing:",
+      error.message || error
+    );
+  }
 
   db.get("tournaments")
     .nth(0)
@@ -370,14 +379,24 @@ async function EndDoubleElimMatches(interaction = "") {
       console.log("Winner ID is : " + winnerId);
       var csv = match.entrant1.points + "-" + match.entrant2.points;
 
-      await endChallongeMatch(
-        urlName,
-        embedDetails.challongeMatchNumber,
-        csv,
-        winnerId
-      );
-      await unmarkChallongeMatch(urlName, embedDetails.challongeMatchNumber);
-      await completeChallongeMatch(urlName, embedDetails.challongeMatchNumber);
+      // Challonge only mirrors bracket state; a failure here must not stop the
+      // tournament from advancing.
+      try {
+        await endChallongeMatch(
+          urlName,
+          embedDetails.challongeMatchNumber,
+          csv
+        );
+        await unmarkChallongeMatch(urlName, embedDetails.challongeMatchNumber);
+        await completeChallongeMatch(urlName, embedDetails.challongeMatchNumber);
+      } catch (error) {
+        console.error(
+          "Challonge update failed for match " +
+            embedDetails.challongeMatchNumber +
+            "; continuing without it:",
+          error.message || error
+        );
+      }
     }
 
     // //

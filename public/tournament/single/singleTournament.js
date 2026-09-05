@@ -1145,28 +1145,40 @@ async function EndSingleMatches(interaction = "") {
         const entrant2Id =
           match.entrant2.challongeParticipantId ||
           getChallongeParticipantIdForEntry(single, match.entrant2);
-        const matchId =
-          match.challongeMatchId ||
-          (await getMatchIdByNumber(
-            challongeTournamentUrlName,
-            match.match,
-            matchType ? { matchType } : {}
-          ));
-        if (matchId && entrant1Id && entrant2Id) {
-          await endMatchByIdWithEntrants(
-            challongeTournamentUrlName,
-            matchId,
-            entrant1Id,
-            entrant2Id,
-            match.entrant1.points,
-            match.entrant2.points
-          );
-        } else {
-          await endMatchByNumber(
-            challongeTournamentUrlName,
-            match.match,
-            challongeResults,
-            matchType ? { matchType } : {}
+        // Challonge only mirrors bracket state. If it is unreachable or over
+        // quota the results still have to be processed, so never let it throw
+        // out of here - the bracket can be resynced later.
+        try {
+          const matchId =
+            match.challongeMatchId ||
+            (await getMatchIdByNumber(
+              challongeTournamentUrlName,
+              match.match,
+              matchType ? { matchType } : {}
+            ));
+          if (matchId && entrant1Id && entrant2Id) {
+            await endMatchByIdWithEntrants(
+              challongeTournamentUrlName,
+              matchId,
+              entrant1Id,
+              entrant2Id,
+              match.entrant1.points,
+              match.entrant2.points
+            );
+          } else {
+            await endMatchByNumber(
+              challongeTournamentUrlName,
+              match.match,
+              challongeResults,
+              matchType ? { matchType } : {}
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Challonge update failed for match " +
+              match.match +
+              "; continuing without it:",
+            error.message || error
           );
         }
       }
