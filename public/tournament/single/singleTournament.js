@@ -716,11 +716,24 @@ async function StartSingleMatch(
     } else if (finalMatchNumber && matchData.match === finalMatchNumber) {
       matchType = "final";
     }
-    matchData.challongeMatchId = await getMatchIdByNumber(
-      challongeTournamentUrlName,
-      matchData.match,
-      matchType ? { matchType } : {}
-    );
+    // Challonge is only used to mirror bracket state; if it's unreachable or
+    // errors out, we still want the match posted to Discord, just without a
+    // linked challongeMatchId (it can be backfilled/resynced later).
+    try {
+      matchData.challongeMatchId = await getMatchIdByNumber(
+        challongeTournamentUrlName,
+        matchData.match,
+        matchType ? { matchType } : {}
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch Challonge match ID for match " +
+          matchData.match +
+          "; continuing without it:",
+        error
+      );
+      matchData.challongeMatchId = null;
+    }
   }
 
   single.round = thisRound;
