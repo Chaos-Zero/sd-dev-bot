@@ -412,10 +412,15 @@ async function registerTournament(
               participants[i].challongeSeed = i + 1;
             }
             if (isHiddenBracket) {
+              // Hidden brackets stay anonymous until each round is posted;
+              // updateParticipantNameBySeed is what reveals the entrant.
               participantNames.push("Entrant #" + entrantNum);
             } else {
+              // Register in the final "title - name" form used when rounds are
+              // posted, so the round 1 rename pass has nothing left to do and
+              // costs no requests.
               participantNames.push(
-                participants[i].name + " - " + participants[i].title
+                participants[i].title + " - " + participants[i].name
               );
             }
 
