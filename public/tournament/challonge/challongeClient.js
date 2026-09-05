@@ -51,6 +51,14 @@ axiosInstance.interceptors.request.use((config) => {
       )} minutes)`
     );
   }
+
+  // API v1 authenticates on the api_key param (or HTTP basic); it has no bearer
+  // token scheme. Attaching the key here means no call site can forget it, and
+  // callers that pass their own key still win.
+  config.params = config.params || {};
+  if (config.params.api_key == null) {
+    config.params.api_key = challongeKey;
+  }
   return config;
 });
 
@@ -70,28 +78,18 @@ function invalidateChallongeCache(tournamentUrl) {
   challongeState.matches.delete(tournamentUrl);
 }
 
+// Form headers for the write endpoints. Authentication is not done here - see
+// the api_key interceptor above.
 function getHeaders() {
   return {
     "Content-Type": "application/x-www-form-urlencoded",
     "User-Agent": "Challonge API Client",
-    Authorization: `Bearer ${challongeKey}`,
-  };
-}
-
-function getStartHeaders(apiKey) {
-  return {
-    "Content-Type": "application/x-www-form-urlencoded",
-    Authorization: `Bearer ${apiKey}`,
   };
 }
 
 async function get(endpoint) {
   try {
-    // v1 authenticates via the api_key param (or HTTP basic), not a bearer
-    // token, so the key has to go on the query string here.
-    const response = await axiosInstance.get(endpoint, {
-      params: { api_key: challongeKey },
-    });
+    const response = await axiosInstance.get(endpoint);
     return response.data;
   } catch (error) {
     console.error("GET request failed:", error);
@@ -119,7 +117,7 @@ async function participantsGet(endpoint) {
 async function post(endpoint, data) {
   try {
     const response = await axiosInstance.post(endpoint, qs.stringify(data), {
-      headers: getHeaders(challongeKey),
+      headers: getHeaders(),
     });
     return response.data;
   } catch (error) {
@@ -134,7 +132,7 @@ async function post(endpoint, data) {
 async function put(endpoint, data) {
   try {
     const response = await axiosInstance.put(endpoint, qs.stringify(data), {
-      headers: getHeaders(challongeKey),
+      headers: getHeaders(),
     });
     return response.data;
   } catch (error) {
@@ -156,7 +154,7 @@ async function postBulk(endpoint, data, apiKey) {
 
     // Make the POST request
     const response = await axiosInstance.post(endpoint, serializedData, {
-      headers: getHeaders(apiKey),
+      headers: getHeaders(),
     });
 
     return response.data;
@@ -352,7 +350,7 @@ async function startTournament(tournamentName) {
       `/tournaments/${tournamentName}/start.json`,
       qs.stringify({ api_key: challongeKey }),
       {
-        headers: getHeaders(challongeKey),
+        headers: getHeaders(),
       }
     );
     // Starting the tournament is what generates the matches, so anything
@@ -374,7 +372,7 @@ async function startChallongeMatch(tournamentUrl, matchId) {
       endpoint,
       qs.stringify({ api_key: challongeKey }),
       {
-        headers: getStartHeaders(challongeKey),
+        headers: getHeaders(),
       }
     );
     return response.data;
@@ -395,7 +393,7 @@ async function unmarkChallongeMatch(tournamentUrl, matchId) {
       endpoint,
       qs.stringify({ api_key: challongeKey }),
       {
-        headers: getStartHeaders(challongeKey),
+        headers: getHeaders(),
       }
     );
     return response.data;
@@ -547,7 +545,7 @@ async function endChallongeMatch(
 
     const endpoint = `/tournaments/${tournamentUrl}/matches/${matchId}.json`;
     const response = await axiosInstance.put(endpoint, qs.stringify(data), {
-      headers: getHeaders(challongeKey),
+      headers: getHeaders(),
     });
 
      if (response.status === 200) {
@@ -604,7 +602,7 @@ async function completeChallongeMatch(tournamentUrl, matchId) {
 
   try {
     const response = await axiosInstance.put(endpoint, qs.stringify(data), {
-      headers: getHeaders(challongeKey),
+      headers: getHeaders(),
     });
     return response.data;
   } catch (error) {
@@ -624,7 +622,7 @@ async function completeChallongeTournament(tournamentUrl) {
   };
   try {
     const response = await axiosInstance.put(endpoint, qs.stringify(data), {
-      headers: getHeaders(challongeKey),
+      headers: getHeaders(),
     });
     invalidateChallongeCache(tournamentUrl);
     return response.data;
@@ -671,7 +669,7 @@ async function updateParticipantNameBySeed(
       `/tournaments/${tournamentName}/participants/${participantId}.json`,
       qs.stringify(updateData),
       {
-        headers: getHeaders(challongeKey),
+        headers: getHeaders(),
       }
     );
 
