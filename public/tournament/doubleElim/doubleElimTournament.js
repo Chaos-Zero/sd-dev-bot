@@ -117,7 +117,7 @@ async function StartDoubleElimMatch(
 
   console.log("Double Elimination  obejct: " + doubleElimination);
   var matchData = {
-    braket: bracket,
+    bracket: bracket,
     round: stringRound,
     match: matchNumber,
     challongeMatchNumber: foundEntries[0].challongeId,
@@ -239,7 +239,7 @@ async function EndDoubleElimMatches(interaction = "") {
   for (var match of inProgressMatches) {
     continuedTie = false;
     perviouslyTied = false;
-    var bracket = match.braket;
+    var bracket = match.bracket || match.braket;
 
     // winnerNum = match.match;
     // loserNum = match.match;

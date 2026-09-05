@@ -374,7 +374,9 @@ async function SendDoubleElimDailyEmbed(
   var embed = new EmbedBuilder();
 
   var bracket =
-    matchData.braket == "winnersBracket" ? "Winners Bracket" : "Losers Bracket";
+    (matchData.bracket || matchData.braket) == "winnersBracket"
+      ? "Winners Bracket"
+      : "Losers Bracket";
   embed
     .setTitle(
       "Final" +
