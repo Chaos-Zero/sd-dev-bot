@@ -484,7 +484,8 @@ async function main() {
     targets = args.channels.map(
       (id) => CHANNELS.find((c) => c.id === id) || { id, label: id, style: "unknown" }
     );
-  } else if (!args.all) {
+  } else if (!args.all && !args.membersOnly) {
+    // --members fetches only the guild roster, so it needs no channel target.
     console.error(
       "Specify --channel <id>, or --all for every configured channel. --list shows what is configured."
     );
