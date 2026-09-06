@@ -187,13 +187,16 @@ function ballotCount(voters) {
 /** Detect the real shape of a match, since tournamentFormat cannot be trusted. */
 function detectMatchFormat(match) {
   const sides = matchSides(match);
+  // "ranked3" means ranked ballots ({first, second}), not merely three sides:
+  // several historical contests ran three-way "pick one" votes.
   const ranked = sides.some(
     ({ entrant }) =>
       entrant.voters &&
       !Array.isArray(entrant.voters) &&
       typeof entrant.voters === "object"
   );
-  if (ranked || sides.length >= 3) return "ranked3";
+  if (ranked) return "ranked3";
+  if (sides.length > 2) return "multi";
   return "h2h";
 }
 

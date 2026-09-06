@@ -15,6 +15,8 @@
  *
  * Usage:
  *   node dumpChannels.js --list                    # show configured channels, fetch nothing
+ *   node dumpChannels.js --all --estimate          # cost the job without fetching reactions
+ *   node dumpChannels.js --members                 # write the guild roster only
  *   node dumpChannels.js --channel 785547515998109696 --limit 50
  *   node dumpChannels.js --channel 785547515998109696
  *   node dumpChannels.js --all
@@ -68,9 +70,11 @@ const CHANNELS = [
     note:
       "Bot result embeds. On 2023-04-11 every match prior to that date was " +
       "backfilled here in one burst, so this channel holds the full results " +
-      "history, not just post-2023-03-27. Scores and winners only — no " +
-      "reactions, so no voter ids. Expect a large same-day block; the parser " +
-      "must read match identity from the embed, never from message order.",
+      "history, not just post-2023-03-27. The embeds carry round, match, both " +
+      "entrants, both scores AND the per-side voter list (display names for " +
+      "current members, literal *ID:...* for departed ones) — so this is a " +
+      "vote source, not just a results source. Expect a large same-day block; " +
+      "read match identity from the embed, never from message order.",
     style: "results-log",
   },
 ];
@@ -79,7 +83,7 @@ const DEFAULT_OUT = path.join(".data", "history-dump");
 
 // Pause between reaction-user pages. Discord's per-route limit is the binding
 // constraint here, not the global one; 350ms keeps us comfortably under it.
-const REACTION_DELAY_MS = 350;
+let REACTION_DELAY_MS = 350;
 const HISTORY_DELAY_MS = 500;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -95,6 +99,10 @@ function parseArgs(argv) {
     if (arg === "--all") args.all = true;
     else if (arg === "--resume") args.resume = true;
     else if (arg === "--list") args.list = true;
+    else if (arg === "--estimate") args.estimate = true;
+    else if (arg === "--members") args.membersOnly = true;
+    else if (arg === "--no-members") args.noMembers = true;
+    else if (arg === "--delay") args.delay = parseInt(argv[++i], 10);
     else if (arg === "--channel") args.channels.push(argv[++i]);
     else if (arg === "--out") args.out = argv[++i];
     else if (arg === "--limit") args.limit = parseInt(argv[++i], 10);
@@ -189,6 +197,41 @@ function serialiseMessage(message, reactions) {
 // Per-channel dump
 // ---------------------------------------------------------------------------
 
+/**
+ * The log embeds name voters by display name, not id. Capture the roster so the
+ * parser can resolve them; departed members are already written as raw ids.
+ */
+async function dumpMembers(client, outDir) {
+  const guildId = process.env.GUILD_ID;
+  if (!guildId) {
+    console.log("\nGUILD_ID not set — skipping member roster.");
+    return;
+  }
+  try {
+    const guild = await client.guilds.fetch(guildId);
+    const members = await guild.members.fetch();
+    const roster = [...members.values()].map((m) => ({
+      id: m.id,
+      username: m.user.username,
+      globalName: m.user.globalName ?? null,
+      displayName: m.displayName,
+      nickname: m.nickname ?? null,
+      bot: m.user.bot,
+      joinedAt: m.joinedAt ? m.joinedAt.toISOString() : null,
+    }));
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(outDir, "members.json"),
+      JSON.stringify({ guildId, fetchedAt: new Date().toISOString(), members: roster }, null, 2),
+      "utf8"
+    );
+    console.log(`\nmember roster: ${roster.length} members -> members.json`);
+  } catch (error) {
+    console.log(`\nmember roster failed: ${error.message}`);
+    console.log("  (needs the GuildMembers privileged intent)");
+  }
+}
+
 function metaPath(outDir, id) {
   return path.join(outDir, `${id}.meta.json`);
 }
@@ -204,6 +247,74 @@ function readMeta(outDir, id) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Page history without fetching a single reaction user, and cost out the real
+ * run. Reaction counts arrive inside the message payload, so this is free.
+ */
+async function estimateChannel(client, spec, args) {
+  const { id, label } = spec;
+  let channel;
+  try {
+    channel = await client.channels.fetch(id);
+  } catch (error) {
+    console.error(`\n${label} (${id}) — unreachable: ${error.message}`);
+    return null;
+  }
+
+  let before;
+  let messages = 0;
+  let withReactions = 0;
+  let emojiInstances = 0;
+  let reactionRequests = 0;
+  let ballots = 0;
+  let oldest = null;
+
+  process.stdout.write(`\n${label} (${id}) — scanning`);
+  for (;;) {
+    let batch;
+    try {
+      batch = await channel.messages.fetch({ limit: 100, ...(before && { before }) });
+    } catch (error) {
+      console.log(`\n  ! history fetch failed: ${error.message}`);
+      break;
+    }
+    if (!batch.size) break;
+    for (const message of batch.values()) {
+      messages++;
+      const reactions = [...message.reactions.cache.values()];
+      if (reactions.length) {
+        withReactions++;
+        emojiInstances += reactions.length;
+        for (const r of reactions) {
+          ballots += r.count;
+          reactionRequests += Math.max(1, Math.ceil(r.count / 100));
+        }
+      }
+      oldest = message.id;
+    }
+    before = batch.lastKey();
+    process.stdout.write(".");
+    if (batch.size < 100) break;
+    await sleep(HISTORY_DELAY_MS);
+  }
+
+  const historyRequests = Math.ceil(messages / 100);
+  const seconds = Math.round(
+    (reactionRequests + emojiInstances) * (REACTION_DELAY_MS / 1000) +
+      historyRequests * (HISTORY_DELAY_MS / 1000)
+  );
+  const mins = Math.floor(seconds / 60);
+
+  console.log(`\n  messages          ${messages}`);
+  console.log(`  with reactions    ${withReactions}`);
+  console.log(`  ballots to fetch  ${ballots}`);
+  console.log(`  API requests      ${historyRequests} history + ${reactionRequests} reaction = ${historyRequests + reactionRequests}`);
+  console.log(`  estimated runtime ${mins}m ${seconds % 60}s at ${REACTION_DELAY_MS}ms pacing`);
+  if (oldest) console.log(`  oldest message    ${snowflakeDate(oldest).toISOString().slice(0, 10)}`);
+
+  return { messages, reactionRequests, historyRequests, ballots, seconds };
 }
 
 async function dumpChannel(client, spec, args) {
@@ -244,17 +355,21 @@ async function dumpChannel(client, spec, args) {
 
   console.log(`  #${channel.name} — created ${snowflakeDate(id).toISOString().slice(0, 10)}`);
 
+  // Only carry counters forward when genuinely resuming; a fresh run has just
+  // truncated the file, so starting from the old totals over-reports.
+  const carry = args.resume && existing ? existing : null;
+
   const stream = fs.createWriteStream(dumpPath(outDir, id), { flags: "a" });
   const stats = {
-    messages: existing?.messages || 0,
-    withReactions: existing?.withReactions || 0,
-    ballots: existing?.ballots || 0,
+    messages: carry?.messages || 0,
+    withReactions: carry?.withReactions || 0,
+    ballots: carry?.ballots || 0,
     reactionCalls: 0,
     reactionErrors: 0,
     countMismatches: 0,
   };
-  let oldestId = existing?.oldestId || null;
-  let newestId = existing?.newestId || null;
+  let oldestId = carry?.oldestId || null;
+  let newestId = carry?.newestId || null;
   let complete = false;
 
   for (;;) {
@@ -396,12 +511,37 @@ async function main() {
 
   client.once("ready", async () => {
     console.log(`Connected as ${client.user.tag}`);
+    if (args.delay) REACTION_DELAY_MS = args.delay;
     console.log(`Output: ${path.resolve(args.out)}`);
     if (args.limit) console.log(`LIMIT: stopping after ${args.limit} messages per channel`);
 
     const started = Date.now();
-    for (const spec of targets) {
-      await dumpChannel(client, spec, args);
+    if (args.membersOnly) {
+      await dumpMembers(client, args.out);
+      await client.destroy();
+      process.exit(0);
+    }
+    if (!args.estimate && !args.noMembers) {
+      await dumpMembers(client, args.out);
+    }
+    if (args.estimate) {
+      const totals = { requests: 0, seconds: 0, messages: 0, ballots: 0 };
+      for (const spec of targets) {
+        const r = await estimateChannel(client, spec, args);
+        if (!r) continue;
+        totals.requests += r.reactionRequests + r.historyRequests;
+        totals.seconds += r.seconds;
+        totals.messages += r.messages;
+        totals.ballots += r.ballots;
+      }
+      console.log(`\n${"-".repeat(56)}`);
+      console.log(`TOTAL  ${totals.messages} messages · ${totals.ballots} ballots · ${totals.requests} requests`);
+      console.log(`       roughly ${Math.floor(totals.seconds / 60)}m ${totals.seconds % 60}s of fetching`);
+      console.log("\nNothing was written. Drop --estimate to run for real.");
+    } else {
+      for (const spec of targets) {
+        await dumpChannel(client, spec, args);
+      }
     }
     console.log(`\nFinished in ${Math.round((Date.now() - started) / 1000)}s`);
     await client.destroy();
