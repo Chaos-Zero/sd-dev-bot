@@ -701,6 +701,7 @@ async function StartSingleMatch(
       points: 0,
     },
   };
+  StampMatchShape(matchData);
 
   if (single.isChallonge) {
     const challongeTournamentUrlName = replaceSpacesWithUnderlines(
@@ -1089,7 +1090,7 @@ async function EndSingleMatches(interaction = "") {
       if (match.progress == "tie") {
         previouslyTied = true;
       }
-      match.progress = "complete";
+      MarkMatchComplete(match, single);
       var matchObj = single.matches.find(
         (dbMatch) => dbMatch.match == match.match
       );

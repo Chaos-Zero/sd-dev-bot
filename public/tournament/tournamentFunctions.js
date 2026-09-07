@@ -406,13 +406,15 @@ async function registerTournament(
           if (resolved) {
             return;
           }
-          participants.push({
-            name: row.Name,
-            title: row.Title,
-            link: row.Link,
-            type: row.Type || "",
-            match: 0,
-          });
+          participants.push(
+            StampEntrant({
+              name: row.Name,
+              title: row.Title,
+              link: row.Link,
+              type: row.Type || "",
+              match: 0,
+            })
+          );
         })
         .on("end", async () => {
           if (resolved) {

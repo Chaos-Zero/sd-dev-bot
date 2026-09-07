@@ -139,6 +139,7 @@ async function StartDoubleElimMatch(
       points: 0,
     },
   };
+  StampMatchShape(matchData);
   doubleElimination.matchNumber = matchNumber;
   doubleElimination.matches.push(matchData);
   const urlName = replaceSpacesWithUnderlines(
@@ -326,7 +327,7 @@ async function EndDoubleElimMatches(interaction = "") {
       if (match.progress == "tie") {
         perviouslyTied = true;
       }
-      match.progress = "complete";
+      MarkMatchComplete(match, doubleElimination);
       var matchObj = doubleElimination.matches.find(
         (dbMatch) => dbMatch.match == match.match
       );
