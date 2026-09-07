@@ -124,42 +124,58 @@ function UpdateCompatibilityForMatches(
   SaveCompatibilityDb(db);
 }
 
+/**
+ * Entrants of a match, in slot order. Historical contests ran 3- and 4-way
+ * "pick one" battles (Best VGM 2020 round 1, 2021 round 1), so reading only
+ * entrant1/entrant2 would silently discard those voters and score everyone who
+ * backed slots 3 or 4 as if they had not voted at all.
+ */
+function matchEntrantList(match) {
+  const out = [];
+  if (!match) return out;
+  const count = match.entrantCount || 8;
+  for (let i = 1; i <= count; i++) {
+    const entrant = match["entrant" + i];
+    if (entrant && typeof entrant === "object" && entrant.name) out.push(entrant);
+  }
+  return out;
+}
+
 function updateSingleDoubleCompatibility(target, match) {
-  const votersA = normalizeVoters(match?.entrant1?.voters);
-  const votersB = normalizeVoters(match?.entrant2?.voters);
+  const sides = matchEntrantList(match).map((e) => normalizeVoters(e.voters));
 
   target.totalMatches = (target.totalMatches || 0) + 1;
 
-  if (votersA.length < 1 && votersB.length < 1) {
+  if (!sides.some((s) => s.length > 0)) {
     return;
   }
 
-  const allVoters = uniqueValues(votersA.concat(votersB));
+  const allVoters = uniqueValues([].concat(...sides));
   incrementUserMatchCounts(target.userMatchCounts, allVoters);
-  for (let i = 0; i < votersA.length; i++) {
-    for (let j = i + 1; j < votersA.length; j++) {
-      updatePairStats(target.users, votersA[i], votersA[j], {
-        matched: 1,
-        iterations: 1,
-      });
+
+  // Same side: agreement. Different sides: disagreement. Identical maths to
+  // the old two-side version when there are only two.
+  for (const side of sides) {
+    for (let i = 0; i < side.length; i++) {
+      for (let j = i + 1; j < side.length; j++) {
+        updatePairStats(target.users, side[i], side[j], {
+          matched: 1,
+          iterations: 1,
+        });
+      }
     }
   }
 
-  for (let i = 0; i < votersB.length; i++) {
-    for (let j = i + 1; j < votersB.length; j++) {
-      updatePairStats(target.users, votersB[i], votersB[j], {
-        matched: 1,
-        iterations: 1,
-      });
-    }
-  }
-
-  for (let i = 0; i < votersA.length; i++) {
-    for (let j = 0; j < votersB.length; j++) {
-      updatePairStats(target.users, votersA[i], votersB[j], {
-        matched: 0,
-        iterations: 1,
-      });
+  for (let a = 0; a < sides.length; a++) {
+    for (let b = a + 1; b < sides.length; b++) {
+      for (const userA of sides[a]) {
+        for (const userB of sides[b]) {
+          updatePairStats(target.users, userA, userB, {
+            matched: 0,
+            iterations: 1,
+          });
+        }
+      }
     }
   }
 }
@@ -362,5 +378,6 @@ if (typeof module !== "undefined") {
     LoadCompatibilityDb,
     SaveCompatibilityDb,
     UpdateCompatibilityForMatches,
+    matchEntrantList,
   };
 }

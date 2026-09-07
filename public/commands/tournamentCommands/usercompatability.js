@@ -707,29 +707,36 @@ function calculateWinnerRateStatsForTournament(tournamentDb, userId) {
 }
 
 function getSingleDoubleWinnerVoteOutcome(match, userId) {
-  const entrant1Voters = match?.entrant1?.voters;
-  const entrant2Voters = match?.entrant2?.voters;
-  if (!Array.isArray(entrant1Voters) || !Array.isArray(entrant2Voters)) {
+  // Historical contests ran 3- and 4-way "pick one" battles as well as
+  // head-to-head, so read every slot. Reading only entrant1/entrant2 would
+  // pick the wrong winner and score anyone who backed slot 3 or 4 as absent.
+  // matchEntrantList comes from compatibilityStore.js, eval'd at the top.
+  const entrants = matchEntrantList(match);
+  if (entrants.length < 2) {
     return { isValid: false, participated: false, hit: false };
   }
 
-  const pointsOne = Number(match?.entrant1?.points);
-  const pointsTwo = Number(match?.entrant2?.points);
-  if (
-    !Number.isFinite(pointsOne) ||
-    !Number.isFinite(pointsTwo) ||
-    pointsOne === pointsTwo
-  ) {
+  const voterLists = entrants.map((e) => e.voters);
+  if (!voterLists.every((v) => Array.isArray(v))) {
+    return { isValid: false, participated: false, hit: false };
+  }
+
+  const points = entrants.map((e) => Number(e.points));
+  if (!points.every((p) => Number.isFinite(p))) {
     return { isValid: true, participated: false, hit: false };
   }
 
-  const participated =
-    entrant1Voters.includes(userId) || entrant2Voters.includes(userId);
+  const best = Math.max(...points);
+  if (points.filter((p) => p === best).length !== 1) {
+    return { isValid: true, participated: false, hit: false };
+  }
+
+  const participated = voterLists.some((v) => v.includes(userId));
   if (!participated) {
     return { isValid: true, participated: false, hit: false };
   }
 
-  const winnerVoters = pointsOne > pointsTwo ? entrant1Voters : entrant2Voters;
+  const winnerVoters = voterLists[points.indexOf(best)];
   return {
     isValid: true,
     participated: true,

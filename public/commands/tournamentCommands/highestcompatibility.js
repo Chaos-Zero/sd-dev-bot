@@ -570,8 +570,11 @@ function GetAllVoters(currentTournament) {
       if (!isValidMatchForFormat(match, "Single Elimination")) {
         continue;
       }
-      addUniqueVoters(voters, match.entrant1.voters);
-      addUniqueVoters(voters, match.entrant2.voters);
+      // 3- and 4-way "pick one" battles exist in the historical contests, so
+      // read every slot; matchEntrantList comes from compatibilityStore.js.
+      for (const entrant of matchEntrantList(match)) {
+        addUniqueVoters(voters, entrant.voters);
+      }
     }
   }
 

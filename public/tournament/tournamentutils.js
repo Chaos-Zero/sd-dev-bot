@@ -355,6 +355,35 @@ async function CreateAndSendBattleVotesEmbed(
   }
 }
 
+/**
+ * Entrants of a match, in slot order, however many there are.
+ *
+ * Matches are stored as entrant1..entrantN rather than an array so that the
+ * ~940 existing references to entrant1/2/3 keep working. Historical contests
+ * ran 4-way battles (Best VGM 2020 round 1, 2021 round 1), so anything that
+ * walks matches generically must use this rather than assume two or three.
+ */
+function GetMatchEntrants(match) {
+  if (!match) return [];
+  const out = [];
+  const count = match.entrantCount || 8;
+  for (let i = 1; i <= count; i++) {
+    const entrant = match["entrant" + i];
+    if (entrant && typeof entrant === "object" && entrant.name) out.push(entrant);
+  }
+  return out;
+}
+
+/** Ballots for one entrant, flattened. Ranked entries carry {first, second}. */
+function GetEntrantVoters(entrant) {
+  const v = entrant && entrant.voters;
+  if (Array.isArray(v)) return v;
+  if (v && typeof v === "object") {
+    return [].concat(v.first || [], v.second || []);
+  }
+  return [];
+}
+
 function CreateUsersString(users, members) {
   var outputMessage = "";
   for (var user of users) {
