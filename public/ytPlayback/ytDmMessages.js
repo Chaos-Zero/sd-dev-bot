@@ -150,6 +150,16 @@ function getDomoHelpCategories() {
           args: "make-public, include-low-participation",
         },
         {
+          name: "/tournament-results",
+          desc: "Final standings of a finished tournament, with the closing rounds.",
+          args: "tournament (defaults to the most recent), make-public",
+        },
+        {
+          name: "/tournament-bracket",
+          desc: "The closing rounds of a finished tournament drawn as a bracket.",
+          args: "tournament (defaults to the most recent), make-public",
+        },
+        {
           name: "/tournament-track-history",
           desc: "See how a track, or every track from a game, has done across all tournaments.",
           args: "query* (track title or game/series), make-public",

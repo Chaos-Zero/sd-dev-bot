@@ -87,7 +87,7 @@ async function StartTripleMatch(
 
   let foundEntries = [];
 
-  for (var entry of triple.rounds[triple.round]) {
+  for (var entry of triple.rounds[triple.round] || []) {
     if (entry.match == matchNumber) {
       foundEntries.push(entry);
       thisRound = triple.round;
@@ -96,12 +96,26 @@ async function StartTripleMatch(
 
   if (foundEntries.length < 1 && thisRound == 0) {
     var nextRound = parseInt(triple.round) + 1;
-    for (var entry of triple.rounds[nextRound]) {
+    for (var entry of triple.rounds[nextRound] || []) {
       if (entry.match == matchNumber) {
         foundEntries.push(entry);
         thisRound = nextRound;
       }
     }
+  }
+
+  // Winners are seeded into the next round as they are decided, so neither this
+  // round nor the next one holding the match means the final has been played.
+  if (foundEntries.length < 1) {
+    console.log("Every 3v3 ranked match has been played.");
+    ConcludeTournament(db, currentTournamentName);
+    if (interaction !== "") {
+      await interaction.editReply({
+        content: "That was the last match. Thank you for participating!",
+        ephemeral: true,
+      });
+    }
+    return;
   }
 
   var stringRound = thisRound.toString();

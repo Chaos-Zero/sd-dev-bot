@@ -24,6 +24,8 @@ const cron = require("cron");
 const sleep = require("util").promisify(setTimeout);
 const updateEntrantHandlers = require("./public/commands/tournamentCommands/updateEntrant.js");
 const trackHistoryHandlers = require("./public/commands/tournamentCommands/trackHistory.js");
+const tournamentBracketHandlers = require("./public/commands/tournamentCommands/tournamentBracket.js");
+const tournamentResultsHandlers = require("./public/commands/tournamentCommands/tournamentResults.js");
 
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/api/openai/chat.js") + "");
@@ -410,6 +412,18 @@ bot.on(Events.InteractionCreate, (interaction) => {
     interaction.customId.startsWith("update-entrant-page:")
   ) {
     return updateEntrantHandlers.handleEntrantPage(interaction);
+  }
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId === "tournament-bracket-pick"
+  ) {
+    return tournamentBracketHandlers.handleBracketPick(interaction);
+  }
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId === "tournament-results-pick"
+  ) {
+    return tournamentResultsHandlers.handleResultsPick(interaction);
   }
   if (
     interaction.isStringSelectMenu() &&
