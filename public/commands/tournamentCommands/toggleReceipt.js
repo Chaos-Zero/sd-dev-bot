@@ -3,6 +3,7 @@ const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs");
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/tournament/dmUtils.js") + "");
+eval(fs.readFileSync("./public/utils/adminUtils.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,6 +12,11 @@ module.exports = {
       "Toggle whether you would like DM messages which track you votes in tournaments."
     ),
   async execute(interaction) {
+    // Gated in the Discord server too, but that configuration lives outside
+    // the repo, so the check is enforced here as well.
+    if (!(await RequireDomoAdmin(interaction))) {
+      return;
+    }
     var db = GetDb();
     await db.read();
     let tournamentDetails = await db.get("tournaments").nth(0).value();

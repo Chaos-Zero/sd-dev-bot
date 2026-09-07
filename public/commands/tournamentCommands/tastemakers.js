@@ -5,6 +5,7 @@ const sleep = require("util").promisify(setTimeout);
 
 eval(fs.readFileSync("./public/database/read.js") + "");
 eval(fs.readFileSync("./public/main.js") + "");
+eval(fs.readFileSync("./public/utils/compatibilityStore.js") + "");
 
 const loadingEmbed = new EmbedBuilder().setImage(
   "http://91.99.239.6/files/assets/Domo_load.gif"
@@ -42,7 +43,7 @@ module.exports = {
     console.log(doubleEliminationName);
     let tournamentDb = tournamentDetails[doubleEliminationName];
     if (!doubleEliminationName || doubleEliminationName === "N/A" || !tournamentDb) {
-      const latestTournament = getLatestTournamentEntry(tournamentDetails);
+      const latestTournament = GetLatestTournamentEntry(tournamentDetails);
       if (latestTournament) {
         doubleEliminationName = latestTournament.name;
         tournamentDb = latestTournament.data;
@@ -78,7 +79,7 @@ module.exports = {
     var guild = interaction.member.guild;
     var guildUsers = await guild.members.cache;
 
-    var voters = GetAllVoters(tournamentDb);
+    var voters = GetAllTournamentVoters(tournamentDb);
 
     var userResults = compareUsersAndReturnTasteMakers(
       interaction,
@@ -140,26 +141,6 @@ async function PopulateEmbedData(interaction, result, tournamentName) {
   });
 }
 
-function GetAllVoters(currentTournament) {
-  var voters = [];
-  if (currentTournament?.matches?.length < 1) {
-    return [];
-  }
-  outer: for (const match of currentTournament.matches) {
-    for (const voter of match.entrant1.voters) {
-      if (!voters.includes(voter)) {
-        voters.push(voter);
-      }
-    }
-    for (const voter of match.entrant2.voters) {
-      if (!voters.includes(voter)) {
-        voters.push(voter);
-      }
-    }
-  }
-  return voters;
-}
-
 function compareUsersAndReturnTasteMakers(
   interaction,
   currentTournament,
@@ -191,36 +172,23 @@ function compareUsersAndReturnTasteMakers(
     totalWeight = 0;
     maxWeight = 0;
     iterations = 0;
-    matchInner: for (const match of playedMatches) {
-      if (match.progress == "complete") {
-        maxWeight += 1;
-        if (
-          parseInt(match.entrant1.points) > parseInt(match.entrant2.points) &&
-          match.entrant1.voters.includes(voter)
-        ) {
-          totalWeight += 1;
-          iterations += 1;
-          continue matchInner;
-        } else if (
-          parseInt(match.entrant2.points) > parseInt(match.entrant1.points) &&
-          match.entrant1.voters.includes(voter)
-        ) {
-          iterations += 1;
-          continue matchInner;
-        } else if (
-          parseInt(match.entrant2.points) > parseInt(match.entrant1.points) &&
-          match.entrant2.voters.includes(voter)
-        ) {
-          totalWeight += 1;
-          iterations += 1;
-          continue matchInner;
-        } else if (
-          parseInt(match.entrant1.points) > parseInt(match.entrant2.points) &&
-          match.entrant2.voters.includes(voter)
-        ) {
-          iterations += 1;
-          continue matchInner;
-        }
+    for (const match of playedMatches) {
+      // Read every entrant slot and judge the ballot by its own shape.
+      // Historical contests ran 3- and 4-way "pick one" battles and ranked
+      // rounds, so comparing entrant1 against entrant2 picked the wrong winner
+      // and threw outright on a ranked ballot, whose voters are an object.
+      // GetWinnerVoteOutcome comes from compatibilityStore.js, eval'd at the top.
+      const outcome = GetWinnerVoteOutcome(match, voter);
+      if (!outcome.isValid) {
+        continue;
+      }
+      maxWeight += 1;
+      if (!outcome.participated) {
+        continue;
+      }
+      iterations += 1;
+      if (outcome.hit) {
+        totalWeight += 1;
       }
     }
 
@@ -263,18 +231,6 @@ function compareUsersAndReturnTasteMakers(
     }
   }
   return tasteMakers;
-}
-
-function getLatestTournamentEntry(tournamentDetails) {
-  const excludedKeys = new Set(["admin", "currentTournament", "receiptUsers"]);
-  const entries = Object.entries(tournamentDetails).filter(
-    ([key, value]) => !excludedKeys.has(key) && value
-  );
-  if (entries.length < 1) {
-    return null;
-  }
-  const [name, data] = entries[entries.length - 1];
-  return { name, data };
 }
 
 async function getUserInfoFromId(guild, userId) {

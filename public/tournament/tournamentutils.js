@@ -355,6 +355,104 @@ async function CreateAndSendBattleVotesEmbed(
   }
 }
 
+/**
+ * Entrants of a match, in slot order, however many there are.
+ *
+ * Matches are stored as entrant1..entrantN rather than an array so that the
+ * ~940 existing references to entrant1/2/3 keep working. Historical contests
+ * ran 4-way battles (Best VGM 2020 round 1, 2021 round 1), so anything that
+ * walks matches generically must use this rather than assume two or three.
+ */
+function GetMatchEntrants(match) {
+  if (!match) return [];
+  const out = [];
+  const count = match.entrantCount || 8;
+  for (let i = 1; i <= count; i++) {
+    const entrant = match["entrant" + i];
+    if (entrant && typeof entrant === "object" && entrant.name) out.push(entrant);
+  }
+  return out;
+}
+
+/** Ballots for one entrant, flattened. Ranked entries carry {first, second}. */
+function GetEntrantVoters(entrant) {
+  const v = entrant && entrant.voters;
+  if (Array.isArray(v)) return v;
+  if (v && typeof v === "object") {
+    return [].concat(v.first || [], v.second || []);
+  }
+  return [];
+}
+
+/**
+ * Fields the database wants on every entrant and match, written at the point
+ * the bot creates them rather than repaired afterwards by normalizeDb.
+ *
+ *   videoId      join key across tournaments; free text names are not reliable
+ *   tags[]       absorbs the ad-hoc "type"/"contest" labels
+ *   matchFormat  h2h | multi | ranked3, so consumers need not guess from shape
+ *   entrantCount how many slots to read; contests have run 2-, 3- and 4-way
+ *   completedAt  when the match finished -- nothing else records this
+ */
+const ENTRANT_YOUTUBE_ID =
+  /(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})/;
+
+function ExtractVideoId(link) {
+  if (typeof link !== "string") return null;
+  const match = ENTRANT_YOUTUBE_ID.exec(link.trim());
+  return match ? match[1] : null;
+}
+
+/** Derived fields for one entrant. Safe to call repeatedly. */
+function StampEntrant(entrant) {
+  if (!entrant || typeof entrant !== "object") return entrant;
+  if (entrant.videoId === undefined) {
+    entrant.videoId = ExtractVideoId(entrant.link);
+  }
+  if (!Array.isArray(entrant.tags)) {
+    const tags = [];
+    if (typeof entrant.type === "string" && entrant.type.trim()) {
+      tags.push("theme:" + entrant.type.trim());
+    }
+    if (entrant.contest !== undefined && String(entrant.contest).trim()) {
+      tags.push("contest:" + String(entrant.contest).trim());
+    }
+    entrant.tags = tags;
+  }
+  return entrant;
+}
+
+/**
+ * Shape descriptor for a match, plus entrant stamping. Ranked entries store
+ * voters as {first, second}; everything else stores a flat array, so the shape
+ * of the ballots is what distinguishes a ranked match from a 3-way pick-one.
+ */
+function StampMatchShape(match) {
+  if (!match || typeof match !== "object") return match;
+  const entrants = GetMatchEntrants(match);
+  match.entrantCount = entrants.length;
+  const ranked = entrants.some(
+    (e) => e.voters && !Array.isArray(e.voters) && typeof e.voters === "object"
+  );
+  match.matchFormat = ranked ? "ranked3" : entrants.length > 2 ? "multi" : "h2h";
+  for (const entrant of entrants) StampEntrant(entrant);
+  return match;
+}
+
+/** Mark a match finished, recording when, and move the tournament clock on. */
+function MarkMatchComplete(match, tournament) {
+  if (!match || typeof match !== "object") return match;
+  match.progress = "complete";
+  if (!match.completedAt) {
+    match.completedAt = new Date().toISOString();
+  }
+  if (!match.matchFormat) StampMatchShape(match);
+  if (tournament && typeof tournament === "object") {
+    tournament.lastMatchAt = match.completedAt;
+  }
+  return match;
+}
+
 function CreateUsersString(users, members) {
   var outputMessage = "";
   for (var user of users) {

@@ -10,26 +10,110 @@ const axiosInstance = axios.create({
   timeout: 8000,
 });
 
+// This file is eval'd into several module scopes (tournamentFunctions,
+// singleTournament, doubleElimTournament, ...), so each copy gets its own
+// module-level variables. Shared state therefore lives on `global` so the
+// cache and the rate-limit breaker are shared across all of them.
+const challongeState = (global.__challongeState = global.__challongeState || {
+  participants: new Map(), // tournamentUrl -> participant array
+  matches: new Map(), // tournamentUrl -> match array
+  blockedUntil: 0, // epoch ms; set when Challonge returns 429
+});
+
+// Challonge allows 500 requests per 30 days on the free plan. Once we are over
+// the limit every further call is wasted, so short-circuit them locally until
+// the window Challonge told us about has passed.
+function challongeBlockedFor() {
+  return Math.max(0, challongeState.blockedUntil - Date.now());
+}
+
+// The quota allowance is a rolling window, so it frees up continuously rather
+// than at a single reset time - and Challonge's retry-after on a quota 429 is a
+// fixed 30 day constant, not a real countdown. Honouring it literally would
+// park the bot for a month. Instead cap the pause: long enough to stop
+// hammering, short enough that the tournament resumes on its own as requests
+// age out of the window.
+const RATE_LIMIT_MAX_COOLDOWN_MS = 15 * 60 * 1000;
+
+function noteRateLimit(error) {
+  if (error?.response?.status !== 429) return;
+  const retryAfter = Number(error.response.headers?.["retry-after"]);
+  const requested =
+    Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : RATE_LIMIT_MAX_COOLDOWN_MS;
+  // Respect a genuinely short retry-after (a burst limit), cap a long one.
+  const waitMs = Math.min(requested, RATE_LIMIT_MAX_COOLDOWN_MS);
+  challongeState.blockedUntil = Date.now() + waitMs;
+  console.error(
+    `Challonge request limit exceeded. Backing off ${Math.round(
+      waitMs / 60000
+    )} min, then retrying (quota frees up gradually).`
+  );
+}
+
+axiosInstance.interceptors.request.use((config) => {
+  const remaining = challongeBlockedFor();
+  if (remaining > 0) {
+    throw new Error(
+      `Challonge request limit exceeded; skipping call (retry in ~${Math.ceil(
+        remaining / 60000
+      )} minutes)`
+    );
+  }
+
+  // API v1 authenticates on the api_key param (or HTTP basic); it has no bearer
+  // token scheme. Attaching the key here means no call site can forget it, and
+  // callers that pass their own key still win.
+  config.params = config.params || {};
+  if (config.params.api_key == null) {
+    config.params.api_key = challongeKey;
+  }
+  return config;
+});
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    noteRateLimit(error);
+    // A 404/410 means we acted on an id Challonge no longer recognises, which
+    // normally means the bracket was reset or participants were changed by hand
+    // on the site. Drop the cached ids for that tournament so the next call
+    // refetches instead of reusing ids that no longer exist.
+    const status = error?.response?.status;
+    if (status === 404 || status === 410) {
+      const match = /\/tournaments\/([^/.?]+)/.exec(error?.config?.url || "");
+      if (match) {
+        console.warn(
+          `Challonge returned ${status} for tournament ${match[1]}; clearing cached ids.`
+        );
+        invalidateChallongeCache(match[1]);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Cached reads. Match ids and participant ids are stable for the life of a
+// tournament, so the expensive "fetch every match / every participant" calls
+// only need to happen once per tournament instead of once per match.
+function invalidateChallongeCache(tournamentUrl) {
+  challongeState.participants.delete(tournamentUrl);
+  challongeState.matches.delete(tournamentUrl);
+}
+
+// Form headers for the write endpoints. Authentication is not done here - see
+// the api_key interceptor above.
 function getHeaders() {
   return {
     "Content-Type": "application/x-www-form-urlencoded",
     "User-Agent": "Challonge API Client",
-    Authorization: `Bearer ${challongeKey}`,
-  };
-}
-
-function getStartHeaders(apiKey) {
-  return {
-    "Content-Type": "application/x-www-form-urlencoded",
-    Authorization: `Bearer ${apiKey}`,
   };
 }
 
 async function get(endpoint) {
   try {
-    const response = await axiosInstance.get(endpoint, {
-      headers: getHeaders(challongeKey),
-    });
+    const response = await axiosInstance.get(endpoint);
     return response.data;
   } catch (error) {
     console.error("GET request failed:", error);
@@ -39,7 +123,7 @@ async function get(endpoint) {
 
 async function participantsGet(endpoint) {
   try {
-    const response = await axios.get(`${BASE_URL}${endpoint}`, {
+    const response = await axiosInstance.get(endpoint, {
       params: {
         api_key: challongeKey,
       },
@@ -57,7 +141,7 @@ async function participantsGet(endpoint) {
 async function post(endpoint, data) {
   try {
     const response = await axiosInstance.post(endpoint, qs.stringify(data), {
-      headers: getHeaders(challongeKey),
+      headers: getHeaders(),
     });
     return response.data;
   } catch (error) {
@@ -72,7 +156,7 @@ async function post(endpoint, data) {
 async function put(endpoint, data) {
   try {
     const response = await axiosInstance.put(endpoint, qs.stringify(data), {
-      headers: getHeaders(challongeKey),
+      headers: getHeaders(),
     });
     return response.data;
   } catch (error) {
@@ -94,7 +178,7 @@ async function postBulk(endpoint, data, apiKey) {
 
     // Make the POST request
     const response = await axiosInstance.post(endpoint, serializedData, {
-      headers: getHeaders(apiKey),
+      headers: getHeaders(),
     });
 
     return response.data;
@@ -140,50 +224,55 @@ async function createChallongeTournament(
 }
 
 async function addChallongeEntrants(names, tournamentName) {
-  /*  // Endpoint with the API key as a query parameter
-  const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}/participants/bulk_add.json?api_key=${challongeKey}`;
+  if (!names || names.length === 0) return;
 
-  const participants = names.map((name, index) => ({ 
-        name,
-        seed: index + 1  // Seeds start from 1 for the first participant
-    }));
+  const participants = names.map((name, index) => ({
+    name,
+    seed: index + 1, // seeds start at 1
+  }));
 
+  // One bulk_add call instead of one POST per entrant: a 64-entrant bracket
+  // goes from 64 requests to 1.
   try {
-    // Send the POST request
-    const response = await axios.post(
-      endpoint,
+    const response = await axiosInstance.post(
+      `/tournaments/${tournamentName}/participants/bulk_add.json`,
       { participants },
       {
+        params: { api_key: challongeKey },
         headers: {
           "Content-Type": "application/json",
           "User-Agent": "Challonge API Client",
         },
       }
     );
-
+    invalidateChallongeCache(tournamentName);
     return response.data;
   } catch (error) {
-    console.error(
-      "Bulk addition of participants failed:",
+    // Don't burn the remaining quota on a retry loop if we are rate limited.
+    if (error?.response?.status === 429 || challongeBlockedFor() > 0) {
+      throw error;
+    }
+    console.warn(
+      "bulk_add failed, falling back to one request per participant:",
       error.response ? error.response.data : error.message
     );
-    throw error;
   }
-}
-*/
+
   for (const name of names) {
     await addParticipant(tournamentName, name, challongeKey);
   }
+  invalidateChallongeCache(tournamentName);
 }
 
 async function addParticipant(tournamentName, name, apiKey) {
-  const endpoint = `${BASE_URL}/tournaments/${tournamentName}/participants.json?api_key=${apiKey}`;
+  const endpoint = `/tournaments/${tournamentName}/participants.json`;
 
   try {
-    const response = await axios.post(
+    const response = await axiosInstance.post(
       endpoint,
       { participant: { name } },
       {
+        params: { api_key: apiKey },
         headers: {
           "Content-Type": "application/json",
           "User-Agent": "Challonge API Client",
@@ -219,10 +308,13 @@ async function updateOrder(tournamentUrl) {
 
 async function getTournamentStructure(tournamentUrl) {
   try {
-    // Fetch participants
-    const participantsData = await participantsGet(
-      `/tournaments/${tournamentUrl}/participants.json`
-    );
+    // This reads volatile per-match state (current players, winner, loser) and
+    // is the "what does the bracket actually look like now" call, so it always
+    // goes to Challonge - a warm cache here would silently mask results entered
+    // by hand on the Challonge site.
+    const participantsData = await getChallongeParticipants(tournamentUrl, {
+      forceRefresh: true,
+    });
 
     // Ensure participants are fetched correctly
     if (!participantsData || participantsData.length === 0) {
@@ -230,26 +322,27 @@ async function getTournamentStructure(tournamentUrl) {
     }
 
     const participants = participantsData.map((p) => ({
-      id: p.participant.id,
-      name: p.participant.name,
+      id: p.id,
+      name: p.name,
     }));
 
-    // Fetch matches
-    const matchesData = await participantsGet(
-      `/tournaments/${tournamentUrl}/matches.json`
-    );
+    const matchesData = await getChallongeMatches(tournamentUrl, {
+      forceRefresh: true,
+    });
 
     if (!matchesData || matchesData.length === 0) {
       throw new Error("No matches found.");
     }
 
     const matches = matchesData.map((m) => ({
-      challongeMatchId: m.match.id,
-      player1Id: m.match.player1_id,
-      player2Id: m.match.player2_id,
-      round: m.match.round,
-      state: m.match.state,
-      matchNumber: m.match.suggested_play_order, // Derived match number
+      challongeMatchId: m.id,
+      player1Id: m.player1_id,
+      player2Id: m.player2_id,
+      winnerId: m.winner_id,
+      loserId: m.loser_id,
+      round: m.round,
+      state: m.state,
+      matchNumber: m.suggested_play_order, // Derived match number
     }));
 
     // Convert player IDs to player names for easier readability
@@ -283,13 +376,16 @@ async function getTournamentStructure(tournamentUrl) {
 
 async function startTournament(tournamentName) {
   try {
-    const response = await axios.post(
-      `${BASE_URL}/tournaments/${tournamentName}/start.json`,
+    const response = await axiosInstance.post(
+      `/tournaments/${tournamentName}/start.json`,
       qs.stringify({ api_key: challongeKey }),
       {
-        headers: getHeaders(challongeKey),
+        headers: getHeaders(),
       }
     );
+    // Starting the tournament is what generates the matches, so anything
+    // cached before this point is stale.
+    invalidateChallongeCache(tournamentName);
     console.log(`Tournament ${tournamentName} started successfully`);
     return response.data;
   } catch (error) {
@@ -306,7 +402,7 @@ async function startChallongeMatch(tournamentUrl, matchId) {
       endpoint,
       qs.stringify({ api_key: challongeKey }),
       {
-        headers: getStartHeaders(challongeKey),
+        headers: getHeaders(),
       }
     );
     return response.data;
@@ -327,7 +423,7 @@ async function unmarkChallongeMatch(tournamentUrl, matchId) {
       endpoint,
       qs.stringify({ api_key: challongeKey }),
       {
-        headers: getStartHeaders(challongeKey),
+        headers: getHeaders(),
       }
     );
     return response.data;
@@ -386,7 +482,7 @@ async function saveTournamentStructure(urlName, tournamentDb, db) {
       if (!match.player2) {
         matchEntrant2 = {
           match: match.matchNumber,
-          challongeId: match.id,
+          challongeId: match.challongeMatchId,
           bracket: match.bracket,
           round: match.round,
         };
@@ -441,9 +537,23 @@ function findObjectByName(arr, searchString) {
   return result;
 }
 
-async function endChallongeMatch(tournamentUrl, matchId, scoresCsv) {
+async function endChallongeMatch(
+  tournamentUrl,
+  matchId,
+  scoresCsv,
+  prefetchedMatch
+) {
   try {
-    const match = await getChallongeMatch(tournamentUrl, matchId);
+    // Callers that already hold the match (endMatchByIdWithEntrants) pass it in
+    // rather than making us fetch the same match a second time. The double elim
+    // path passes a winnerId here, which older versions of this function
+    // ignored, so only accept an actual match object.
+    const usablePrefetch =
+      prefetchedMatch && typeof prefetchedMatch === "object"
+        ? prefetchedMatch
+        : null;
+    const match =
+      usablePrefetch || (await getChallongeMatch(tournamentUrl, matchId));
 
     if (!match) {
       throw new Error("Match not found.");
@@ -470,8 +580,10 @@ async function endChallongeMatch(tournamentUrl, matchId, scoresCsv) {
     };
 
     const endpoint = `/tournaments/${tournamentUrl}/matches/${matchId}.json`;
-    const response = await axiosInstance.put(endpoint, qs.stringify(data));
-    
+    const response = await axiosInstance.put(endpoint, qs.stringify(data), {
+      headers: getHeaders(),
+    });
+
      if (response.status === 200) {
       console.log(`Match ${matchId} completed successfully.`);
     } else {
@@ -489,9 +601,11 @@ async function endChallongeMatch(tournamentUrl, matchId, scoresCsv) {
 }
 
 async function getChallongeMatch(tournamentUrl, matchId) {
-  const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}/matches/${matchId}.json?api_key=${challongeKey}`;
+  const endpoint = `/tournaments/${tournamentUrl}/matches/${matchId}.json`;
   try {
-    const response = await axios.get(endpoint);
+    const response = await axiosInstance.get(endpoint, {
+      params: { api_key: challongeKey },
+    });
     return response.data.match;
   } catch (error) {
     console.error(
@@ -516,14 +630,16 @@ async function completeChallongeMatch(tournamentUrl, matchId) {
   }
 
   // If scores are set, try to complete the match
-  const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}/matches/${matchId}.json`;
+  const endpoint = `/tournaments/${tournamentUrl}/matches/${matchId}.json`;
   const data = {
     "match[state]": "complete",
     api_key: challongeKey,
   };
 
   try {
-    const response = await axios.put(endpoint, qs.stringify(data));
+    const response = await axiosInstance.put(endpoint, qs.stringify(data), {
+      headers: getHeaders(),
+    });
     return response.data;
   } catch (error) {
     console.error(
@@ -535,15 +651,16 @@ async function completeChallongeMatch(tournamentUrl, matchId) {
 }
 
 async function completeChallongeTournament(tournamentUrl) {
-  const endpoint = `${BASE_URL}/tournaments/${tournamentUrl}.json`;
+  const endpoint = `/tournaments/${tournamentUrl}.json`;
   const data = {
     "tournament[state]": "complete",
     api_key: challongeKey,
   };
   try {
-    const response = await axios.put(endpoint, qs.stringify(data), {
-      headers: getHeaders(challongeKey),
+    const response = await axiosInstance.put(endpoint, qs.stringify(data), {
+      headers: getHeaders(),
     });
+    invalidateChallongeCache(tournamentUrl);
     return response.data;
   } catch (error) {
     console.error(
@@ -560,42 +677,40 @@ async function updateParticipantNameBySeed(
   newName
 ) {
   try {
-    const participantsResponse = await axios.get(
-      `${BASE_URL}/tournaments/${tournamentName}/participants.json`,
-      {
-        params: {
-          api_key: challongeKey,
-        },
-      }
-    );
-    const participants = participantsResponse.data;
+    // Served from cache after the first call, so a round's worth of renames
+    // costs one participants fetch rather than one per entrant.
+    const participants = await getChallongeParticipants(tournamentName);
 
     // Step 2: Find the participant with the given seed number
-    const participant = participants.find(
-      (p) => p.participant.seed === seedNumber
-    );
+    const participant = participants.find((p) => p.seed === seedNumber);
 
     if (!participant) {
       console.log(`No participant found with seed number ${seedNumber}`);
       return;
     }
 
+    // Already correct (e.g. a resend) - nothing to spend a request on.
+    if (participant.name === newName) {
+      return;
+    }
+
     // Step 3: Update the participant's name
-    const participantId = participant.participant.id;
+    const participantId = participant.id;
     const updateData = {
       api_key: challongeKey,
       "participant[name]": newName,
     };
 
-    const updateResponse = await axios.put(
-      `${BASE_URL}/tournaments/${tournamentName}/participants/${participantId}.json`,
+    const updateResponse = await axiosInstance.put(
+      `/tournaments/${tournamentName}/participants/${participantId}.json`,
       qs.stringify(updateData),
       {
-        headers: getHeaders(challongeKey),
+        headers: getHeaders(),
       }
     );
 
     if (updateResponse.status === 200) {
+      participant.name = newName; // keep the cache in step with Challonge
       console.log(
         `Participant with seed ${seedNumber} updated to "${newName}"`
       );
@@ -607,16 +722,52 @@ async function updateParticipantNameBySeed(
   }
 }
 
-async function getChallongeParticipants(tournamentName) {
-  const response = await axios.get(
-    `${BASE_URL}/tournaments/${tournamentName}/participants.json`,
+async function getChallongeParticipants(tournamentName, options = {}) {
+  if (
+    !options.forceRefresh &&
+    challongeState.participants.has(tournamentName)
+  ) {
+    return challongeState.participants.get(tournamentName);
+  }
+
+  const response = await axiosInstance.get(
+    `/tournaments/${tournamentName}/participants.json`,
     {
       params: {
         api_key: challongeKey,
       },
     }
   );
-  return response.data.map((p) => p.participant || p);
+  const participants = response.data.map((p) => p.participant || p);
+  challongeState.participants.set(tournamentName, participants);
+  return participants;
+}
+
+// Match ids and their play order are fixed once the tournament starts, and
+// every caller here only needs those stable fields, so this list is cached for
+// the life of the tournament. Volatile per-match data (current players, scores)
+// still comes from getChallongeMatch.
+async function getChallongeMatches(tournamentName, options = {}) {
+  if (!options.forceRefresh && challongeState.matches.has(tournamentName)) {
+    return challongeState.matches.get(tournamentName);
+  }
+
+  const response = await axiosInstance.get(
+    `/tournaments/${tournamentName}/matches.json`,
+    {
+      params: {
+        api_key: challongeKey,
+      },
+    }
+  );
+  const matches = response.data.map((m) => m.match || m);
+  // Don't cache an empty list: the bracket may simply not be generated yet
+  // (startTournament is fired without await at some call sites), and caching
+  // that would make every later lookup miss.
+  if (matches.length) {
+    challongeState.matches.set(tournamentName, matches);
+  }
+  return matches;
 }
 
 async function getChallongeParticipantMaps(tournamentName) {
@@ -634,64 +785,54 @@ async function getChallongeParticipantMaps(tournamentName) {
   return { bySeed, byName };
 }
 
+function selectMatch(matches, matchNumber, options = {}) {
+  if (options.matchType === "third_place") {
+    return matches.find((m) => m.is_third_place_match === true);
+  }
+
+  if (options.matchType === "final") {
+    const nonThirdPlace = matches.filter((m) => m.is_third_place_match !== true);
+    return nonThirdPlace
+      .slice()
+      .sort((a, b) => {
+        const roundA = a.round ?? 0;
+        const roundB = b.round ?? 0;
+        if (roundA !== roundB) {
+          return roundA - roundB;
+        }
+        const orderA = a.suggested_play_order ?? 0;
+        const orderB = b.suggested_play_order ?? 0;
+        return orderA - orderB;
+      })
+      .pop();
+  }
+
+  return matches.find((m) => m.suggested_play_order === matchNumber);
+}
+
 async function getMatchIdByNumber(tournamentName, matchNumber, options = {}) {
   try {
-    // Log the request URL
-    console.log(`Requesting matches for tournament: ${tournamentName}`);
+    let matches = await getChallongeMatches(tournamentName);
+    let match = selectMatch(matches, matchNumber, options);
 
-    const response = await axios.get(
-      `${BASE_URL}/tournaments/${tournamentName}/matches.json`,
-      {
-        params: {
-          api_key: challongeKey,
-        },
-      }
-    );
-
-    const matches = response.data.map((m) => m.match || m);
-
-    // Log the matches array to ensure it's not empty
-    if (!matches.length) {
-      console.error('No matches found for this tournament');
-      return null;
+    // A miss can mean the cache predates the bracket being generated, so pay
+    // for one refresh before giving up.
+    if (!match && challongeState.matches.has(tournamentName)) {
+      matches = await getChallongeMatches(tournamentName, {
+        forceRefresh: true,
+      });
+      match = selectMatch(matches, matchNumber, options);
     }
 
-    // Log the match number being searched for
-    console.log(`Searching for match number: ${matchNumber}`);
-
-    let match = null;
-    if (options.matchType === "third_place") {
-      match = matches.find((m) => m.is_third_place_match === true);
-    } else if (options.matchType === "final") {
-      const nonThirdPlace = matches.filter(
-        (m) => m.is_third_place_match !== true
-      );
-      match = nonThirdPlace
-        .slice()
-        .sort((a, b) => {
-          const roundA = a.round ?? 0;
-          const roundB = b.round ?? 0;
-          if (roundA !== roundB) {
-            return roundA - roundB;
-          }
-          const orderA = a.suggested_play_order ?? 0;
-          const orderB = b.suggested_play_order ?? 0;
-          return orderA - orderB;
-        })
-        .pop();
-    } else {
-      match = matches.find(
-        (m) => m.suggested_play_order === matchNumber
-      );
+    if (!matches.length) {
+      console.error("No matches found for this tournament");
+      return null;
     }
 
     if (!match) {
       console.error(`No match found with match number ${matchNumber}`);
       return null;
     }
-
-    // Log the found match ID
-    console.log(`Found match ID: ${match.id}`);
 
     return match.id;
   } catch (error) {
@@ -729,7 +870,7 @@ async function endMatchByIdWithEntrants(
       throw new Error("Entrant IDs do not match match player IDs.");
     }
 
-    await endChallongeMatch(tournamentName, matchId, scoresCsv);
+    await endChallongeMatch(tournamentName, matchId, scoresCsv, match);
     console.log(`Match ${matchId} updated successfully.`);
   } catch (error) {
     console.error("Failed to update match by ID:", error);

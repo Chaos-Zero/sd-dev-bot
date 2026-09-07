@@ -289,6 +289,38 @@ function buildDailyPlaylistUrlForTournament(tournamentDb, matchesPerDay = 1) {
   return buildWatchPlaylistUrlFromTrackLinks(trackLinks);
 }
 
+/**
+ * Move a tournament to the front of tournaments[0].
+ *
+ * Object.assign appends new keys, so a freshly registered tournament would sit
+ * below every finished one. Rebuilding the root puts it first, keeping the
+ * config keys (currentTournament, admin, testMode, ...) ahead of the
+ * tournaments and leaving the rest in their existing newest-first order.
+ */
+function PutTournamentFirst(db, tournamentTitle) {
+  const root = db.get("tournaments").nth(0).value();
+  if (!root || !root[tournamentTitle]) {
+    return;
+  }
+  const isTournamentEntry = (value) =>
+    value && typeof value === "object" && !Array.isArray(value) && Array.isArray(value.matches);
+
+  const config = [];
+  const tournaments = [];
+  for (const key of Object.keys(root)) {
+    if (key === tournamentTitle) continue;
+    if (isTournamentEntry(root[key])) tournaments.push(key);
+    else config.push(key);
+  }
+
+  const rebuilt = {};
+  for (const key of config) rebuilt[key] = root[key];
+  rebuilt[tournamentTitle] = root[tournamentTitle];
+  for (const key of tournaments) rebuilt[key] = root[key];
+
+  db.set("tournaments[0]", rebuilt).write();
+}
+
 async function registerTournament(
   tournamentTitle,
   tournamentFormat,
@@ -374,13 +406,15 @@ async function registerTournament(
           if (resolved) {
             return;
           }
-          participants.push({
-            name: row.Name,
-            title: row.Title,
-            link: row.Link,
-            type: row.Type || "",
-            match: 0,
-          });
+          participants.push(
+            StampEntrant({
+              name: row.Name,
+              title: row.Title,
+              link: row.Link,
+              type: row.Type || "",
+              match: 0,
+            })
+          );
         })
         .on("end", async () => {
           if (resolved) {
@@ -412,10 +446,15 @@ async function registerTournament(
               participants[i].challongeSeed = i + 1;
             }
             if (isHiddenBracket) {
+              // Hidden brackets stay anonymous until each round is posted;
+              // updateParticipantNameBySeed is what reveals the entrant.
               participantNames.push("Entrant #" + entrantNum);
             } else {
+              // Register in the final "title - name" form used when rounds are
+              // posted, so the round 1 rename pass has nothing left to do and
+              // costs no requests.
               participantNames.push(
-                participants[i].name + " - " + participants[i].title
+                participants[i].title + " - " + participants[i].name
               );
             }
 
@@ -492,6 +531,7 @@ async function registerTournament(
               },
             })
             .write();
+          PutTournamentFirst(db, tournamentTitle);
         } else {
           db.get("tournaments")
             .nth(0)
@@ -516,6 +556,7 @@ async function registerTournament(
               },
             })
             .write();
+          PutTournamentFirst(db, tournamentTitle);
         }
 
           finish({ ok: true });

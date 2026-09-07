@@ -4,6 +4,7 @@ const sleep = require("util").promisify(setTimeout);
 
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/tournament/tournamentFunctions.js") + "");
+eval(fs.readFileSync("./public/utils/adminUtils.js") + "");
 
 function parseRoundValue(value) {
   const parsed = parseInt(value, 10);
@@ -269,6 +270,11 @@ module.exports = {
         .setRequired(false)
     ),
   async execute(interaction) {
+    // Gated in the Discord server too, but that configuration lives outside
+    // the repo, so the check is enforced here as well.
+    if (!(await RequireDomoAdmin(interaction))) {
+      return;
+    }
     await interaction.deferReply({ ephemeral: true });
     const includeResults =
       interaction.options.getBoolean("include-results") === true;

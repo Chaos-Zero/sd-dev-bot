@@ -701,6 +701,7 @@ async function StartSingleMatch(
       points: 0,
     },
   };
+  StampMatchShape(matchData);
 
   if (single.isChallonge) {
     const challongeTournamentUrlName = replaceSpacesWithUnderlines(
@@ -716,11 +717,24 @@ async function StartSingleMatch(
     } else if (finalMatchNumber && matchData.match === finalMatchNumber) {
       matchType = "final";
     }
-    matchData.challongeMatchId = await getMatchIdByNumber(
-      challongeTournamentUrlName,
-      matchData.match,
-      matchType ? { matchType } : {}
-    );
+    // Challonge is only used to mirror bracket state; if it's unreachable or
+    // errors out, we still want the match posted to Discord, just without a
+    // linked challongeMatchId (it can be backfilled/resynced later).
+    try {
+      matchData.challongeMatchId = await getMatchIdByNumber(
+        challongeTournamentUrlName,
+        matchData.match,
+        matchType ? { matchType } : {}
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch Challonge match ID for match " +
+          matchData.match +
+          "; continuing without it:",
+        error
+      );
+      matchData.challongeMatchId = null;
+    }
   }
 
   single.round = thisRound;
@@ -1076,7 +1090,7 @@ async function EndSingleMatches(interaction = "") {
       if (match.progress == "tie") {
         previouslyTied = true;
       }
-      match.progress = "complete";
+      MarkMatchComplete(match, single);
       var matchObj = single.matches.find(
         (dbMatch) => dbMatch.match == match.match
       );
@@ -1132,28 +1146,40 @@ async function EndSingleMatches(interaction = "") {
         const entrant2Id =
           match.entrant2.challongeParticipantId ||
           getChallongeParticipantIdForEntry(single, match.entrant2);
-        const matchId =
-          match.challongeMatchId ||
-          (await getMatchIdByNumber(
-            challongeTournamentUrlName,
-            match.match,
-            matchType ? { matchType } : {}
-          ));
-        if (matchId && entrant1Id && entrant2Id) {
-          await endMatchByIdWithEntrants(
-            challongeTournamentUrlName,
-            matchId,
-            entrant1Id,
-            entrant2Id,
-            match.entrant1.points,
-            match.entrant2.points
-          );
-        } else {
-          await endMatchByNumber(
-            challongeTournamentUrlName,
-            match.match,
-            challongeResults,
-            matchType ? { matchType } : {}
+        // Challonge only mirrors bracket state. If it is unreachable or over
+        // quota the results still have to be processed, so never let it throw
+        // out of here - the bracket can be resynced later.
+        try {
+          const matchId =
+            match.challongeMatchId ||
+            (await getMatchIdByNumber(
+              challongeTournamentUrlName,
+              match.match,
+              matchType ? { matchType } : {}
+            ));
+          if (matchId && entrant1Id && entrant2Id) {
+            await endMatchByIdWithEntrants(
+              challongeTournamentUrlName,
+              matchId,
+              entrant1Id,
+              entrant2Id,
+              match.entrant1.points,
+              match.entrant2.points
+            );
+          } else {
+            await endMatchByNumber(
+              challongeTournamentUrlName,
+              match.match,
+              challongeResults,
+              matchType ? { matchType } : {}
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Challonge update failed for match " +
+              match.match +
+              "; continuing without it:",
+            error.message || error
           );
         }
       }

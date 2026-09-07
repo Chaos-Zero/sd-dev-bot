@@ -51,7 +51,7 @@ function getDomoHelpCategories() {
             "tournament-name*, tournament-format*, matches-per-day*, csv-file*, channel*, post-time (UTC hourly, confirm with timezone prompt), include-weekends, randomise-tournament, create-challonge-bracket, set-challonge-hidden, participant-role, notes: <fill-in>",
         },
         {
-          name: "/tournament-start-match",
+          name: "/tournament-start-next-match",
           desc: "Manually start a day's worth of matches for the current tournament.",
           
         },
@@ -66,7 +66,7 @@ function getDomoHelpCategories() {
           args: "include-results, include-logs",
         },
         {
-          name: "/tournament-remove",
+          name: "/tournament-remove-tournament",
           desc: "Remove a tournament from the DB (confirmation required).",
           args: "tournament-name*",
         },
@@ -111,7 +111,7 @@ function getDomoHelpCategories() {
           args: "action* (add-user/remove-user/add-role/remove-role), user (required for add-user), role (required for add-role)",
         },
         {
-          name: "/tournament-set-time",
+          name: "/tournament-set-match-time",
           desc: "Set the daily tournament post time (UTC, 24-hour).",
           args: "time* (UTC hourly)",
         },
@@ -119,6 +119,11 @@ function getDomoHelpCategories() {
           name: "/tournament-set-weekends",
           desc: "Enable or disable weekend tournament posting.",
           args: "include-weekends*",
+        },
+        {
+          name: "/tournament-april-fools",
+          desc: "Run the April Fools routine (owner/admin only).",
+          args: "none",
         },
       ],
     },

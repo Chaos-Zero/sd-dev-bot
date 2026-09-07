@@ -539,7 +539,7 @@ async function EndTripleMatches(interaction = "") {
       if (match.progress == "tie") {
         previouslyTied = true;
       }
-      match.progress = "complete";
+      MarkMatchComplete(match, triple);
       var matchObj = triple.matches.find(
         (dbMatch) => dbMatch.match == match.match
       );

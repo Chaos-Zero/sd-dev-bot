@@ -999,6 +999,8 @@ async function AddSingleWinnerToNextRound(
     type: firstPlaceEntrant.type,
     challongeSeed: firstPlaceEntrant.challongeSeed,
     challongeParticipantId: firstPlaceEntrant.challongeParticipantId,
+    videoId: firstPlaceEntrant.videoId,
+    tags: firstPlaceEntrant.tags,
     match: parseInt(nextMatchNum),
     fromMatch: resolvedMatchNumber,
   };

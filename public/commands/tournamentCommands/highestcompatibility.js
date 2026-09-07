@@ -67,7 +67,7 @@ module.exports = {
       const latestTournament = getLatestTournamentWithCompat(
         tournamentDetails,
         compatibilityDb
-      ) || getLatestTournamentEntry(tournamentDetails);
+      ) || GetLatestTournamentEntry(tournamentDetails);
       if (latestTournament) {
         tournamentName = latestTournament.name;
         tournamentDb = latestTournament.data;
@@ -111,6 +111,9 @@ module.exports = {
     var guildUsers = await guild.members.cache;
 
     var userResults = [];
+    // The buckets actually scored, so the footnote below can look for standouts
+    // in the same data the headline came from.
+    var scoredStores = [];
 
     if (searchAll) {
       tournamentName = "All Tournaments";
@@ -129,6 +132,7 @@ module.exports = {
             globalSingle.totalMatches
           )
         );
+        scoredStores.push({ store: globalSingle, format: "Single Elimination" });
       }
 
       if (globalTriple?.totalMatches >= 10) {
@@ -143,6 +147,7 @@ module.exports = {
             globalTriple.totalMatches
           )
         );
+        scoredStores.push({ store: globalTriple, format: "3v3 Ranked" });
       }
       if (userResults.length < 1) {
         const userSingleMatches =
@@ -164,7 +169,7 @@ module.exports = {
         const latestTournament = getLatestTournamentWithCompat(
           tournamentDetails,
           compatibilityDb
-        ) || getLatestTournamentEntry(tournamentDetails);
+        ) || GetLatestTournamentEntry(tournamentDetails);
         if (latestTournament) {
           tournamentName = latestTournament.name;
           tournamentDb = latestTournament.data;
@@ -195,6 +200,10 @@ module.exports = {
         tournamentCompat.format || tournamentDb.tournamentFormat,
         tournamentCompat.totalMatches || 0
       );
+      scoredStores.push({
+        store: tournamentCompat,
+        format: tournamentCompat.format || tournamentDb.tournamentFormat,
+      });
       if (userResults.length < 1) {
         const userMatchCount =
           tournamentCompat.userMatchCounts?.[interaction.user.id] || 0;
@@ -215,12 +224,44 @@ module.exports = {
         embeds: [],
       });
     }
+    // Smoothing keeps a thin pairing off the top spot on purpose, but if one
+    // still scores higher outright it is worth saying so instead of hiding it.
+    const headlineRaw = Math.max(
+      ...userResults.map((r) =>
+        r.rawPercent === undefined ? r.userCompatPercent : r.rawPercent
+      )
+    );
+    let thinStandout = null;
+    for (const scored of scoredStores) {
+      const candidate = getThinStandout(
+        scored.store,
+        interaction.user.id,
+        guildUsers,
+        scored.format,
+        headlineRaw
+      );
+      if (
+        candidate &&
+        (!thinStandout || candidate.rawPercent > thinStandout.rawPercent)
+      ) {
+        thinStandout = candidate;
+      }
+    }
+    if (thinStandout) {
+      const standoutInfo = await getUserInfoFromId(
+        interaction.guild,
+        thinStandout.voter
+      );
+      thinStandout.username = standoutInfo?.username || null;
+    }
+
     //console.log("We got here")
     let embeds = await PopulateEmbeds(
       userResults,
       interaction,
       tournamentName,
-      tournamentDb
+      tournamentDb,
+      thinStandout
     );
 
     if (!isPublic) {
@@ -250,7 +291,8 @@ async function PopulateEmbeds(
   userResults,
   interaction,
   tournamentName,
-  tournamentDb
+  tournamentDb,
+  thinStandout
 ) {
   var embeds = [];
   for (var result of userResults) {
@@ -269,9 +311,35 @@ async function PopulateEmbeds(
       tournamentName,
       tournamentDb
     );
+    applyThinStandoutFooter(embed, thinStandout);
     embeds.push(embed);
   }
   return embeds;
+}
+
+/**
+ * Note the higher-scoring but barely-shared pairing under the result, so the
+ * headline stays trustworthy without quietly dropping the more eye-catching
+ * number on the floor.
+ */
+function applyThinStandoutFooter(embed, thinStandout) {
+  if (!embed || !thinStandout || !thinStandout.username) {
+    return embed;
+  }
+  const matches =
+    thinStandout.sharedMatches === 1
+      ? "1 shared match"
+      : String(thinStandout.sharedMatches) + " shared matches";
+  return embed.setFooter({
+    text:
+      thinStandout.username +
+      " scores higher at " +
+      thinStandout.rawPercent +
+      "%, but only across " +
+      matches +
+      "\nSupradarky's VGM Club",
+    iconURL: "http://91.99.239.6/files/assets/sd-img.png",
+  });
 }
 
 async function PopulateEmbedData(
@@ -307,119 +375,18 @@ async function PopulateEmbedData(
   });
 }
 
-function getAllTournamentEntries(tournamentDetails) {
-  const excludedKeys = new Set(["admin", "currentTournament", "receiptUsers"]);
-  return Object.entries(tournamentDetails)
-    .filter(([key, value]) => !excludedKeys.has(key) && value)
-    .map(([key, value]) => ({ name: key, data: value }));
-}
-
-function getLatestTournamentEntry(tournamentDetails) {
-  const allTournaments = getAllTournamentEntries(tournamentDetails);
-  if (allTournaments.length < 1) {
-    return null;
-  }
-  return allTournaments[allTournaments.length - 1];
-}
-
+/**
+ * The most recent tournament that has compatibility data precomputed for it.
+ * Walks newest first, so a contest that has not been backfilled yet is skipped
+ * in favour of the next most recent one rather than the oldest on record.
+ */
 function getLatestTournamentWithCompat(tournamentDetails, compatibilityDb) {
-  const allTournaments = getAllTournamentEntries(tournamentDetails);
-  if (allTournaments.length < 1) {
-    return null;
-  }
-  for (let i = allTournaments.length - 1; i >= 0; i -= 1) {
-    const candidate = allTournaments[i];
+  for (const candidate of GetTournamentEntriesNewestFirst(tournamentDetails)) {
     if (compatibilityDb?.tournaments?.[candidate.name]) {
       return candidate;
     }
   }
   return null;
-}
-
-function buildTournamentSignature(tournaments) {
-  return tournaments
-    .map((tournament) => {
-      const matchCount = Array.isArray(tournament.data.matches)
-        ? tournament.data.matches.length
-        : 0;
-      const format = tournament.data.tournamentFormat || "unknown";
-      return `${tournament.name}:${format}:${matchCount}`;
-    })
-    .join("|");
-}
-
-function getAggregateTournamentFromCache(tournamentDetails, formatKey) {
-  const allTournaments = getAllTournamentEntries(tournamentDetails);
-  const signature = buildTournamentSignature(allTournaments);
-  if (aggregateCache.signature !== signature) {
-    aggregateCache.signature = signature;
-    aggregateCache.byFormat = {};
-  }
-
-  if (aggregateCache.byFormat[formatKey]) {
-    return aggregateCache.byFormat[formatKey];
-  }
-
-  let tournaments = [];
-  let tournamentFormat = "Single Elimination";
-  if (formatKey == "3v3 Ranked") {
-    tournaments = allTournaments.filter(
-      (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
-    );
-    tournamentFormat = "3v3 Ranked";
-  } else {
-    tournaments = allTournaments.filter(
-      (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
-    );
-  }
-
-  const aggregate = buildAggregateTournament(tournaments, tournamentFormat);
-  if (aggregate) {
-    aggregate.voters = GetAllVoters(aggregate);
-  }
-
-  aggregateCache.byFormat[formatKey] = aggregate;
-  return aggregate;
-}
-
-function buildAggregateTournament(tournaments, tournamentFormat) {
-  const matches = [];
-  for (const tournament of tournaments) {
-    if (Array.isArray(tournament.data.matches)) {
-      const filteredMatches = tournament.data.matches.filter((match) =>
-        isValidMatchForFormat(match, tournamentFormat)
-      );
-      matches.push(...filteredMatches);
-    }
-  }
-  if (matches.length < 1) {
-    return null;
-  }
-  return {
-    tournamentFormat,
-    matches,
-  };
-}
-
-function isValidMatchForFormat(match, tournamentFormat) {
-  if (!match || !match.entrant1 || !match.entrant2) {
-    return false;
-  }
-  if (tournamentFormat == "3v3 Ranked") {
-    return (
-      match.entrant3 &&
-      Array.isArray(match.entrant1?.voters?.first) &&
-      Array.isArray(match.entrant1?.voters?.second) &&
-      Array.isArray(match.entrant2?.voters?.first) &&
-      Array.isArray(match.entrant2?.voters?.second) &&
-      Array.isArray(match.entrant3?.voters?.first) &&
-      Array.isArray(match.entrant3?.voters?.second)
-    );
-  }
-  return (
-    Array.isArray(match.entrant1?.voters) &&
-    Array.isArray(match.entrant2?.voters)
-  );
 }
 
 function mergeCompatibilityResults(existingResults, nextResults) {
@@ -462,80 +429,61 @@ function getTopCompatibilityFromStore(
     return [];
   }
 
+  const kind = tournamentFormat == "3v3 Ranked" ? "ranked" : "flat";
+  const baseline = GetBaselineRate(store, kind);
   const userPairs = store.users[userId] || {};
   const userMatchCount = store.userMatchCounts?.[userId] || 0;
-  let highestValue = 0;
+  let highestValue = Number.NEGATIVE_INFINITY;
   let topCompatibility = [];
 
   for (const [otherId, stats] of Object.entries(userPairs)) {
-    if (otherId === userId) {
-      continue;
-    }
-    if (!guildUsers.has(otherId)) {
+    if (otherId === userId || !guildUsers.has(otherId)) {
       continue;
     }
 
-    if (tournamentFormat == "3v3 Ranked") {
-      const matchCount = stats.matchCount || 0;
-      if (
-        userMatchCount > 0 &&
-        (matchCount / userMatchCount) * 100 < Math.ceil(userPercent)
-      ) {
-        continue;
-      }
-
-      const totalWeight = stats.totalWeight || 0;
-      const partialMatch = stats.partialMatch || 0;
-      const disagreementWeight = stats.disagreementWeight || 0;
-      const maxWeight = stats.maxWeight || 0;
-      const weightMinusDisagreements =
-        totalWeight - disagreementWeight + partialMatch / 2;
-      const userCompatPercent =
-        maxWeight > 0
-          ? Math.ceil((weightMinusDisagreements / maxWeight) * 100)
-          : 0;
-
-      const result = {
-        voter: otherId,
-        totalWeight,
-        firstWeight: stats.firstWeight || 0,
-        secondWeight: stats.secondWeight || 0,
-        partialMatch,
-        maxWeight,
-        iterations: totalMatches || 0,
-        disagreementWeight,
-        matchCount,
-        userCompatPercent,
-        tournamentFormat: "3v3 Ranked",
-      };
-
-      if (userCompatPercent > highestValue) {
-        highestValue = userCompatPercent;
-        topCompatibility = [result];
-      } else if (userCompatPercent === highestValue) {
-        topCompatibility.push(result);
-      }
-      continue;
-    }
-
-    const iterations = stats.iterations || 0;
+    const shared = GetPairSharedMatches(stats, kind);
     if (
       userMatchCount > 0 &&
-      (iterations / userMatchCount) * 100 < Math.ceil(userPercent)
+      (shared / userMatchCount) * 100 < Math.ceil(userPercent)
     ) {
       continue;
     }
-    const matched = stats.matched || 0;
-    const userCompatPercent =
-      iterations > 0 ? Math.ceil((matched / iterations) * 100) : 0;
-    const result = {
-      voter: otherId,
-      totalWeight: matched,
-      maxWeight: totalMatches || 0,
-      iterations,
-      userCompatPercent,
-      tournamentFormat,
-    };
+
+    // Ranked on the smoothed rate, so a pair who shared two matches cannot
+    // outrank a pair who shared a season. The raw rate rides along for the
+    // footnote, which is the only place it is still worth showing.
+    const userCompatPercent = Math.ceil(
+      GetPairShrunkRate(stats, kind, baseline) * 100
+    );
+    const rawPercent = Math.ceil(GetPairRawRate(stats, kind) * 100);
+
+    const result =
+      kind === "ranked"
+        ? {
+            voter: otherId,
+            totalWeight: stats.totalWeight || 0,
+            firstWeight: stats.firstWeight || 0,
+            secondWeight: stats.secondWeight || 0,
+            partialMatch: stats.partialMatch || 0,
+            maxWeight: stats.maxWeight || 0,
+            iterations: totalMatches || 0,
+            disagreementWeight: stats.disagreementWeight || 0,
+            matchCount: shared,
+            userCompatPercent,
+            rawPercent,
+            sharedMatches: shared,
+            tournamentFormat: "3v3 Ranked",
+          }
+        : {
+            voter: otherId,
+            totalWeight: stats.matched || 0,
+            maxWeight: totalMatches || 0,
+            iterations: shared,
+            userCompatPercent,
+            rawPercent,
+            sharedMatches: shared,
+            tournamentFormat,
+          };
 
     if (userCompatPercent > highestValue) {
       highestValue = userCompatPercent;
@@ -548,45 +496,59 @@ function getTopCompatibilityFromStore(
   return topCompatibility;
 }
 
-function GetAllVoters(currentTournament) {
-  var voters = [];
-  if (currentTournament?.matches?.length < 1) {
-    return [];
+// Overlap below this share of your own votes is too thin to headline, but a
+// standout there is still worth a mention.
+const THIN_OVERLAP_PERCENT = 33;
+
+// ...provided it rests on more than a coincidence. Agreeing twice is not a
+// finding, and two thirds of the standouts sat at one or two shared matches,
+// which would have made the note read as boilerplate rather than a highlight.
+const STANDOUT_MIN_MATCHES = 3;
+
+/**
+ * The best score among partners you have barely voted alongside. Smoothing
+ * deliberately keeps these off the top spot, but a 100% across four matches is
+ * the sort of thing people want to know about, so it goes in the footer rather
+ * than being buried.
+ */
+function getThinStandout(
+  store,
+  userId,
+  guildUsers,
+  tournamentFormat,
+  headlineRawPercent
+) {
+  if (!store || !store.users) {
+    return null;
   }
-  if (currentTournament.tournamentFormat == "3v3 Ranked") {
-    outer: for (const match of currentTournament.matches) {
-      if (!isValidMatchForFormat(match, "3v3 Ranked")) {
-        continue;
-      }
-      addUniqueVoters(voters, match.entrant1.voters.first);
-      addUniqueVoters(voters, match.entrant1.voters.second);
-      addUniqueVoters(voters, match.entrant2.voters.first);
-      addUniqueVoters(voters, match.entrant2.voters.second);
-      addUniqueVoters(voters, match.entrant3.voters.first);
-      addUniqueVoters(voters, match.entrant3.voters.second);
-    }
-  } else {
-    outer: for (const match of currentTournament.matches) {
-      if (!isValidMatchForFormat(match, "Single Elimination")) {
-        continue;
-      }
-      addUniqueVoters(voters, match.entrant1.voters);
-      addUniqueVoters(voters, match.entrant2.voters);
-    }
+  const kind = tournamentFormat == "3v3 Ranked" ? "ranked" : "flat";
+  const userPairs = store.users[userId] || {};
+  const userMatchCount = store.userMatchCounts?.[userId] || 0;
+  if (userMatchCount < 1) {
+    return null;
   }
 
-  return voters;
-}
-
-function addUniqueVoters(voters, list) {
-  if (!Array.isArray(list)) {
-    return;
-  }
-  for (const voter of list) {
-    if (!voters.includes(voter)) {
-      voters.push(voter);
+  let best = null;
+  for (const [otherId, stats] of Object.entries(userPairs)) {
+    if (otherId === userId || !guildUsers.has(otherId)) {
+      continue;
+    }
+    const shared = GetPairSharedMatches(stats, kind);
+    if (shared < STANDOUT_MIN_MATCHES) {
+      continue;
+    }
+    if ((shared / userMatchCount) * 100 >= THIN_OVERLAP_PERCENT) {
+      continue;
+    }
+    const rawPercent = Math.ceil(GetPairRawRate(stats, kind) * 100);
+    if (rawPercent <= headlineRawPercent) {
+      continue;
+    }
+    if (!best || rawPercent > best.rawPercent || (rawPercent === best.rawPercent && shared > best.sharedMatches)) {
+      best = { voter: otherId, rawPercent, sharedMatches: shared };
     }
   }
+  return best;
 }
 
 async function getUserInfoFromId(guild, userId) {
