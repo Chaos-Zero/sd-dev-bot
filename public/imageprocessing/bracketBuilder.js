@@ -77,32 +77,17 @@ function fitText(ctx, text, maxWidth) {
 }
 
 /**
- * "R3", or the name people actually use once the field narrows. Only single
- * elimination gets the Final/SF/QF treatment: in double elimination the rounds
- * do not count down to a single final, so the bracket is the useful label.
+ * The round's own number, except for the two matches we can identify for
+ * certain: the decider and a third-place playoff. Stage names are not guessed
+ * from the round number -- most brackets here are irregular enough that
+ * counting back from the final labelled two different matches "QF".
  */
-function roundLabel(round, finalRound, isDoubleElim) {
+function roundLabel(round) {
   if (round.isThirdPlace || round.isPlayoff) return "3rd";
-  if (isDoubleElim) return "R" + round.round;
-  const from = finalRound - round.round;
-  if (from === 0) return "Final";
-  if (from === 1) return "SF";
-  if (from === 2) return "QF";
+  if (round.isFinal) return "Final";
+  if (round.stage === "Semi-final") return "SF";
+  if (round.stage === "Quarter-final") return "QF";
   return "R" + round.round;
-}
-
-/** How the run ended, in words rather than a bare placement label. */
-function describeExit(summary) {
-  if (summary.isChampion) return "Won the tournament";
-  const placement = summary.placement;
-  if (placement === "Runner-up") return "Lost the final";
-  if (placement === "Finalist (tied)") return "Final ended level";
-  if (placement === "Joint 3rd place") return "Third-place match ended level";
-  if (placement === "3rd place") return "Won the third-place match";
-  if (placement === "4th place") return "Lost the third-place match";
-  // keep the placement's own casing here: lowercasing turns "R8" into "r8"
-  if (summary.isDoubleElim) return `Knocked out — ${placement}`;
-  return `Knocked out in the ${placement.toLowerCase()}`;
 }
 
 function rowHeight(round) {
@@ -241,7 +226,7 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
     ctx.font = "bold 12px sans-serif";
     ctx.fillStyle = THEME.faint;
     ctx.textAlign = "right";
-    const label = roundLabel(round, summary.finalRound, summary.isDoubleElim);
+    const label = roundLabel(round);
     ctx.fillText(label, LAYOUT.spineX - 12, y + LAYOUT.boxHeight / 2 + 4);
     if (summary.isDoubleElim && round.bracket) {
       ctx.font = "9px sans-serif";
@@ -292,7 +277,7 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
     ? THEME.text
     : THEME.dim;
   ctx.textAlign = "left";
-  ctx.fillText(describeExit(summary), LAYOUT.pad, footerTop + 20);
+  ctx.fillText(summary.exit, LAYOUT.pad, footerTop + 20);
 
   return canvas.toBuffer("image/png");
 }

@@ -16,6 +16,24 @@ const {
   GetTournamentEntriesNewestFirst,
 } = require("../utils/compatibilityStore.js");
 
+/**
+ * Whether a match may be spoken about at all.
+ *
+ * Only a finished match is public. Everything else is withheld, and the states
+ * are not hypothetical: a match still being voted on carries running vote
+ * counts, a tie carries the scores of a result awaiting a replay, and an
+ * abandoned match carries the pairing that was drawn. A bracket can also be
+ * registered as hidden so that upcoming rounds are not revealed before they
+ * open, and future matches are stored with their entrants already filled in.
+ *
+ * So this gate is applied when building the index too, not only when reading a
+ * run: a track must not become searchable, and must not show up as having
+ * entered a tournament, until it has actually played a match there.
+ */
+function isPublicMatch(match) {
+  return Boolean(match) && match.progress === "complete";
+}
+
 /** Case- and punctuation-insensitive key for matching a track to itself. */
 function normaliseTitle(value) {
   return String(value || "")
@@ -81,6 +99,7 @@ function BuildTrackIndex(tournamentRoot) {
     tournamentRoot
   )) {
     for (const match of data.matches || []) {
+      if (!isPublicMatch(match)) continue;
       for (const entrant of matchEntrantList(match)) {
         if (!normaliseTitle(entrant.name)) continue;
         const key = trackKey(entrant);
@@ -162,6 +181,120 @@ function mergeRestatedGames(records) {
 }
 
 /**
+ * How many tracks were still standing before each match was played.
+ *
+ * This is what actually names a stage: a quarter-final is the match where eight
+ * remain, whatever round number it carries. Deriving it by counting rounds back
+ * from the final does not survive these brackets -- byes, repechage rounds and
+ * tie replays mean rounds hold odd numbers of matches and a track can play
+ * twice in one, which is how a single run showed two "QF" labels.
+ *
+ * Matches are played in order within a round, so the count falls one at a time
+ * and each match can be attributed to the stage it belongs to.
+ */
+function survivorsBeforeEachMatch(tournament) {
+  const matches = (tournament?.matches || [])
+    .filter(isPublicMatch)
+    .sort(
+      (a, b) => Number(a.round) - Number(b.round) || Number(a.match) - Number(b.match)
+    );
+
+  const field = new Set();
+  for (const match of matches) {
+    for (const entrant of matchEntrantList(match)) field.add(trackKey(entrant));
+  }
+
+  const eliminated = new Set();
+  const alive = new Map();
+  for (const match of matches) {
+    alive.set(Number(match.match), field.size - eliminated.size);
+    const entrants = matchEntrantList(match);
+    const winner = matchWinner(entrants);
+    // a tie eliminates nobody: it is replayed
+    if (!winner) continue;
+    for (const entrant of entrants) {
+      if (entrant !== winner) eliminated.add(trackKey(entrant));
+    }
+  }
+  return alive;
+}
+
+/**
+ * Which matches were the quarter- and semi-finals, or nothing if the bracket
+ * does not actually have them.
+ *
+ * The survivor count alone is not enough to trust. A contest with byes and tie
+ * replays drains slowly, leaving sixteen matches sitting in the last-eight
+ * window -- naming them all "quarter-final" would be as wrong as counting
+ * rounds back from the final. So a stage is only named when exactly the right
+ * number of matches qualify for it: four quarter-finals, two semi-finals.
+ * Otherwise those matches keep their round number, which is always true.
+ *
+ * The two are checked independently, because a contest can have a clean pair of
+ * semi-finals reached by an untidy route.
+ *
+ * Double elimination is skipped outright: a track is not out on its first loss,
+ * so "how many are left" does not mean the same thing there.
+ */
+function namedStages(tournament) {
+  const stages = new Map();
+  const matches = (tournament?.matches || [])
+    .filter(isPublicMatch)
+    .sort(
+      (a, b) => Number(a.round) - Number(b.round) || Number(a.match) - Number(b.match)
+    );
+  if (matches.some((m) => m.bracket === "losersBracket")) return stages;
+
+  const survivors = survivorsBeforeEachMatch(tournament);
+  const candidates = { "Semi-final": [], "Quarter-final": [] };
+  for (const match of matches) {
+    const alive = survivors.get(Number(match.match));
+    if (!Number.isFinite(alive) || alive <= 2) continue;
+    if (alive <= 4) candidates["Semi-final"].push(Number(match.match));
+    else if (alive <= 8) candidates["Quarter-final"].push(Number(match.match));
+  }
+
+  const expected = { "Semi-final": 2, "Quarter-final": 4 };
+  for (const [stage, list] of Object.entries(candidates)) {
+    if (list.length !== expected[stage]) continue;
+    for (const match of list) stages.set(match, stage);
+  }
+  return stages;
+}
+
+/**
+ * The third-place playoff, found by who is in it: the two tracks that lost the
+ * semi-finals, meeting again in a match that is not the final.
+ *
+ * Needed because the playoff is not reliably flagged and does not reliably sit
+ * beside the final. Technology vs Nature runs it at match 63 in round 6 while
+ * the final is match 64 in round 7, so looking only at the closing round missed
+ * it and reported the third-place finisher as a plain round-6 exit.
+ */
+function findPlayoffBySemiFinalLosers(matches, stages, decidingMatch) {
+  const semiLosers = new Set();
+  for (const match of matches) {
+    if (stages.get(Number(match.match)) !== "Semi-final") continue;
+    const entrants = matchEntrantList(match);
+    const winner = matchWinner(entrants);
+    if (!winner) continue;
+    for (const entrant of entrants) {
+      if (entrant !== winner) semiLosers.add(trackKey(entrant));
+    }
+  }
+  if (semiLosers.size !== 2) return [];
+
+  const found = [];
+  for (const match of matches) {
+    if (Number(match.match) === decidingMatch) continue;
+    const keys = matchEntrantList(match).map(trackKey);
+    if (keys.length !== semiLosers.size) continue;
+    if (keys.every((k) => semiLosers.has(k))) found.push(Number(match.match));
+  }
+  return found;
+}
+
+/**
  * A track's run through one tournament: every match it appeared in, in order,
  * with who it beat and by how much.
  */
@@ -174,7 +307,7 @@ function BuildTrackProgression(tournament, track) {
   const rounds = [];
 
   const matches = (tournament?.matches || [])
-    .filter((match) => match && match.progress === "complete")
+    .filter(isPublicMatch)
     .sort(
       (a, b) => Number(a.round) - Number(b.round) || Number(a.match) - Number(b.match)
     );
@@ -236,7 +369,7 @@ function CountUserVotesForTrack(tournament, track, userId) {
 
   let voted = 0;
   for (const match of tournament?.matches || []) {
-    if (!match || match.progress !== "complete") continue;
+    if (!isPublicMatch(match)) continue;
     const self = matchEntrantList(match).find(
       (e) => normaliseTitle(e.name) === wantName && sameGame(e.title, wantTitle)
     );
@@ -265,9 +398,7 @@ function SummariseTrackRun(tournament, track) {
   const wins = progression.filter((r) => r.won === true).length;
   const losses = progression.filter((r) => r.won === false).length;
   const last = progression[progression.length - 1];
-  const complete = (tournament.matches || []).filter(
-    (m) => m && m.progress === "complete"
-  );
+  const complete = (tournament.matches || []).filter(isPublicMatch);
   const decided = complete.filter((m) => !m.isThirdPlace);
   const finalRound = Math.max(...decided.map((m) => Number(m.round)), 0);
 
@@ -289,6 +420,7 @@ function SummariseTrackRun(tournament, track) {
   // second match of the closing round (2023, 2024, 2020, SupraDarky). Where the
   // closing round holds three or more matches it is tie replays rather than a
   // playoff, so nothing is assumed.
+  const stages = namedStages(tournament);
   const thirdPlaceMatches = new Set(
     complete.filter((m) => m.isThirdPlace).map((m) => Number(m.match))
   );
@@ -297,19 +429,26 @@ function SummariseTrackRun(tournament, track) {
       if (Number(m.match) !== decidingMatch) thirdPlaceMatches.add(Number(m.match));
     }
   }
+  for (const match of findPlayoffBySemiFinalLosers(complete, stages, decidingMatch)) {
+    thirdPlaceMatches.add(match);
+  }
   // Double elimination keeps beaten tracks alive in a losers bracket, so the
   // rounds no longer count down to the final and "quarter-final" stops meaning
   // anything. Say which bracket instead.
-  const isDoubleElim = (tournament.matches || []).some(
-    (m) => m && m.bracket === "losersBracket"
-  );
+  const isDoubleElim = complete.some((m) => m.bracket === "losersBracket");
 
   // an unflagged playoff still needs marking, or the renderer labels it "Final"
   for (const round of progression) {
     round.isPlayoff = thirdPlaceMatches.has(round.match);
+    round.isFinal = round.match === decidingMatch;
+    round.stage = round.isPlayoff
+      ? "Third-place match"
+      : round.isFinal
+      ? "Final"
+      : stages.get(round.match) || null;
   }
 
-  const placement = describePlacement(last, {
+  const { placement, exit } = describePlacement(last, {
     finalRound,
     decidingMatch,
     thirdPlaceMatches,
@@ -336,34 +475,64 @@ function SummariseTrackRun(tournament, track) {
     // top four, so the summary line can be given more weight than a mid-bracket exit
     isPodium: PODIUM.has(placement),
     placement,
+    exit,
   };
 }
 
 const PODIUM = new Set(["Winner", "Runner-up", "3rd place", "4th place"]);
 
+/**
+ * Where a track finished, and the sentence describing how it went out.
+ *
+ * Deliberately does not name stages like "quarter-final" from the round number.
+ * Only three of thirteen contests ran a clean halving bracket -- byes, repechage
+ * rounds and tie replays mean a round can hold an odd number of matches, and a
+ * track can play twice in the same round (94 runs do). Counting back from the
+ * final then labels two different matches "QF", which is how "Shore of Dreams"
+ * came to show two quarter-finals in one run. The round number is always true;
+ * the invented stage name is not.
+ */
 function describePlacement(last, context) {
   const { finalRound, decidingMatch, thirdPlaceMatches, isDoubleElim } = context;
 
   if (thirdPlaceMatches.has(last.match)) {
-    if (last.won === null) return "Joint 3rd place";
-    return last.won ? "3rd place" : "4th place";
+    if (last.won === null) {
+      return { placement: "Joint 3rd place", exit: "Third-place match ended level" };
+    }
+    return last.won
+      ? { placement: "3rd place", exit: "Won the third-place match" }
+      : { placement: "4th place", exit: "Lost the third-place match" };
   }
 
   if (last.match === decidingMatch) {
     // a tied final is left as a tie rather than crowning someone
-    if (last.won === null) return "Finalist (tied)";
-    return last.won ? "Winner" : "Runner-up";
+    if (last.won === null) {
+      return { placement: "Finalist (tied)", exit: "The final ended level" };
+    }
+    return last.won
+      ? { placement: "Winner", exit: "Won the tournament" }
+      : { placement: "Runner-up", exit: "Lost the final" };
   }
 
   if (isDoubleElim) {
-    return last.bracket === "losersBracket"
-      ? `Losers bracket, R${last.round}`
-      : `Winners bracket, R${last.round}`;
+    const side = last.bracket === "losersBracket" ? "losers" : "winners";
+    return {
+      placement: `${side === "losers" ? "Losers" : "Winners"} bracket, R${last.round}`,
+      exit: `Knocked out in the ${side} bracket, round ${last.round}`,
+    };
   }
-  const from = finalRound - last.round;
-  if (from === 1) return "Semi-finals";
-  if (from === 2) return "Quarter-finals";
-  return `Round ${last.round} of ${finalRound}`;
+
+  if (last.stage === "Semi-final" || last.stage === "Quarter-final") {
+    return {
+      placement: `${last.stage}s`,
+      exit: `Knocked out in the ${last.stage.toLowerCase()}s`,
+    };
+  }
+
+  return {
+    placement: `Round ${last.round} of ${finalRound}`,
+    exit: `Knocked out in round ${last.round} of ${finalRound}`,
+  };
 }
 
 if (typeof module !== "undefined") {
@@ -374,5 +543,7 @@ if (typeof module !== "undefined") {
     CountUserVotesForTrack,
     normaliseTitle,
     trackKey,
+    isPublicMatch,
+    namedStages,
   };
 }

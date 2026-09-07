@@ -343,7 +343,7 @@ function buildHelpIntroEmbed() {
     "Hi! Here are the command categories available:",
     "",
     ...categories.map(
-      (category) => `• **${category.title}** — ${category.summary}`
+      (category) => `• **${category.title}**  - ${category.summary}`
     ),
     "",
   ];
@@ -359,9 +359,9 @@ function buildHelpIntroEmbed() {
 function buildHelpCategoryEmbed(category) {
   const lines = category.commands.map((command) => {
     if (command.args) {
-      return `**${command.name}** — ${command.desc}\nOptions: \`${command.args}\``;
+      return `**${command.name}**  - ${command.desc}\nOptions: \`${command.args}\``;
     }
-    return `**${command.name}** — ${command.desc}`;
+    return `**${command.name}**  - ${command.desc}`;
   });
 
   return new EmbedBuilder()
@@ -378,7 +378,7 @@ function buildHelpCommandEmbed(command, category) {
     descriptionLines.push(`**Options:** \`${command.args}\``);
   }
   return new EmbedBuilder()
-    .setTitle(`${command.name} — ${category.title}`)
+    .setTitle(`${command.name}  - ${category.title}`)
     .setColor(category.color || 0x43b581)
     .setThumbnail(category.thumbnail || domoHelpThumb)
     .setDescription(descriptionLines.join("\n"))
@@ -423,7 +423,7 @@ async function SendDomoHelpDetailsDm(user, topic) {
 
 async function SendTournamentHelpDm(message) {
   const introEmbed = new EmbedBuilder()
-    .setTitle("Tournament Setup — Quick Start")
+    .setTitle("Tournament Setup  - Quick Start")
     .setColor(0x8e44ad)
     .setThumbnail(
       "http://91.99.239.6/files/assets/domo_smarty_pants_face.png"
@@ -438,7 +438,7 @@ async function SendTournamentHelpDm(message) {
     .setFooter(domoHelpFoot);
 
   const csvEmbed = new EmbedBuilder()
-    .setTitle("Step 1 — Prepare Your CSV")
+    .setTitle("Step 1  - Prepare Your CSV")
     .setColor(0x8e44ad)
     .setThumbnail("http://91.99.239.6/files/assets/help/headers.png")
     .setDescription(
@@ -453,7 +453,7 @@ async function SendTournamentHelpDm(message) {
     .setFooter(domoHelpFoot);
 
   const registerEmbed = new EmbedBuilder()
-    .setTitle("Step 2 — Register the Tournament (Required Options)")
+    .setTitle("Step 2  - Register the Tournament (Required Options)")
     .setColor(0x8e44ad)
     .setThumbnail("http://91.99.239.6/files/assets/help/match.png")
     .setDescription(
@@ -486,7 +486,7 @@ async function SendTournamentHelpDm(message) {
     .setFooter(domoHelpFoot);
 
   const registerOptionsEmbed = new EmbedBuilder()
-    .setTitle("Step 2 — Register the Tournament (Additional Options)")
+    .setTitle("Step 2  - Register the Tournament (Additional Options)")
     .setColor(0x8e44ad)
     .setThumbnail("http://91.99.239.6/files/assets/help/challonge.png")
     .setDescription(
@@ -514,7 +514,7 @@ async function SendTournamentHelpDm(message) {
     .setFooter(domoHelpFoot);
 
   const runEmbed = new EmbedBuilder()
-    .setTitle("Step 3 — Run Daily Matches")
+    .setTitle("Step 3  - Run Daily Matches")
     .setColor(0x8e44ad)
     .setThumbnail("http://91.99.239.6/files/assets/help/results.png")
     .setDescription(

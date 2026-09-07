@@ -35,7 +35,7 @@ function buildHelpIntroEmbedForCategories(categories) {
     "Hi! Here are the command categories available:",
     "",
     ...categories.map(
-      (category) => `• **${category.title}** — ${category.summary}`
+      (category) => `• **${category.title}**  - ${category.summary}`
     ),
     "",
   ];

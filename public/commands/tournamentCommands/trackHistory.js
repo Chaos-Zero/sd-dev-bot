@@ -258,7 +258,7 @@ function buildComponents(sessionId, session, track, tournamentName) {
   if (session.results.length > 1) {
     const menu = new StringSelectMenuBuilder()
       .setCustomId(`track-history-track:${sessionId}`)
-      .setPlaceholder(`${session.results.length} tracks matched — pick one`)
+      .setPlaceholder(`${session.results.length} tracks: select one`)
       .addOptions(
         session.results.map((option, index) => ({
           label: option.name.slice(0, 100),
