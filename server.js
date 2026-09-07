@@ -23,6 +23,7 @@ const { Events, EmbedBuilder } = require("discord.js");
 const cron = require("cron");
 const sleep = require("util").promisify(setTimeout);
 const updateEntrantHandlers = require("./public/commands/tournamentCommands/updateEntrant.js");
+const trackHistoryHandlers = require("./public/commands/tournamentCommands/trackHistory.js");
 
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/api/openai/chat.js") + "");
@@ -409,6 +410,18 @@ bot.on(Events.InteractionCreate, (interaction) => {
     interaction.customId.startsWith("update-entrant-page:")
   ) {
     return updateEntrantHandlers.handleEntrantPage(interaction);
+  }
+  if (
+    interaction.isButton() &&
+    interaction.customId.startsWith("track-history-page:")
+  ) {
+    return trackHistoryHandlers.handleTrackHistoryPage(interaction);
+  }
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId.startsWith("track-history-tournament:")
+  ) {
+    return trackHistoryHandlers.handleTrackHistoryTournament(interaction);
   }
   if (interaction.isStringSelectMenu() && interaction.customId === "domo-help-topic") {
     const requesterId = interaction.user?.id;

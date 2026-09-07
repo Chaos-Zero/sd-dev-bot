@@ -1,0 +1,410 @@
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  StringSelectMenuBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
+const fs = require("fs");
+const Fuse = require("fuse.js");
+
+eval(fs.readFileSync("./public/main.js") + "");
+
+const {
+  BuildTrackIndex,
+  SummariseTrackRun,
+  normaliseTitle,
+  trackKey,
+} = require("../../tournament/trackHistory.js");
+const {
+  RenderTrackProgression,
+} = require("../../imageprocessing/bracketBuilder.js");
+
+// Asset host is configurable rather than baked in, so a dev instance can point
+// somewhere else without editing source.
+const ASSET_BASE =
+  process.env.ASSET_BASE_URL || "http://91.99.239.6/files/assets";
+const FALLBACK_THUMB = `${ASSET_BASE}/album_art.png`;
+const FOOTER = {
+  text: "Supradarky's VGM Club",
+  iconURL: `${ASSET_BASE}/sd-img.png`,
+};
+
+const MAX_RESULTS = 25; // a select menu holds 25 options, and nobody pages past this
+const SESSION_TTL_MS = 15 * 60 * 1000;
+
+// Browsing state lives here rather than in the customId: Discord caps a
+// customId at 100 characters, which a track title and a game name blow through
+// on their own. Keyed by a short id, swept on a timer.
+const sessions = new Map();
+
+function newSession(userId, results) {
+  const id = Math.random().toString(36).slice(2, 10);
+  sessions.set(id, {
+    userId,
+    results,
+    page: 0,
+    // which tournament each track is currently showing, keyed by track
+    chosen: new Map(),
+    expiresAt: Date.now() + SESSION_TTL_MS,
+  });
+  sweepSessions();
+  return id;
+}
+
+function sweepSessions() {
+  const now = Date.now();
+  for (const [id, session] of sessions) {
+    if (session.expiresAt <= now) sessions.delete(id);
+  }
+}
+
+function getSession(id) {
+  const session = sessions.get(id);
+  if (!session) return null;
+  if (session.expiresAt <= Date.now()) {
+    sessions.delete(id);
+    return null;
+  }
+  session.expiresAt = Date.now() + SESSION_TTL_MS;
+  return session;
+}
+
+// ---------------------------------------------------------------------------
+// Index, cached between invocations
+// ---------------------------------------------------------------------------
+
+let indexCache = { signature: "", tracks: [], fuse: null };
+
+function tournamentSignature(root) {
+  return Object.keys(root || {})
+    .map((key) => {
+      const value = root[key];
+      return Array.isArray(value?.matches) ? `${key}:${value.matches.length}` : "";
+    })
+    .filter(Boolean)
+    .join("|");
+}
+
+function getTrackIndex(root) {
+  const signature = tournamentSignature(root);
+  if (indexCache.signature !== signature) {
+    const tracks = BuildTrackIndex(root);
+    indexCache = {
+      signature,
+      tracks,
+      // threshold matches the other search commands in the bot
+      fuse: new Fuse(tracks, {
+        keys: [
+          { name: "name", weight: 0.65 },
+          { name: "title", weight: 0.35 },
+        ],
+        threshold: 0.3,
+        ignoreLocation: true,
+      }),
+    };
+  }
+  return indexCache;
+}
+
+/**
+ * Three tiers, best first: an exact title, then anything containing the query,
+ * then the fuzzy net for typos. The middle tier matters -- searching "Hollow
+ * Knight" should lead with the four tracks actually from it, not with whatever
+ * the fuzzy scorer thinks is close ("Shovel Knight Dig" scores well against it).
+ *
+ * A query naming a game returns every track from it, which is the point of
+ * being able to search by series.
+ */
+function searchTracks(root, query) {
+  const { tracks, fuse } = getTrackIndex(root);
+  const wanted = normaliseTitle(query);
+  if (!wanted) return [];
+
+  const exact = [];
+  const contains = [];
+  const seen = new Set();
+
+  for (const track of tracks) {
+    const name = normaliseTitle(track.name);
+    const title = normaliseTitle(track.title);
+    const key = trackKey(track);
+
+    if (name === wanted || title === wanted) {
+      exact.push(track);
+      seen.add(key);
+    } else if (name.includes(wanted) || title.includes(wanted)) {
+      contains.push(track);
+      seen.add(key);
+    }
+  }
+
+  // a track named for its game reads better above one merely from it
+  contains.sort((a, b) => {
+    const an = normaliseTitle(a.name).includes(wanted) ? 0 : 1;
+    const bn = normaliseTitle(b.name).includes(wanted) ? 0 : 1;
+    return an - bn || a.name.localeCompare(b.name);
+  });
+
+  const fuzzy = [];
+  for (const hit of fuse.search(query)) {
+    const key = trackKey(hit.item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    fuzzy.push(hit.item);
+  }
+
+  return exact.concat(contains, fuzzy).slice(0, MAX_RESULTS);
+}
+
+// ---------------------------------------------------------------------------
+// Rendering one page
+// ---------------------------------------------------------------------------
+
+function youtubeThumb(track) {
+  return track.videoId
+    ? `https://i1.ytimg.com/vi/${track.videoId}/mqdefault.jpg`
+    : FALLBACK_THUMB;
+}
+
+function placementColour(summary) {
+  if (!summary) return 0x4e5058;
+  if (summary.isChampion) return 0xfaa61a;
+  if (summary.placement === "Runner-up") return 0xb5bac1;
+  if (summary.placement === "3rd place") return 0xcd7f32;
+  return 0x5865f2;
+}
+
+function buildPage(root, session) {
+  const track = session.results[session.page];
+  const key = trackKey(track);
+  const tournamentName =
+    session.chosen.get(key) || track.tournaments[0];
+  const summary = SummariseTrackRun(root[tournamentName], track);
+
+  const embed = new EmbedBuilder()
+    .setTitle(track.name)
+    .setURL(track.link || null)
+    .setColor(placementColour(summary))
+    .setThumbnail(youtubeThumb(track))
+    .setFooter(FOOTER);
+
+  const lines = [];
+  if (track.title) lines.push(`**${track.title}**`);
+  lines.push(`_${tournamentName}_`);
+  embed.setDescription(lines.join("\n"));
+
+  const files = [];
+  if (summary) {
+    embed.addFields(
+      { name: "Finished", value: summary.placement, inline: true },
+      {
+        name: "Record",
+        value: `${summary.wins}W – ${summary.losses}L`,
+        inline: true,
+      },
+      {
+        name: "Votes",
+        value: `${summary.totalVotes} across ${summary.matches} matches`,
+        inline: true,
+      }
+    );
+    if (summary.bestMargin > 0) {
+      embed.addFields({
+        name: "Biggest win",
+        value: `by ${summary.bestMargin} votes`,
+        inline: true,
+      });
+    }
+
+    const png = RenderTrackProgression({
+      track,
+      tournamentName,
+      summary,
+    });
+    if (png) {
+      const fileName = `bracket-${session.page}-${Date.now()}.png`;
+      files.push(new AttachmentBuilder(png, { name: fileName }));
+      embed.setImage(`attachment://${fileName}`);
+    }
+  } else {
+    embed.addFields({
+      name: "No completed matches",
+      value: "This track has not played a scored match in that tournament yet.",
+    });
+  }
+
+  return { embed, files, track, tournamentName };
+}
+
+function buildComponents(sessionId, session, track, tournamentName) {
+  const rows = [];
+
+  // Dropdown only earns its row when the track actually ran more than once.
+  if (track.tournaments.length > 1) {
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId(`track-history-tournament:${sessionId}`)
+      .setPlaceholder("Showing: " + tournamentName)
+      .addOptions(
+        track.tournaments.slice(0, 25).map((name) => ({
+          label: name.slice(0, 100),
+          value: name.slice(0, 100),
+          default: name === tournamentName,
+        }))
+      );
+    rows.push(new ActionRowBuilder().addComponents(menu));
+  }
+
+  if (session.results.length > 1) {
+    rows.push(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`track-history-page:${sessionId}:${session.page - 1}`)
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel("Prev")
+          .setDisabled(session.page === 0),
+        new ButtonBuilder()
+          .setCustomId(`track-history-page:${sessionId}:${session.page + 1}`)
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel("Next")
+          .setDisabled(session.page >= session.results.length - 1)
+      )
+    );
+  }
+
+  return rows;
+}
+
+function pageSuffix(session) {
+  return session.results.length > 1
+    ? `Result ${session.page + 1} of ${session.results.length}`
+    : null;
+}
+
+function renderSession(root, sessionId, session) {
+  const { embed, files, track, tournamentName } = buildPage(root, session);
+  const suffix = pageSuffix(session);
+  if (suffix) {
+    embed.setAuthor({ name: suffix });
+  }
+  return {
+    embeds: [embed],
+    files,
+    components: buildComponents(sessionId, session, track, tournamentName),
+  };
+}
+
+function getTournamentRoot() {
+  const db = GetDb();
+  db.read();
+  return db.get("tournaments").nth(0).value() || {};
+}
+
+// ---------------------------------------------------------------------------
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName("tournament-track-history")
+    .setDescription(
+      "Look up how a track or a game's tracks have done across every tournament."
+    )
+    .addStringOption((option) =>
+      option
+        .setName("query")
+        .setDescription("A track title or a game/series name.")
+        .setRequired(true)
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName("make-public")
+        .setDescription("Make the response viewable to the server.")
+        .setRequired(false)
+    ),
+
+  async execute(interaction) {
+    const isPublic = interaction.options.getBoolean("make-public") || false;
+    await interaction.deferReply({ ephemeral: !isPublic });
+
+    const query = interaction.options.getString("query");
+    const root = getTournamentRoot();
+    const results = searchTracks(root, query);
+
+    if (!results.length) {
+      return interaction.editReply({
+        content: `Nothing matched **${query}**. Try a track title or the game it comes from.`,
+      });
+    }
+
+    const sessionId = newSession(interaction.user.id, results);
+    const session = getSession(sessionId);
+    return interaction.editReply(renderSession(root, sessionId, session));
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Component handlers, routed from server.js
+// ---------------------------------------------------------------------------
+
+async function guardSession(interaction, sessionId) {
+  const session = getSession(sessionId);
+  if (!session) {
+    await interaction.reply({
+      content:
+        "That search has expired. Run `/tournament-track-history` again to look it up.",
+      ephemeral: true,
+    });
+    return null;
+  }
+  if (session.userId !== interaction.user.id) {
+    await interaction.reply({
+      content: "Sorry, these controls belong to whoever ran the command.",
+      ephemeral: true,
+    });
+    return null;
+  }
+  return session;
+}
+
+module.exports.handleTrackHistoryPage = async (interaction) => {
+  const [, sessionId, rawPage] = interaction.customId.split(":");
+  const session = await guardSession(interaction, sessionId);
+  if (!session) return;
+
+  const page = Number(rawPage);
+  session.page = Math.min(
+    Math.max(Number.isFinite(page) ? page : 0, 0),
+    session.results.length - 1
+  );
+
+  await interaction.deferUpdate();
+  const root = getTournamentRoot();
+  // attachments have to be cleared explicitly or the previous bracket lingers
+  return interaction.editReply({
+    ...renderSession(root, sessionId, session),
+    attachments: [],
+  });
+};
+
+module.exports.handleTrackHistoryTournament = async (interaction) => {
+  const [, sessionId] = interaction.customId.split(":");
+  const session = await guardSession(interaction, sessionId);
+  if (!session) return;
+
+  const track = session.results[session.page];
+  const chosen = interaction.values?.[0];
+  if (chosen && track.tournaments.includes(chosen)) {
+    session.chosen.set(trackKey(track), chosen);
+  }
+
+  await interaction.deferUpdate();
+  const root = getTournamentRoot();
+  return interaction.editReply({
+    ...renderSession(root, sessionId, session),
+    attachments: [],
+  });
+};
+
+// exported for tests and for the dev harness
+module.exports.searchTracks = searchTracks;
