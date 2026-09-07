@@ -92,8 +92,6 @@ function UpdateCompatibilityForMatches(
   }
 
   const db = LoadCompatibilityDb();
-  const formatKey =
-    tournamentFormat === "3v3 Ranked" ? "triple" : "singleDouble";
 
   const tournamentTarget = ensureCompatibilityTarget(
     db,
@@ -101,18 +99,22 @@ function UpdateCompatibilityForMatches(
     tournamentName,
     tournamentFormat
   );
-  const globalTarget = ensureCompatibilityTarget(
-    db,
-    "global",
-    "",
-    formatKey
-  );
 
   for (const match of matches) {
     if (!match || match.progress !== "complete") {
       continue;
     }
-    if (formatKey === "triple") {
+    // Decided per match, not per tournament: a mixed contest contributes its
+    // ranked rounds to the triple bucket and its head-to-head rounds to the
+    // other, instead of having half of itself silently discarded.
+    const kind = matchVoteKind(match);
+    const globalTarget = ensureCompatibilityTarget(
+      db,
+      "global",
+      "",
+      kind === "ranked" ? "triple" : "singleDouble"
+    );
+    if (kind === "ranked") {
       updateTripleCompatibility(tournamentTarget, match);
       updateTripleCompatibility(globalTarget, match);
     } else {
@@ -139,6 +141,25 @@ function matchEntrantList(match) {
     if (entrant && typeof entrant === "object" && entrant.name) out.push(entrant);
   }
   return out;
+}
+
+/**
+ * How a single match was voted on, decided by the match itself rather than the
+ * tournament's format string. Contests routinely changed style as they
+ * narrowed -- three-way ranked group rounds, then head-to-head finals -- so a
+ * tournament-level format rejects the very matches that decided it.
+ *
+ * Prefers the stamped matchFormat, falling back to the ballot shape for data
+ * written before normalizeDb ran.
+ */
+function matchVoteKind(match) {
+  if (match && match.matchFormat === "ranked3") return "ranked";
+  if (match && match.matchFormat) return "flat";
+  for (const entrant of matchEntrantList(match)) {
+    const v = entrant.voters;
+    if (v && !Array.isArray(v) && typeof v === "object") return "ranked";
+  }
+  return "flat";
 }
 
 function updateSingleDoubleCompatibility(target, match) {
@@ -379,5 +400,6 @@ if (typeof module !== "undefined") {
     SaveCompatibilityDb,
     UpdateCompatibilityForMatches,
     matchEntrantList,
+    matchVoteKind,
   };
 }

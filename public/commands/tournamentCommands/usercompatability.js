@@ -345,15 +345,13 @@ function getAggregateTournamentFromCache(tournamentDetails, formatKey) {
 
   let tournaments = [];
   let tournamentFormat = "Single/Double Elimination";
+  // Every tournament is offered to both buckets; the per-match test below
+  // decides which of its matches belong to which. A contest that ran ranked
+  // group rounds and head-to-head finals contributes to both, rather than
+  // having one half dropped.
+  tournaments = allTournaments;
   if (formatKey == "3v3 Ranked") {
-    tournaments = allTournaments.filter(
-      (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
-    );
     tournamentFormat = "3v3 Ranked";
-  } else {
-    tournaments = allTournaments.filter(
-      (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
-    );
   }
 
   const aggregate = buildAggregateTournament(tournaments, tournamentFormat);
@@ -384,21 +382,23 @@ function isValidMatchForFormat(match, tournamentFormat) {
   if (!match || !match.entrant1 || !match.entrant2) {
     return false;
   }
-  if (tournamentFormat == "3v3 Ranked") {
-    return (
-      match.entrant3 &&
-      Array.isArray(match.entrant1?.voters?.first) &&
-      Array.isArray(match.entrant1?.voters?.second) &&
-      Array.isArray(match.entrant2?.voters?.first) &&
-      Array.isArray(match.entrant2?.voters?.second) &&
-      Array.isArray(match.entrant3?.voters?.first) &&
-      Array.isArray(match.entrant3?.voters?.second)
+  // Judge the match by its own ballots, not by the tournament's format string.
+  // Contests changed voting style as they narrowed, so a tournament-level test
+  // throws away the head-to-head finals of a ranked contest (and vice versa).
+  const wantRanked = tournamentFormat == "3v3 Ranked";
+  if ((matchVoteKind(match) === "ranked") !== wantRanked) {
+    return false;
+  }
+  const entrants = matchEntrantList(match);
+  if (entrants.length < 2) {
+    return false;
+  }
+  if (wantRanked) {
+    return entrants.every(
+      (e) => Array.isArray(e?.voters?.first) && Array.isArray(e?.voters?.second)
     );
   }
-  return (
-    Array.isArray(match.entrant1?.voters) &&
-    Array.isArray(match.entrant2?.voters)
-  );
+  return entrants.every((e) => Array.isArray(e?.voters));
 }
 
 function buildCompatibilityEmbedForAggregate(
@@ -678,16 +678,17 @@ function calculateWinnerRateStatsForTournament(tournamentDb, userId) {
     return stats;
   }
 
-  const isTriple = tournamentDb.tournamentFormat == "3v3 Ranked";
-
   for (const match of tournamentDb.matches) {
     if (!match || match.progress !== "complete") {
       continue;
     }
 
-    const outcome = isTriple
-      ? getTripleWinnerVoteOutcome(match, userId)
-      : getSingleDoubleWinnerVoteOutcome(match, userId);
+    // Decided per match: a ranked contest's head-to-head final is still a
+    // head-to-head, and scoring it as ranked would count nobody at all.
+    const outcome =
+      matchVoteKind(match) === "ranked"
+        ? getTripleWinnerVoteOutcome(match, userId)
+        : getSingleDoubleWinnerVoteOutcome(match, userId);
     if (!outcome.isValid) {
       continue;
     }

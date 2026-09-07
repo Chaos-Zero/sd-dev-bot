@@ -362,15 +362,13 @@ function getAggregateTournamentFromCache(tournamentDetails, formatKey) {
 
   let tournaments = [];
   let tournamentFormat = "Single Elimination";
+  // Every tournament is offered to both buckets; the per-match test below
+  // decides which of its matches belong to which. A contest that ran ranked
+  // group rounds and head-to-head finals contributes to both, rather than
+  // having one half dropped.
+  tournaments = allTournaments;
   if (formatKey == "3v3 Ranked") {
-    tournaments = allTournaments.filter(
-      (tournament) => tournament.data.tournamentFormat == "3v3 Ranked"
-    );
     tournamentFormat = "3v3 Ranked";
-  } else {
-    tournaments = allTournaments.filter(
-      (tournament) => tournament.data.tournamentFormat != "3v3 Ranked"
-    );
   }
 
   const aggregate = buildAggregateTournament(tournaments, tournamentFormat);
@@ -405,21 +403,23 @@ function isValidMatchForFormat(match, tournamentFormat) {
   if (!match || !match.entrant1 || !match.entrant2) {
     return false;
   }
-  if (tournamentFormat == "3v3 Ranked") {
-    return (
-      match.entrant3 &&
-      Array.isArray(match.entrant1?.voters?.first) &&
-      Array.isArray(match.entrant1?.voters?.second) &&
-      Array.isArray(match.entrant2?.voters?.first) &&
-      Array.isArray(match.entrant2?.voters?.second) &&
-      Array.isArray(match.entrant3?.voters?.first) &&
-      Array.isArray(match.entrant3?.voters?.second)
+  // Judge the match by its own ballots, not by the tournament's format string.
+  // Contests changed voting style as they narrowed, so a tournament-level test
+  // throws away the head-to-head finals of a ranked contest (and vice versa).
+  const wantRanked = tournamentFormat == "3v3 Ranked";
+  if ((matchVoteKind(match) === "ranked") !== wantRanked) {
+    return false;
+  }
+  const entrants = matchEntrantList(match);
+  if (entrants.length < 2) {
+    return false;
+  }
+  if (wantRanked) {
+    return entrants.every(
+      (e) => Array.isArray(e?.voters?.first) && Array.isArray(e?.voters?.second)
     );
   }
-  return (
-    Array.isArray(match.entrant1?.voters) &&
-    Array.isArray(match.entrant2?.voters)
-  );
+  return entrants.every((e) => Array.isArray(e?.voters));
 }
 
 function mergeCompatibilityResults(existingResults, nextResults) {
@@ -550,30 +550,19 @@ function getTopCompatibilityFromStore(
 
 function GetAllVoters(currentTournament) {
   var voters = [];
-  if (currentTournament?.matches?.length < 1) {
+  if (!currentTournament || !Array.isArray(currentTournament.matches)) {
     return [];
   }
-  if (currentTournament.tournamentFormat == "3v3 Ranked") {
-    outer: for (const match of currentTournament.matches) {
-      if (!isValidMatchForFormat(match, "3v3 Ranked")) {
-        continue;
-      }
-      addUniqueVoters(voters, match.entrant1.voters.first);
-      addUniqueVoters(voters, match.entrant1.voters.second);
-      addUniqueVoters(voters, match.entrant2.voters.first);
-      addUniqueVoters(voters, match.entrant2.voters.second);
-      addUniqueVoters(voters, match.entrant3.voters.first);
-      addUniqueVoters(voters, match.entrant3.voters.second);
-    }
-  } else {
-    outer: for (const match of currentTournament.matches) {
-      if (!isValidMatchForFormat(match, "Single Elimination")) {
-        continue;
-      }
-      // 3- and 4-way "pick one" battles exist in the historical contests, so
-      // read every slot; matchEntrantList comes from compatibilityStore.js.
-      for (const entrant of matchEntrantList(match)) {
-        addUniqueVoters(voters, entrant.voters);
+  // Per match, not per tournament: a contest that ran ranked group rounds and
+  // head-to-head finals would otherwise contribute voters from only one half.
+  for (const match of currentTournament.matches) {
+    for (const entrant of matchEntrantList(match)) {
+      const v = entrant.voters;
+      if (Array.isArray(v)) {
+        addUniqueVoters(voters, v);
+      } else if (v) {
+        addUniqueVoters(voters, v.first);
+        addUniqueVoters(voters, v.second);
       }
     }
   }
