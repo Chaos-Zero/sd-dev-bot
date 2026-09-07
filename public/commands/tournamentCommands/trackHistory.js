@@ -14,6 +14,7 @@ const {
   BuildTrackIndex,
   SummariseTrackRun,
   CountUserVotesForTrack,
+  IsTournamentRunning,
   normaliseTitle,
   trackKey,
 } = require("../../tournament/trackHistory.js");
@@ -170,10 +171,37 @@ function youtubeThumb(track) {
 
 function placementColour(summary) {
   if (!summary) return 0x4e5058;
+  // A live contest gets its own colours before anything else is considered:
+  // green while the track is still in it, grey once it is out, so the embed
+  // never wears the gold of a result that has not happened.
+  if (summary.isRunning) return summary.stillIn ? 0x3ba55d : 0x4e5058;
   if (summary.isChampion) return 0xfaa61a;
   if (summary.placement === "Runner-up") return 0xb5bac1;
   if (summary.placement === "3rd place") return 0xcd7f32;
   return 0x5865f2;
+}
+
+/**
+ * The line under the embed: what is left of a contest that is still being
+ * played. Says how many rounds a track still has in front of it when it is
+ * still in, and otherwise only that the contest is not over -- a track that is
+ * out has no rounds of its own left to count.
+ */
+function liveFooter(summary) {
+  if (!summary || !summary.isRunning) return FOOTER;
+
+  let note = "Tournament still running";
+  if (summary.stillIn && summary.roundsRemaining) {
+    const rounds =
+      summary.roundsRemaining === 1
+        ? "1 round left to play"
+        : `${summary.roundsRemaining} rounds left to play`;
+    note = `Still in · ${rounds} · ${summary.tracksRemaining} tracks left`;
+  } else if (summary.stillIn) {
+    note = "Tournament still running · this track is still in it";
+  }
+
+  return { text: `${note} · ${FOOTER.text}`, iconURL: FOOTER.iconURL };
 }
 
 function buildPage(root, session) {
@@ -182,15 +210,24 @@ function buildPage(root, session) {
   const tournamentName =
     session.chosen.get(key) || track.tournaments[0];
   const tournament = root[tournamentName];
-  const summary = SummariseTrackRun(tournament, track);
+  const isRunning = IsTournamentRunning(
+    tournament,
+    tournamentName,
+    root.currentTournament
+  );
+  const summary = SummariseTrackRun(tournament, track, { isRunning });
 
   const embed = new EmbedBuilder()
     .setTitle(track.name)
     .setURL(track.link || null)
     .setColor(placementColour(summary))
     .setThumbnail(youtubeThumb(track))
-    .setDescription(`_${tournamentName}_`)
-    .setFooter(FOOTER);
+    .setDescription(
+      isRunning
+        ? `_${tournamentName}_\n🔴 **This tournament is still running** — the run so far, up to the last finished match.`
+        : `_${tournamentName}_`
+    )
+    .setFooter(liveFooter(summary));
 
   if (track.title) {
     embed.setAuthor({ name: track.title.slice(0, 256) });
@@ -199,7 +236,11 @@ function buildPage(root, session) {
   const files = [];
   if (summary) {
     embed.addFields(
-      { name: "Finished", value: summary.placement, inline: true },
+      {
+        name: summary.isRunning ? "Status" : "Finished",
+        value: summary.placement,
+        inline: true,
+      },
       {
         name: "Record",
         value: `${summary.wins}W – ${summary.losses}L`,
@@ -229,6 +270,16 @@ function buildPage(root, session) {
         inline: true,
       });
     }
+    // Spelled out in the body as well as the footer: the footer is easy to miss
+    // on mobile, and this is the one thing that stops a run being read as final.
+    if (summary.isRunning) {
+      embed.addFields({
+        name: summary.stillIn ? "Still to come" : "Tournament in progress",
+        value: summary.stillIn
+          ? `${summary.exit} in **${tournamentName}**.`
+          : `Knocked out in round ${summary.finishedAt}, but **${tournamentName}** is still being played.`,
+      });
+    }
 
     const png = RenderTrackProgression({
       track,
@@ -243,14 +294,16 @@ function buildPage(root, session) {
   } else {
     embed.addFields({
       name: "No completed matches",
-      value: "This track has not played a scored match in that tournament yet.",
+      value: isRunning
+        ? "This track has not played a finished match in that tournament yet — it is still being played."
+        : "This track has not played a scored match in that tournament yet.",
     });
   }
 
   return { embed, files, track, tournamentName };
 }
 
-function buildComponents(sessionId, session, track, tournamentName) {
+function buildComponents(sessionId, session, track, tournamentName, running) {
   const rows = [];
 
   // Picking a track straight from the list beats stepping through it, and the
@@ -278,6 +331,9 @@ function buildComponents(sessionId, session, track, tournamentName) {
       .addOptions(
         track.tournaments.slice(0, 25).map((name) => ({
           label: name.slice(0, 100),
+          // marked in the picker too, so a contest that is still being played
+          // is obvious before it is opened
+          description: running.has(name) ? "Still running" : undefined,
           value: name.slice(0, 100),
           default: name === tournamentName,
         }))
@@ -293,8 +349,25 @@ function renderSession(root, sessionId, session) {
   return {
     embeds: [embed],
     files,
-    components: buildComponents(sessionId, session, track, tournamentName),
+    components: buildComponents(
+      sessionId,
+      session,
+      track,
+      tournamentName,
+      runningTournaments(root, track)
+    ),
   };
+}
+
+/** Which of a track's tournaments are still being played. */
+function runningTournaments(root, track) {
+  const live = new Set();
+  for (const name of track.tournaments) {
+    if (IsTournamentRunning(root[name], name, root.currentTournament)) {
+      live.add(name);
+    }
+  }
+  return live;
 }
 
 function getTournamentRoot() {

@@ -90,6 +90,35 @@ function roundLabel(round) {
   return "R" + round.round;
 }
 
+/**
+ * The "LIVE" flag in the top corner of a run from a contest still being played.
+ * Drawn rather than written into the header line so it survives the header
+ * being trimmed to fit, which is where a long track name would otherwise push
+ * it off the image.
+ */
+function drawLiveBadge(ctx, right, y) {
+  const label = "LIVE";
+  ctx.font = "bold 11px sans-serif";
+  const width = ctx.measureText(label).width + 20;
+  const height = 20;
+  const x = right - width;
+
+  roundedRect(ctx, x, y, width, height, 4);
+  ctx.fillStyle = "rgba(237,66,69,0.18)";
+  ctx.fill();
+  roundedRect(ctx, x, y, width, height, 4);
+  ctx.strokeStyle = THEME.loss;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = THEME.loss;
+  ctx.fillText(label, x + width / 2, y + 14);
+  ctx.textAlign = "left";
+
+  return width;
+}
+
 function rowHeight(round) {
   const boxes = 1 + round.opponents.length;
   return boxes * LAYOUT.boxHeight + (boxes - 1) * LAYOUT.boxGap;
@@ -155,11 +184,18 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
   }
 
   const rounds = summary.progression;
+  // A live contest gets a second footer line saying so, because the ladder on
+  // its own looks exactly like a finished run that happened to end early.
+  const liveNote = !summary.isRunning
+    ? ""
+    : summary.stillIn
+    ? "This tournament is still being played — the run is not over"
+    : "This tournament is still being played — later rounds are still to come";
   const bodyHeight =
     rounds.reduce((total, round) => total + rowHeight(round) + LAYOUT.rowGap, 0) -
     LAYOUT.rowGap;
   const footerTop = LAYOUT.headerHeight + bodyHeight + LAYOUT.footerGap;
-  const height = footerTop + LAYOUT.footerHeight;
+  const height = footerTop + LAYOUT.footerHeight + (liveNote ? 22 : 0);
 
   const canvas = createCanvas(LAYOUT.width, height);
   const ctx = canvas.getContext("2d");
@@ -169,11 +205,14 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
 
   // ---- header -------------------------------------------------------------
   const headerRight = LAYOUT.width - LAYOUT.pad;
+  const badgeWidth = summary.isRunning
+    ? drawLiveBadge(ctx, headerRight, LAYOUT.pad + 3) + 12
+    : 0;
   ctx.textAlign = "left";
   ctx.font = "bold 22px sans-serif";
   ctx.fillStyle = THEME.text;
   ctx.fillText(
-    fitText(ctx, track.name, headerRight - LAYOUT.pad),
+    fitText(ctx, track.name, headerRight - LAYOUT.pad - badgeWidth),
     LAYOUT.pad,
     LAYOUT.pad + 20
   );
@@ -273,11 +312,27 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
   ctx.font = "bold 17px sans-serif";
   ctx.fillStyle = summary.isChampion
     ? THEME.accent
+    : summary.stillIn
+    ? THEME.win
     : summary.isPodium
     ? THEME.text
     : THEME.dim;
   ctx.textAlign = "left";
-  ctx.fillText(summary.exit, LAYOUT.pad, footerTop + 20);
+  ctx.fillText(
+    fitText(ctx, summary.exit, LAYOUT.width - LAYOUT.pad * 2),
+    LAYOUT.pad,
+    footerTop + 20
+  );
+
+  if (liveNote) {
+    ctx.font = "12px sans-serif";
+    ctx.fillStyle = THEME.faint;
+    ctx.fillText(
+      fitText(ctx, liveNote, LAYOUT.width - LAYOUT.pad * 2),
+      LAYOUT.pad,
+      footerTop + 40
+    );
+  }
 
   return canvas.toBuffer("image/png");
 }

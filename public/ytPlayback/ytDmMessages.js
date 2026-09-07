@@ -161,7 +161,7 @@ function getDomoHelpCategories() {
         },
         {
           name: "/tournament-track-history",
-          desc: "See how a track, or every track from a game, has done across all tournaments.",
+          desc: "See how a track, or every track from a game, has done across all tournaments, the one running now included.",
           args: "query* (track title or game/series), make-public",
         },
         {

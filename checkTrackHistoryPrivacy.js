@@ -71,6 +71,33 @@ check("user vote count ignores the live match",
   th.CountUserVotesForTrack(root["Live Contest"], played, "u1") === 1,
   `got ${th.CountUserVotesForTrack(root["Live Contest"], played, "u1")}`);
 
+// a running contest must be reported as running, and must decide nothing: the
+// deciding match is only a guess at the latest one played while it is live, so
+// crowning its winner would name a champion the votes have not chosen
+check("running contest recognised",
+  th.IsTournamentRunning(root["Live Contest"], "Live Contest", root.currentTournament));
+check("run is flagged as still running", summary.isRunning === true);
+check("no champion while it is running", summary.isChampion === false);
+check("no podium while it is running", summary.isPodium === false);
+check("no stage names while it is running",
+  summary.progression.every((r) => !r.isFinal && !r.isPlayoff && r.stage === null));
+check("winner of its last match is still in", summary.stillIn === true,
+  `placement=${summary.placement}`);
+check("rounds left counted from finished matches only",
+  summary.tracksRemaining === 1 && summary.roundsRemaining === 1,
+  `tracks=${summary.tracksRemaining} rounds=${summary.roundsRemaining}`);
+check("nothing in the run counts the unplayed rounds",
+  !summary.exit.includes("3") && !summary.placement.includes("3"),
+  `exit=${summary.exit}`);
+
+// the beaten track is out, but the contest is not over, so it gets no placement
+const beaten = th.SummariseTrackRun(root["Live Contest"], { name: "Beaten Track", title: "Known Game" });
+check("beaten track is out but the contest is not finished",
+  beaten.isRunning === true && beaten.stillIn === false,
+  `${beaten.placement} / ${beaten.exit}`);
+check("no round total claimed while it is running",
+  !beaten.exit.includes(" of "), `exit=${beaten.exit}`);
+
 // a search for the secret must find nothing anywhere in the index
 const leaked = JSON.stringify(index);
 check("secret track name nowhere in index", !leaked.includes(SECRET));

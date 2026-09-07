@@ -50,14 +50,20 @@ function isSettledMatch(match) {
 /**
  * Whether a tournament is still being played.
  *
- * Two ways to be running, because either on its own misses cases: the database
- * names the contest currently under way, and an older contest can still be
- * carrying an unsettled match. Erring towards "running" is the safe direction
- * -- a live contest reported as finished hands out a placement, and a winner,
- * that the votes have not decided yet.
+ * Three signals, because no one of them covers every contest: a tournament that
+ * has been concluded says so outright, the database names the contest currently
+ * under way, and an older contest with no flag can still be carrying an
+ * unsettled match. Erring towards "running" is the safe direction -- a live
+ * contest reported as finished hands out a placement, and a winner, that the
+ * votes have not decided yet.
+ *
+ * The flag is checked first and settles it: contests that ended before
+ * ConcludeTournament existed carry a stale in-progress match apiece, and once
+ * one of those is retired its own matches must stop holding it open.
  */
 function IsTournamentRunning(tournament, tournamentName, currentTournament) {
   if (!tournament || !Array.isArray(tournament.matches)) return false;
+  if (tournament.completed === true) return false;
   if (tournamentName && currentTournament && tournamentName === currentTournament) {
     return true;
   }
@@ -681,7 +687,10 @@ function describeRoundsLeft(tracksRemaining, roundsRemaining) {
   }
   const rounds =
     roundsRemaining === 1 ? "1 more round" : `${roundsRemaining} more rounds`;
-  return `Still in the running — ${rounds} to play, ${tracksRemaining} tracks left`;
+  // The field is only worth quoting once it is a field: "1 tracks left" reads
+  // as a bug, and "2 tracks left" is the final, which is already named above.
+  const field = tracksRemaining > 2 ? `, ${tracksRemaining} tracks left` : "";
+  return `Still in the running — ${rounds} to play${field}`;
 }
 
 /**
