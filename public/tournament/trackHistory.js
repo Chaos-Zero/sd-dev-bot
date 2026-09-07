@@ -223,6 +223,38 @@ function BuildTrackProgression(tournament, track) {
 }
 
 /**
+ * How many of this track's matches the given user voted for it in. Reads both
+ * ballot shapes, since a ranked ballot stores voters as {first, second} rather
+ * than a flat array. Returns 0 for someone who never backed it -- including
+ * someone who voted in the tournament but always for the other side.
+ */
+function CountUserVotesForTrack(tournament, track, userId) {
+  if (!userId) return 0;
+  const wantName = normaliseTitle(typeof track === "string" ? track : track?.name);
+  const wantTitle =
+    typeof track === "string" ? null : normaliseTitle(track?.title);
+
+  let voted = 0;
+  for (const match of tournament?.matches || []) {
+    if (!match || match.progress !== "complete") continue;
+    const self = matchEntrantList(match).find(
+      (e) => normaliseTitle(e.name) === wantName && sameGame(e.title, wantTitle)
+    );
+    if (!self) continue;
+
+    const voters = self.voters;
+    if (Array.isArray(voters)) {
+      if (voters.includes(userId)) voted++;
+    } else if (voters && typeof voters === "object") {
+      const first = Array.isArray(voters.first) ? voters.first : [];
+      const second = Array.isArray(voters.second) ? voters.second : [];
+      if (first.includes(userId) || second.includes(userId)) voted++;
+    }
+  }
+  return voted;
+}
+
+/**
  * Headline numbers for one track in one tournament: how far it got, what it
  * won, and where it finished.
  */
@@ -233,21 +265,56 @@ function SummariseTrackRun(tournament, track) {
   const wins = progression.filter((r) => r.won === true).length;
   const losses = progression.filter((r) => r.won === false).length;
   const last = progression[progression.length - 1];
-  const decided = (tournament.matches || []).filter(
-    (m) => m && m.progress === "complete" && !m.isThirdPlace
+  const complete = (tournament.matches || []).filter(
+    (m) => m && m.progress === "complete"
   );
+  const decided = complete.filter((m) => !m.isThirdPlace);
   const finalRound = Math.max(...decided.map((m) => Number(m.round)), 0);
-  // The last round can hold more than one match: 2023 ran the final and the
-  // 3rd-place playoff side by side in round 5, and neither carried the
-  // isThirdPlace flag. The deciding match is the highest-numbered one, so
-  // losing the other is fourth place rather than runner-up.
-  const decidingMatch = Math.max(...decided.map((m) => Number(m.match)), 0);
+
+  // The deciding match has to be found within the final round, not by taking
+  // the highest match number overall: match numbers are not ordered by
+  // progression. The Forest tournament's final is round 4 match 29 while match
+  // 31 sits back in round 3, so a global maximum picked a semi-final and left
+  // the contest with no winner at all.
+  const finalRoundMatches = decided.filter(
+    (m) => Number(m.round) === finalRound
+  );
+  const decidingMatch = Math.max(
+    ...finalRoundMatches.map((m) => Number(m.match)),
+    0
+  );
+
+  // Third-place playoffs come in two shapes: flagged outright (2025 runs one in
+  // round 7, before the final), or sitting unflagged alongside the final as the
+  // second match of the closing round (2023, 2024, 2020, SupraDarky). Where the
+  // closing round holds three or more matches it is tie replays rather than a
+  // playoff, so nothing is assumed.
+  const thirdPlaceMatches = new Set(
+    complete.filter((m) => m.isThirdPlace).map((m) => Number(m.match))
+  );
+  if (finalRoundMatches.length === 2) {
+    for (const m of finalRoundMatches) {
+      if (Number(m.match) !== decidingMatch) thirdPlaceMatches.add(Number(m.match));
+    }
+  }
   // Double elimination keeps beaten tracks alive in a losers bracket, so the
   // rounds no longer count down to the final and "quarter-final" stops meaning
   // anything. Say which bracket instead.
   const isDoubleElim = (tournament.matches || []).some(
     (m) => m && m.bracket === "losersBracket"
   );
+
+  // an unflagged playoff still needs marking, or the renderer labels it "Final"
+  for (const round of progression) {
+    round.isPlayoff = thirdPlaceMatches.has(round.match);
+  }
+
+  const placement = describePlacement(last, {
+    finalRound,
+    decidingMatch,
+    thirdPlaceMatches,
+    isDoubleElim,
+  });
 
   return {
     progression,
@@ -266,21 +333,28 @@ function SummariseTrackRun(tournament, track) {
     decidingMatch,
     isDoubleElim,
     isChampion: last.won === true && last.match === decidingMatch,
-    placement: describePlacement(last, finalRound, decidingMatch, isDoubleElim),
+    // top four, so the summary line can be given more weight than a mid-bracket exit
+    isPodium: PODIUM.has(placement),
+    placement,
   };
 }
 
-function describePlacement(last, finalRound, decidingMatch, isDoubleElim) {
-  if (last.isThirdPlace) {
-    return last.won === true ? "3rd place" : "4th place";
+const PODIUM = new Set(["Winner", "Runner-up", "3rd place", "4th place"]);
+
+function describePlacement(last, context) {
+  const { finalRound, decidingMatch, thirdPlaceMatches, isDoubleElim } = context;
+
+  if (thirdPlaceMatches.has(last.match)) {
+    if (last.won === null) return "Joint 3rd place";
+    return last.won ? "3rd place" : "4th place";
   }
+
   if (last.match === decidingMatch) {
-    return last.won === true ? "Winner" : "Runner-up";
+    // a tied final is left as a tie rather than crowning someone
+    if (last.won === null) return "Finalist (tied)";
+    return last.won ? "Winner" : "Runner-up";
   }
-  // reached the closing round but not the deciding match: a placement playoff
-  if (last.round === finalRound) {
-    return last.won === true ? "3rd place" : "4th place";
-  }
+
   if (isDoubleElim) {
     return last.bracket === "losersBracket"
       ? `Losers bracket, R${last.round}`
@@ -297,6 +371,7 @@ if (typeof module !== "undefined") {
     BuildTrackIndex,
     BuildTrackProgression,
     SummariseTrackRun,
+    CountUserVotesForTrack,
     normaliseTitle,
     trackKey,
   };

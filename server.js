@@ -412,10 +412,10 @@ bot.on(Events.InteractionCreate, (interaction) => {
     return updateEntrantHandlers.handleEntrantPage(interaction);
   }
   if (
-    interaction.isButton() &&
-    interaction.customId.startsWith("track-history-page:")
+    interaction.isStringSelectMenu() &&
+    interaction.customId.startsWith("track-history-track:")
   ) {
-    return trackHistoryHandlers.handleTrackHistoryPage(interaction);
+    return trackHistoryHandlers.handleTrackHistoryTrack(interaction);
   }
   if (
     interaction.isStringSelectMenu() &&

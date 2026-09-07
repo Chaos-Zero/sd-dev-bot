@@ -33,13 +33,16 @@ const THEME = {
 const LAYOUT = {
   width: 760,
   pad: 24,
-  headerHeight: 96,
+  // deep enough that the rule clears the record line's baseline rather than
+  // striking through it
+  headerHeight: 114,
   rowGap: 14,
   boxHeight: 34,
   boxGap: 6,
   spineX: 58,
   labelWidth: 46,
-  footerHeight: 34,
+  footerGap: 18,
+  footerHeight: 40,
   radius: 6,
 };
 
@@ -79,7 +82,7 @@ function fitText(ctx, text, maxWidth) {
  * do not count down to a single final, so the bracket is the useful label.
  */
 function roundLabel(round, finalRound, isDoubleElim) {
-  if (round.isThirdPlace) return "3rd";
+  if (round.isThirdPlace || round.isPlayoff) return "3rd";
   if (isDoubleElim) return "R" + round.round;
   const from = finalRound - round.round;
   if (from === 0) return "Final";
@@ -93,9 +96,10 @@ function describeExit(summary) {
   if (summary.isChampion) return "Won the tournament";
   const placement = summary.placement;
   if (placement === "Runner-up") return "Lost the final";
-  if (placement === "3rd place" || placement === "4th place") {
-    return `Finished ${placement}`;
-  }
+  if (placement === "Finalist (tied)") return "Final ended level";
+  if (placement === "Joint 3rd place") return "Third-place match ended level";
+  if (placement === "3rd place") return "Won the third-place match";
+  if (placement === "4th place") return "Lost the third-place match";
   // keep the placement's own casing here: lowercasing turns "R8" into "r8"
   if (summary.isDoubleElim) return `Knocked out — ${placement}`;
   return `Knocked out in the ${placement.toLowerCase()}`;
@@ -166,12 +170,11 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
   }
 
   const rounds = summary.progression;
-  const bodyHeight = rounds.reduce(
-    (total, round) => total + rowHeight(round) + LAYOUT.rowGap,
-    0
-  );
-  const height =
-    LAYOUT.headerHeight + bodyHeight + LAYOUT.footerHeight + LAYOUT.pad;
+  const bodyHeight =
+    rounds.reduce((total, round) => total + rowHeight(round) + LAYOUT.rowGap, 0) -
+    LAYOUT.rowGap;
+  const footerTop = LAYOUT.headerHeight + bodyHeight + LAYOUT.footerGap;
+  const height = footerTop + LAYOUT.footerHeight;
 
   const canvas = createCanvas(LAYOUT.width, height);
   const ctx = canvas.getContext("2d");
@@ -281,10 +284,15 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
     y += h + LAYOUT.rowGap;
   });
 
-  // ---- footer -------------------------------------------------------------
-  ctx.font = "11px sans-serif";
-  ctx.fillStyle = THEME.faint;
-  ctx.fillText(describeExit(summary), LAYOUT.pad, height - 16);
+  // ---- summary ------------------------------------------------------------
+  ctx.font = "bold 17px sans-serif";
+  ctx.fillStyle = summary.isChampion
+    ? THEME.accent
+    : summary.isPodium
+    ? THEME.text
+    : THEME.dim;
+  ctx.textAlign = "left";
+  ctx.fillText(describeExit(summary), LAYOUT.pad, footerTop + 20);
 
   return canvas.toBuffer("image/png");
 }

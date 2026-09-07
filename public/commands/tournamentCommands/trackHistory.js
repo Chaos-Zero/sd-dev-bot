@@ -2,8 +2,6 @@ const {
   SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   StringSelectMenuBuilder,
   AttachmentBuilder,
 } = require("discord.js");
@@ -15,6 +13,7 @@ eval(fs.readFileSync("./public/main.js") + "");
 const {
   BuildTrackIndex,
   SummariseTrackRun,
+  CountUserVotesForTrack,
   normaliseTitle,
   trackKey,
 } = require("../../tournament/trackHistory.js");
@@ -182,19 +181,20 @@ function buildPage(root, session) {
   const key = trackKey(track);
   const tournamentName =
     session.chosen.get(key) || track.tournaments[0];
-  const summary = SummariseTrackRun(root[tournamentName], track);
+  const tournament = root[tournamentName];
+  const summary = SummariseTrackRun(tournament, track);
 
   const embed = new EmbedBuilder()
     .setTitle(track.name)
     .setURL(track.link || null)
     .setColor(placementColour(summary))
     .setThumbnail(youtubeThumb(track))
+    .setDescription(`_${tournamentName}_`)
     .setFooter(FOOTER);
 
-  const lines = [];
-  if (track.title) lines.push(`**${track.title}**`);
-  lines.push(`_${tournamentName}_`);
-  embed.setDescription(lines.join("\n"));
+  if (track.title) {
+    embed.setAuthor({ name: track.title.slice(0, 256) });
+  }
 
   const files = [];
   if (summary) {
@@ -207,14 +207,25 @@ function buildPage(root, session) {
       },
       {
         name: "Votes",
-        value: `${summary.totalVotes} across ${summary.matches} matches`,
+        value: `${summary.totalVotes} (${summary.matches} matches)`,
         inline: true,
       }
     );
+
+    // Second row: both of these can legitimately be missing -- a track that
+    // never won has no best margin, and the caller may not have voted for it.
+    const yourVotes = CountUserVotesForTrack(tournament, track, session.userId);
     if (summary.bestMargin > 0) {
       embed.addFields({
         name: "Biggest win",
         value: `by ${summary.bestMargin} votes`,
+        inline: true,
+      });
+    }
+    if (yourVotes > 0) {
+      embed.addFields({
+        name: "You voted for it",
+        value: `${yourVotes} of ${summary.matches} matches`,
         inline: true,
       });
     }
@@ -242,7 +253,24 @@ function buildPage(root, session) {
 function buildComponents(sessionId, session, track, tournamentName) {
   const rows = [];
 
-  // Dropdown only earns its row when the track actually ran more than once.
+  // Picking a track straight from the list beats stepping through it, and the
+  // search caps at 25 results precisely so they all fit one menu.
+  if (session.results.length > 1) {
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId(`track-history-track:${sessionId}`)
+      .setPlaceholder(`${session.results.length} tracks matched — pick one`)
+      .addOptions(
+        session.results.map((option, index) => ({
+          label: option.name.slice(0, 100),
+          description: (option.title || "").slice(0, 100) || undefined,
+          value: String(index),
+          default: index === session.page,
+        }))
+      );
+    rows.push(new ActionRowBuilder().addComponents(menu));
+  }
+
+  // Only worth a row when the track actually ran more than once.
   if (track.tournaments.length > 1) {
     const menu = new StringSelectMenuBuilder()
       .setCustomId(`track-history-tournament:${sessionId}`)
@@ -257,38 +285,11 @@ function buildComponents(sessionId, session, track, tournamentName) {
     rows.push(new ActionRowBuilder().addComponents(menu));
   }
 
-  if (session.results.length > 1) {
-    rows.push(
-      new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`track-history-page:${sessionId}:${session.page - 1}`)
-          .setStyle(ButtonStyle.Secondary)
-          .setLabel("Prev")
-          .setDisabled(session.page === 0),
-        new ButtonBuilder()
-          .setCustomId(`track-history-page:${sessionId}:${session.page + 1}`)
-          .setStyle(ButtonStyle.Secondary)
-          .setLabel("Next")
-          .setDisabled(session.page >= session.results.length - 1)
-      )
-    );
-  }
-
   return rows;
-}
-
-function pageSuffix(session) {
-  return session.results.length > 1
-    ? `Result ${session.page + 1} of ${session.results.length}`
-    : null;
 }
 
 function renderSession(root, sessionId, session) {
   const { embed, files, track, tournamentName } = buildPage(root, session);
-  const suffix = pageSuffix(session);
-  if (suffix) {
-    embed.setAuthor({ name: suffix });
-  }
   return {
     embeds: [embed],
     files,
@@ -367,16 +368,15 @@ async function guardSession(interaction, sessionId) {
   return session;
 }
 
-module.exports.handleTrackHistoryPage = async (interaction) => {
-  const [, sessionId, rawPage] = interaction.customId.split(":");
+module.exports.handleTrackHistoryTrack = async (interaction) => {
+  const [, sessionId] = interaction.customId.split(":");
   const session = await guardSession(interaction, sessionId);
   if (!session) return;
 
-  const page = Number(rawPage);
-  session.page = Math.min(
-    Math.max(Number.isFinite(page) ? page : 0, 0),
-    session.results.length - 1
-  );
+  const picked = Number(interaction.values?.[0]);
+  if (Number.isFinite(picked) && picked >= 0 && picked < session.results.length) {
+    session.page = picked;
+  }
 
   await interaction.deferUpdate();
   const root = getTournamentRoot();
