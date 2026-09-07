@@ -57,7 +57,7 @@ module.exports = {
     //  content: "Testing in the backend",
     //});
     if (!searchAll && (!tournamentName || tournamentName === "N/A" || !tournamentDb)) {
-      const latestTournament = getLatestTournamentEntry(tournamentDetails);
+      const latestTournament = GetLatestTournamentEntry(tournamentDetails);
       if (latestTournament) {
         tournamentName = latestTournament.name;
         tournamentDb = latestTournament.data;
@@ -185,7 +185,7 @@ module.exports = {
     } else {
       let tournamentCompat = compatibilityDb.tournaments?.[tournamentName];
       if (!tournamentCompat) {
-        const latestTournament = getLatestTournamentEntry(tournamentDetails);
+        const latestTournament = GetLatestTournamentEntry(tournamentDetails);
         if (latestTournament) {
           tournamentName = latestTournament.name;
           tournamentDb = latestTournament.data;
@@ -253,21 +253,6 @@ module.exports = {
   },
 };
 
-function getAllTournamentEntries(tournamentDetails) {
-  const excludedKeys = new Set(["admin", "currentTournament", "receiptUsers"]);
-  return Object.entries(tournamentDetails)
-    .filter(([key, value]) => !excludedKeys.has(key) && value)
-    .map(([key, value]) => ({ name: key, data: value }));
-}
-
-function getLatestTournamentEntry(tournamentDetails) {
-  const allTournaments = getAllTournamentEntries(tournamentDetails);
-  if (allTournaments.length < 1) {
-    return null;
-  }
-  return allTournaments[allTournaments.length - 1];
-}
-
 function buildCompatibilityEmbedFromStore(
   store,
   checkingUser,
@@ -288,8 +273,20 @@ function buildCompatibilityEmbedFromStore(
     return null;
   }
 
+  // Which shape to read is the pair's to decide, not the tournament's. A
+  // contest that ran ranked group rounds and a head-to-head final stores both
+  // side by side, and a pair who only ever met in that final carries no ranked
+  // keys at all -- reading them by the tournament's label divides zero by zero
+  // and reports the pair as "NaN%" compatible.
+  const hasRanked = (stats.matchCount || 0) > 0;
+  const hasFlat = (stats.iterations || 0) > 0;
+  if (!hasRanked && !hasFlat) {
+    return null;
+  }
+  const useRanked = tournamentType == "3v3 Ranked" ? hasRanked : !hasFlat;
+
   let userResults = {};
-  if (tournamentType == "3v3 Ranked") {
+  if (useRanked) {
     userResults = {
       totalWeight: stats.totalWeight || 0,
       firstWeight: stats.firstWeight || 0,
@@ -311,135 +308,28 @@ function buildCompatibilityEmbedFromStore(
     };
   }
 
-  return buildCompatibilityEmbedFromResult(
-    userResults,
-    userInfo,
-    tournamentName,
-    tournamentType
+  // The embed lays its fields out by type too, so report the shape actually
+  // read rather than the tournament's -- otherwise a head-to-head pair in a
+  // ranked contest gets the ranked layout over flat numbers.
+  const effectiveType = useRanked
+    ? "3v3 Ranked"
+    : tournamentType == "3v3 Ranked"
+    ? "Single Elimination"
+    : tournamentType;
+
+  // Same smoothing /tournament-most-compatible ranks on, so a pair's number
+  // reads the same in both commands. Two shared matches is not 100%.
+  const kind = useRanked ? "ranked" : "flat";
+  const shrunkPercent = Math.ceil(
+    GetPairShrunkRate(stats, kind, GetBaselineRate(store, kind)) * 100
   );
-}
-
-function buildTournamentSignature(tournaments) {
-  return tournaments
-    .map((tournament) => {
-      const matchCount = Array.isArray(tournament.data.matches)
-        ? tournament.data.matches.length
-        : 0;
-      const format = tournament.data.tournamentFormat || "unknown";
-      return `${tournament.name}:${format}:${matchCount}`;
-    })
-    .join("|");
-}
-
-function getAggregateTournamentFromCache(tournamentDetails, formatKey) {
-  const allTournaments = getAllTournamentEntries(tournamentDetails);
-  const signature = buildTournamentSignature(allTournaments);
-  if (aggregateCache.signature !== signature) {
-    aggregateCache.signature = signature;
-    aggregateCache.byFormat = {};
-  }
-
-  if (aggregateCache.byFormat[formatKey]) {
-    return aggregateCache.byFormat[formatKey];
-  }
-
-  let tournaments = [];
-  let tournamentFormat = "Single/Double Elimination";
-  // Every tournament is offered to both buckets; the per-match test below
-  // decides which of its matches belong to which. A contest that ran ranked
-  // group rounds and head-to-head finals contributes to both, rather than
-  // having one half dropped.
-  tournaments = allTournaments;
-  if (formatKey == "3v3 Ranked") {
-    tournamentFormat = "3v3 Ranked";
-  }
-
-  const aggregate = buildAggregateTournament(tournaments, tournamentFormat);
-  aggregateCache.byFormat[formatKey] = aggregate;
-  return aggregate;
-}
-
-function buildAggregateTournament(tournaments, tournamentFormat) {
-  const matches = [];
-  for (const tournament of tournaments) {
-    if (Array.isArray(tournament.data.matches)) {
-      const filteredMatches = tournament.data.matches.filter((match) =>
-        isValidMatchForFormat(match, tournamentFormat)
-      );
-      matches.push(...filteredMatches);
-    }
-  }
-  if (matches.length < 1) {
-    return null;
-  }
-  return {
-    tournamentFormat,
-    matches,
-  };
-}
-
-function isValidMatchForFormat(match, tournamentFormat) {
-  if (!match || !match.entrant1 || !match.entrant2) {
-    return false;
-  }
-  // Judge the match by its own ballots, not by the tournament's format string.
-  // Contests changed voting style as they narrowed, so a tournament-level test
-  // throws away the head-to-head finals of a ranked contest (and vice versa).
-  const wantRanked = tournamentFormat == "3v3 Ranked";
-  if ((matchVoteKind(match) === "ranked") !== wantRanked) {
-    return false;
-  }
-  const entrants = matchEntrantList(match);
-  if (entrants.length < 2) {
-    return false;
-  }
-  if (wantRanked) {
-    return entrants.every(
-      (e) => Array.isArray(e?.voters?.first) && Array.isArray(e?.voters?.second)
-    );
-  }
-  return entrants.every((e) => Array.isArray(e?.voters));
-}
-
-function buildCompatibilityEmbedForAggregate(
-  interaction,
-  aggregateTournament,
-  checkingUser,
-  userId,
-  userInfo,
-  tournamentName,
-  tournamentType
-) {
-  if (!aggregateTournament || aggregateTournament.matches.length < 10) {
-    return null;
-  }
-
-  let userResults = "";
-  if (aggregateTournament.tournamentFormat == "3v3 Ranked") {
-    userResults = compareTripleUsers(
-      interaction,
-      aggregateTournament,
-      checkingUser,
-      userId
-    );
-  } else {
-    userResults = compareDoubleUsers(
-      interaction,
-      aggregateTournament,
-      checkingUser,
-      userId
-    );
-  }
-
-  if (userResults == "" || userResults.matchCount < 1) {
-    return null;
-  }
 
   return buildCompatibilityEmbedFromResult(
     userResults,
     userInfo,
     tournamentName,
-    tournamentType
+    effectiveType,
+    shrunkPercent
   );
 }
 
@@ -447,7 +337,8 @@ function buildCompatibilityEmbedFromResult(
   userResults,
   userInfo,
   tournamentName,
-  tournamentType
+  tournamentType,
+  percentOverride
 ) {
   var partialMatchWeight =
     userResults?.partialMatch !== undefined
@@ -459,9 +350,14 @@ function buildCompatibilityEmbedFromResult(
 
   weightMinusDisagreements += partialMatchWeight;
 
-  var userCompatPercent = Math.ceil(
-    (parseInt(weightMinusDisagreements) / parseInt(userResults.maxWeight)) * 100
-  );
+  var userCompatPercent =
+    percentOverride === undefined
+      ? Math.ceil(
+          (parseInt(weightMinusDisagreements) /
+            parseInt(userResults.maxWeight)) *
+            100
+        )
+      : percentOverride;
 
   let colour = 0x0047ab;
   if (userCompatPercent >= 90) {
@@ -602,7 +498,7 @@ function buildSelfWinnerRateEmbedsForAllTournaments(
   userId,
   userInfo
 ) {
-  const allTournaments = getAllTournamentEntries(tournamentDetails);
+  const allTournaments = GetTournamentEntries(tournamentDetails);
   const embeds = [];
 
   const nonTripleTournaments = allTournaments.filter(
@@ -683,12 +579,9 @@ function calculateWinnerRateStatsForTournament(tournamentDb, userId) {
       continue;
     }
 
-    // Decided per match: a ranked contest's head-to-head final is still a
-    // head-to-head, and scoring it as ranked would count nobody at all.
-    const outcome =
-      matchVoteKind(match) === "ranked"
-        ? getTripleWinnerVoteOutcome(match, userId)
-        : getSingleDoubleWinnerVoteOutcome(match, userId);
+    // Decided per match, across every entrant slot. GetWinnerVoteOutcome
+    // comes from compatibilityStore.js, eval'd at the top.
+    const outcome = GetWinnerVoteOutcome(match, userId);
     if (!outcome.isValid) {
       continue;
     }
@@ -705,128 +598,6 @@ function calculateWinnerRateStatsForTournament(tournamentDb, userId) {
   }
 
   return stats;
-}
-
-function getSingleDoubleWinnerVoteOutcome(match, userId) {
-  // Historical contests ran 3- and 4-way "pick one" battles as well as
-  // head-to-head, so read every slot. Reading only entrant1/entrant2 would
-  // pick the wrong winner and score anyone who backed slot 3 or 4 as absent.
-  // matchEntrantList comes from compatibilityStore.js, eval'd at the top.
-  const entrants = matchEntrantList(match);
-  if (entrants.length < 2) {
-    return { isValid: false, participated: false, hit: false };
-  }
-
-  const voterLists = entrants.map((e) => e.voters);
-  if (!voterLists.every((v) => Array.isArray(v))) {
-    return { isValid: false, participated: false, hit: false };
-  }
-
-  const points = entrants.map((e) => Number(e.points));
-  if (!points.every((p) => Number.isFinite(p))) {
-    return { isValid: true, participated: false, hit: false };
-  }
-
-  const best = Math.max(...points);
-  if (points.filter((p) => p === best).length !== 1) {
-    return { isValid: true, participated: false, hit: false };
-  }
-
-  const participated = voterLists.some((v) => v.includes(userId));
-  if (!participated) {
-    return { isValid: true, participated: false, hit: false };
-  }
-
-  const winnerVoters = voterLists[points.indexOf(best)];
-  return {
-    isValid: true,
-    participated: true,
-    hit: winnerVoters.includes(userId),
-  };
-}
-
-function getTripleWinnerVoteOutcome(match, userId) {
-  const entrant1First = match?.entrant1?.voters?.first;
-  const entrant1Second = match?.entrant1?.voters?.second;
-  const entrant2First = match?.entrant2?.voters?.first;
-  const entrant2Second = match?.entrant2?.voters?.second;
-  const entrant3First = match?.entrant3?.voters?.first;
-  const entrant3Second = match?.entrant3?.voters?.second;
-
-  if (
-    !Array.isArray(entrant1First) ||
-    !Array.isArray(entrant1Second) ||
-    !Array.isArray(entrant2First) ||
-    !Array.isArray(entrant2Second) ||
-    !Array.isArray(entrant3First) ||
-    !Array.isArray(entrant3Second)
-  ) {
-    return { isValid: false, participated: false, hit: false };
-  }
-
-  const pointsOne = Number(match?.entrant1?.points);
-  const pointsTwo = Number(match?.entrant2?.points);
-  const pointsThree = Number(match?.entrant3?.points);
-  if (
-    !Number.isFinite(pointsOne) ||
-    !Number.isFinite(pointsTwo) ||
-    !Number.isFinite(pointsThree)
-  ) {
-    return { isValid: true, participated: false, hit: false };
-  }
-
-  const winnerIndex = getUniqueWinnerIndex([pointsOne, pointsTwo, pointsThree]);
-  if (winnerIndex === null) {
-    return { isValid: true, participated: false, hit: false };
-  }
-
-  const entrantVoterGroups = [
-    { first: entrant1First, second: entrant1Second },
-    { first: entrant2First, second: entrant2Second },
-    { first: entrant3First, second: entrant3Second },
-  ];
-
-  let participated = false;
-  for (const entrant of entrantVoterGroups) {
-    if (entrant.first.includes(userId) || entrant.second.includes(userId)) {
-      participated = true;
-      break;
-    }
-  }
-  if (!participated) {
-    return { isValid: true, participated: false, hit: false };
-  }
-
-  const winnerVoters = entrantVoterGroups[winnerIndex];
-  return {
-    isValid: true,
-    participated: true,
-    hit:
-      winnerVoters.first.includes(userId) ||
-      winnerVoters.second.includes(userId),
-  };
-}
-
-function getUniqueWinnerIndex(points) {
-  let bestValue = Number.NEGATIVE_INFINITY;
-  let bestIndex = null;
-  let tieFound = false;
-
-  for (let i = 0; i < points.length; i++) {
-    const value = points[i];
-    if (value > bestValue) {
-      bestValue = value;
-      bestIndex = i;
-      tieFound = false;
-    } else if (value === bestValue) {
-      tieFound = true;
-    }
-  }
-
-  if (bestIndex === null || tieFound) {
-    return null;
-  }
-  return bestIndex;
 }
 
 function createSelfWinnerRateEmbed(stats, userInfo, tournamentName) {
