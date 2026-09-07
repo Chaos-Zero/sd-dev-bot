@@ -4,6 +4,7 @@ const path = require("path");
 const fetch = require("node-fetch");
 
 eval(fs.readFileSync("./public/main.js") + "");
+eval(fs.readFileSync("./public/utils/adminUtils.js") + "");
 
 const userImagesDir = path.join(
   __dirname,
@@ -63,6 +64,11 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    // Gated in the Discord server too, but that configuration lives outside
+    // the repo, so the check is enforced here as well.
+    if (!(await RequireDomoAdmin(interaction))) {
+      return;
+    }
     const matchNumber = interaction.options.getInteger("match-number");
     const artistName = interaction.options.getString("artist-name");
     const attachment = interaction.options.getAttachment("image");

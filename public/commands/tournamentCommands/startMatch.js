@@ -4,12 +4,18 @@ const fs = require("fs");
 const sleep = require("util").promisify(setTimeout);
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/tournament/tournamentFunctions.js") + "");
+eval(fs.readFileSync("./public/utils/adminUtils.js") + "");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("tournament-start-next-match")
     .setDescription("If there is a tournament running, manually start a days worth of matches."),
   async execute(interaction) {
+    // Gated in the Discord server too, but that configuration lives outside
+    // the repo, so the check is enforced here as well.
+    if (!(await RequireDomoAdmin(interaction))) {
+      return;
+    }
     await interaction.reply("Sending Messages");
     const previousMatches = await EndMatches(interaction);
 

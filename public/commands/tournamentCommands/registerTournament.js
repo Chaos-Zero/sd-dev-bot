@@ -10,6 +10,7 @@ const {
 const fs = require("fs");
 
 eval(fs.readFileSync("./public/main.js") + "");
+eval(fs.readFileSync("./public/utils/adminUtils.js") + "");
 fs.readFileSync("./public/tournament/tournamentFunctions.js") + "";
 
 const loadingEmbed = new EmbedBuilder().setImage(
@@ -300,6 +301,11 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    // Gated in the Discord server too, but that configuration lives outside
+    // the repo, so the check is enforced here as well.
+    if (!(await RequireDomoAdmin(interaction))) {
+      return;
+    }
     await interaction.deferReply();
     const tournamentName = interaction.options.getString("tournament-name");
     const tournamentFormat = interaction.options.getString("tournament-format");
