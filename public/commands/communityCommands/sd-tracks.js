@@ -490,7 +490,7 @@ async function paginateSeriesResults(
       )
       .setColor(0x5865f2)
       .setFooter({
-        text: `Page ${page + 1}/${totalPages} — ${matches.length} entries`,
+        text: `Page ${page + 1}/${totalPages}  - ${matches.length} entries`,
       });
   };
 

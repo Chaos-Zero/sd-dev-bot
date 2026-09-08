@@ -88,6 +88,30 @@ async function StartDoubleElimMatch(
     }
   }
 
+  // Challonge hands over the whole bracket up front, so having no entries left
+  // for the next match number means the grand final has already been played.
+  if (foundEntries.length < 1) {
+    console.log("Every double elimination match has been played.");
+    if (doubleElimination.isChallonge) {
+      try {
+        await completeChallongeTournament(
+          replaceSpacesWithUnderlines(currentTournamentName.replace(/-/g, " "))
+        );
+        console.log("Challonge tournament marked complete.");
+      } catch (error) {
+        console.warn("Failed to complete Challonge tournament:", error);
+      }
+    }
+    ConcludeTournament(db, currentTournamentName);
+    if (interaction !== "") {
+      await interaction.editReply({
+        content: "That was the last match. Thank you for participating!",
+        ephemeral: true,
+      });
+    }
+    return;
+  }
+
   var stringRound = thisRound.toString();
   const nextRoundNumber = parseInt(stringRound);
   const hasBlockingTie = doubleElimination.matches.some(

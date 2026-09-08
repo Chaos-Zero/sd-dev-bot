@@ -524,13 +524,7 @@ async function SendPreviousSingleDayResultsEmbeds(
           console.warn("Failed to complete Challonge tournament:", error);
         }
       }
-      await db
-        .get("tournaments")
-        .nth(0)
-        .assign({
-          currentTournament: "N/A",
-        })
-        .write();
+      ConcludeTournament(db, currentTournamentName);
     }
   }
 }

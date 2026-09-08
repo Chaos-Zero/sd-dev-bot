@@ -23,6 +23,8 @@ const { Events, EmbedBuilder } = require("discord.js");
 const cron = require("cron");
 const sleep = require("util").promisify(setTimeout);
 const updateEntrantHandlers = require("./public/commands/tournamentCommands/updateEntrant.js");
+const trackHistoryHandlers = require("./public/commands/tournamentCommands/trackHistory.js");
+const tournamentHistoryHandlers = require("./public/commands/tournamentCommands/tournamentHistory.js");
 
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/api/openai/chat.js") + "");
@@ -384,31 +386,91 @@ const listener = app.listen(process.env.PORT, () => {
   console.log("Your app is listening on port " + listener.address().port);
 });
 
+/**
+ * Run a component handler without letting it take the process down.
+ *
+ * The listener below is not async, so returning a handler's promise leaves any
+ * rejection unhandled -- which Node treats as fatal. A track carrying a page
+ * title where its link should be was enough to crash the bot from a dropdown.
+ */
+function routeComponent(interaction, run) {
+  return Promise.resolve()
+    .then(run)
+    .catch(async (error) => {
+      console.error(`Component ${interaction.customId} failed:`, error);
+      const message =
+        "Something went wrong showing that. It has been logged -- please try again.";
+      try {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply({ content: message, embeds: [], components: [] });
+        } else {
+          await interaction.reply({ content: message, ephemeral: true });
+        }
+      } catch (replyError) {
+        console.error("Could not report the failure to the user:", replyError);
+      }
+    });
+}
+
 bot.on(Events.InteractionCreate, (interaction) => {
   console.log(interaction.customId);
   if (
     interaction.isStringSelectMenu() &&
     interaction.customId === "update-entrant-select"
   ) {
-    return updateEntrantHandlers.handleEntrantSelect(interaction);
+    return routeComponent(interaction, () => updateEntrantHandlers.handleEntrantSelect(interaction));
   }
   if (
     interaction.isStringSelectMenu() &&
     interaction.customId.startsWith("update-entrant-field:")
   ) {
-    return updateEntrantHandlers.handleFieldSelect(interaction);
+    return routeComponent(interaction, () => updateEntrantHandlers.handleFieldSelect(interaction));
   }
   if (
     interaction.isModalSubmit() &&
     interaction.customId.startsWith("update-entrant-modal:")
   ) {
-    return updateEntrantHandlers.handleModalSubmit(interaction);
+    return routeComponent(interaction, () => updateEntrantHandlers.handleModalSubmit(interaction));
   }
   if (
     interaction.isButton() &&
     interaction.customId.startsWith("update-entrant-page:")
   ) {
-    return updateEntrantHandlers.handleEntrantPage(interaction);
+    return routeComponent(interaction, () => updateEntrantHandlers.handleEntrantPage(interaction));
+  }
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId.startsWith("tournament-history-pick")
+  ) {
+    return routeComponent(interaction, () => tournamentHistoryHandlers.handleHistoryPick(interaction));
+  }
+  if (
+    interaction.isButton() &&
+    interaction.customId.startsWith("track-history-fixlink:")
+  ) {
+    return routeComponent(interaction, () =>
+      trackHistoryHandlers.handleTrackHistoryFixLink(interaction)
+    );
+  }
+  if (
+    interaction.isModalSubmit() &&
+    interaction.customId.startsWith("track-history-linkmodal:")
+  ) {
+    return routeComponent(interaction, () =>
+      trackHistoryHandlers.handleTrackHistoryLinkModal(interaction)
+    );
+  }
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId.startsWith("track-history-track:")
+  ) {
+    return routeComponent(interaction, () => trackHistoryHandlers.handleTrackHistoryTrack(interaction));
+  }
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId.startsWith("track-history-tournament:")
+  ) {
+    return routeComponent(interaction, () => trackHistoryHandlers.handleTrackHistoryTournament(interaction));
   }
   if (interaction.isStringSelectMenu() && interaction.customId === "domo-help-topic") {
     const requesterId = interaction.user?.id;

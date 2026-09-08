@@ -453,6 +453,48 @@ function MarkMatchComplete(match, tournament) {
   return match;
 }
 
+/**
+ * Retire a finished tournament and free the slot for the next one.
+ *
+ * Registering a tournament needs currentTournament to be "N/A", and the only
+ * other route back to that was /removeTournament, which unsets the whole
+ * tournament object and takes its matches -- and so every user's vote history
+ * -- with it. Flagging the tournament instead leaves all of that queryable.
+ */
+function ConcludeTournament(db, tournamentName) {
+  if (!db || !tournamentName || tournamentName === "N/A") {
+    return false;
+  }
+  const tournamentRoot = db.get("tournaments").nth(0).value();
+  if (!tournamentRoot) {
+    return false;
+  }
+
+  const updates = {};
+  const tournament = tournamentRoot[tournamentName];
+  if (
+    tournament &&
+    typeof tournament === "object" &&
+    tournament.completed !== true
+  ) {
+    tournament.completed = true;
+    tournament.completedAt = new Date().toISOString();
+    updates[tournamentName] = tournament;
+  }
+  if (tournamentRoot.currentTournament === tournamentName) {
+    updates.currentTournament = "N/A";
+  }
+  if (Object.keys(updates).length < 1) {
+    return false;
+  }
+
+  db.get("tournaments").nth(0).assign(updates).write();
+  console.log(
+    'Tournament "' + tournamentName + '" is over; the slot is free again.'
+  );
+  return true;
+}
+
 function CreateUsersString(users, members) {
   var outputMessage = "";
   for (var user of users) {
