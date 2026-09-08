@@ -392,7 +392,7 @@ function buildPage(root, session) {
     embed.addFields({
       name: "No completed matches",
       value: isRunning
-        ? "This track has not played a finished match in that tournament yet — it is still being played."
+        ? "This track has not played a finished match in that tournament yet."
         : "This track has not played a scored match in that tournament yet.",
     });
   }
