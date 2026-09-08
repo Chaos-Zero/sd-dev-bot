@@ -129,7 +129,10 @@ function rowHeight(round) {
  * vote so a landslide and a squeaker do not look identical.
  */
 function drawEntrantBox(ctx, x, y, w, entrant, opts) {
-  const { isSelf, won, share } = opts;
+  const { isSelf, won, share, lost } = opts;
+  // the tracked song turns red in the match it lost, so the exit reads at a
+  // glance instead of needing the scores compared
+  const selfColour = lost ? THEME.loss : THEME.accent;
 
   roundedRect(ctx, x, y, w, LAYOUT.boxHeight, LAYOUT.radius);
   ctx.fillStyle = isSelf ? "#33363d" : THEME.panel;
@@ -140,13 +143,17 @@ function drawEntrantBox(ctx, x, y, w, entrant, opts) {
     ctx.save();
     roundedRect(ctx, x, y, w, LAYOUT.boxHeight, LAYOUT.radius);
     ctx.clip();
-    ctx.fillStyle = isSelf ? "rgba(250,166,26,0.16)" : "rgba(255,255,255,0.05)";
+    ctx.fillStyle = isSelf
+      ? lost
+        ? "rgba(237,66,69,0.16)"
+        : "rgba(250,166,26,0.16)"
+      : "rgba(255,255,255,0.05)";
     ctx.fillRect(x, y, w * share, LAYOUT.boxHeight);
     ctx.restore();
   }
 
   roundedRect(ctx, x, y, w, LAYOUT.boxHeight, LAYOUT.radius);
-  ctx.strokeStyle = isSelf ? THEME.accent : THEME.panelEdge;
+  ctx.strokeStyle = isSelf ? selfColour : THEME.panelEdge;
   ctx.lineWidth = isSelf ? 1.6 : 1;
   ctx.stroke();
 
@@ -154,7 +161,7 @@ function drawEntrantBox(ctx, x, y, w, entrant, opts) {
   const pointsText = String(entrant.points);
   ctx.font = "bold 15px sans-serif";
   ctx.textAlign = "right";
-  ctx.fillStyle = isSelf ? THEME.accent : THEME.dim;
+  ctx.fillStyle = isSelf ? selfColour : THEME.dim;
   ctx.fillText(pointsText, x + w - 12, y + 22);
   const pointsWidth = ctx.measureText(pointsText).width + 24;
 
@@ -282,6 +289,7 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
     drawEntrantBox(ctx, boxX, y, boxW, round.self, {
       isSelf: true,
       won: round.won === true,
+      lost: round.won === false,
       share: selfShare,
     });
 

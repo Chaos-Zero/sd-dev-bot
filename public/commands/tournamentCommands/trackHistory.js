@@ -504,10 +504,8 @@ module.exports = {
     )
     .addBooleanOption((option) =>
       option
-        .setName("as-bracket")
-        .setDescription(
-          "Draw the run as a bracket instead of a round-by-round list."
-        )
+        .setName("horizontal")
+        .setDescription("Show a reduced bracket style instead of the full list.")
         .setRequired(false)
     )
     .addBooleanOption((option) =>
@@ -534,7 +532,7 @@ module.exports = {
     const sessionId = newSession(
       interaction.user.id,
       results,
-      interaction.options.getBoolean("as-bracket"),
+      interaction.options.getBoolean("horizontal"),
       IsDomoAdmin(interaction)
     );
     const session = getSession(sessionId);

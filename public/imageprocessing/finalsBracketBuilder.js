@@ -27,6 +27,7 @@ const THEME = {
   dim: "#b5bac1",
   faint: "#80848e",
   win: "#3ba55d",
+  loss: "#ed4245",
   gold: "#faa61a",
   line: "#4e5058",
   rule: "#3f4147",
@@ -102,19 +103,33 @@ function fitText(ctx, text, maxWidth) {
   return value.slice(0, low) + "…";
 }
 
-function blockHeight(d) {
-  return d.boxHeight * 2 + d.boxGap;
+/**
+ * How tall a match block is. Sized from its own entrant count, because these
+ * contests ran 3- and 4-way "pick one" battles as well as head-to-head: 197 of
+ * the 926 completed matches have more than two contestants, and assuming two
+ * silently dropped the rest from the drawing.
+ */
+function nodeHeight(node, d) {
+  const count = Math.max(2, entrantsOf(node).length);
+  return count * d.boxHeight + (count - 1) * d.boxGap;
+}
+
+function entrantsOf(node) {
+  return (node && node.match && node.match.entrants) || [];
 }
 
 function drawEntrant(ctx, x, y, entrant, d, champion, highlighted) {
   const won = entrant.won === true;
   const accent = champion || highlighted;
+  // the song being tracked turns red in the match it lost, so the exit is
+  // obvious at a glance rather than needing the scores read
+  const accentColour = highlighted && entrant.won === false ? THEME.loss : THEME.gold;
 
   roundedRect(ctx, x, y, d.colWidth, d.boxHeight, d.radius);
   ctx.fillStyle = won ? "#33363d" : THEME.panel;
   ctx.fill();
   roundedRect(ctx, x, y, d.colWidth, d.boxHeight, d.radius);
-  ctx.strokeStyle = accent ? THEME.gold : won ? THEME.win : THEME.panelEdge;
+  ctx.strokeStyle = accent ? accentColour : won ? THEME.win : THEME.panelEdge;
   ctx.lineWidth = accent ? 1.8 : 1;
   ctx.stroke();
 
@@ -122,7 +137,7 @@ function drawEntrant(ctx, x, y, entrant, d, champion, highlighted) {
 
   ctx.font = `bold ${d.pointFont}px sans-serif`;
   ctx.textAlign = "right";
-  ctx.fillStyle = accent ? THEME.gold : won ? THEME.text : THEME.faint;
+  ctx.fillStyle = accent ? accentColour : won ? THEME.text : THEME.faint;
   const points = String(entrant.points);
   ctx.fillText(points, x + d.colWidth - 6, baseline);
   const pointsWidth = ctx.measureText(points).width + 12;
@@ -156,17 +171,17 @@ function connect(ctx, fromX, fromY, toX, toY) {
  * children. Returns the nodes, the depth reached and the total height.
  */
 function layout(root, d) {
-  const slot = blockHeight(d) + d.blockGap;
   const nodes = [];
-  let taken = 0;
+  let cursor = 0;
   let maxDepth = 0;
 
   const place = (node) => {
     maxDepth = Math.max(maxDepth, node.depth);
     nodes.push(node);
+    const height = nodeHeight(node, d);
     if (!node.children.length) {
-      node.centre = taken * slot + blockHeight(d) / 2;
-      taken += 1;
+      node.centre = cursor + height / 2;
+      cursor += height + d.blockGap;
       return node.centre;
     }
     const centres = node.children.map(place);
@@ -175,7 +190,11 @@ function layout(root, d) {
   };
 
   place(root);
-  return { nodes, maxDepth, height: Math.max(taken, 1) * slot };
+  const bottom = Math.max(
+    cursor - d.blockGap,
+    ...nodes.map((n) => n.centre + nodeHeight(n, d) / 2)
+  );
+  return { nodes, maxDepth, height: Math.max(bottom, 1) };
 }
 
 function columnName(count) {
@@ -211,7 +230,14 @@ function RenderFinalsBracket({
   const thirdPlace = trackView
     ? null
     : summary?.rounds?.find((r) => r.stage === "Third-place match");
-  const thirdHeight = thirdPlace ? blockHeight(d) + 34 : 0;
+  const thirdEntrants = thirdPlace
+    ? thirdPlace.matches[0].entrants.length
+    : 0;
+  const thirdHeight = thirdPlace
+    ? Math.max(2, thirdEntrants) * d.boxHeight +
+      (Math.max(2, thirdEntrants) - 1) * d.boxGap +
+      34
+    : 0;
 
   const footerHeight = footer ? 42 : 0;
   const treeWidth =
@@ -220,11 +246,14 @@ function RenderFinalsBracket({
   // would crop the heading and the closing line. Measure them and let the text
   // set the width when it is the wider of the two.
   const width = Math.max(treeWidth, textWidth(heading, footer) + PAD * 2);
-  const bodyTop = HEADER_HEIGHT;
+  // derived from the rule rather than a constant, so the heading's extra line in
+  // a track view pushes the boxes down instead of the rule crossing them
+  const ruleY = heading ? PAD + 70 : PAD + 54;
+  const bodyTop = Math.max(HEADER_HEIGHT, ruleY + 24);
   const height =
     Math.max(
       bodyTop + bodyHeight,
-      bodyTop + tree.root.centre + blockHeight(d) / 2 + thirdHeight
+      bodyTop + tree.root.centre + nodeHeight(tree.root, d) / 2 + thirdHeight
     ) + footerHeight + PAD;
 
   const canvas = createCanvas(width, height);
@@ -266,7 +295,6 @@ function RenderFinalsBracket({
   ctx.strokeStyle = THEME.rule;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  const ruleY = heading ? PAD + 70 : PAD + 54;
   ctx.moveTo(PAD, ruleY);
   ctx.lineTo(width - PAD, ruleY);
   ctx.stroke();
@@ -281,19 +309,21 @@ function RenderFinalsBracket({
     const label = columnName(count);
     if (!label) continue;
     ctx.fillStyle = depth === 0 ? THEME.gold : THEME.faint;
-    ctx.fillText(label, columnX(depth), HEADER_HEIGHT - 10);
+    ctx.fillText(label, columnX(depth), bodyTop - 10);
   }
 
   // ---- the tree -----------------------------------------------------------
   for (const node of nodes) {
     const x = columnX(node.depth);
-    const top = bodyTop + node.centre - blockHeight(d) / 2;
+    const top = bodyTop + node.centre - nodeHeight(node, d) / 2;
     // In a track view the queried song always takes the upper box, so the run
     // reads as one line across the page with the beaten opponents hanging below
     // it. Elsewhere the higher score leads, as a bracket normally shows.
-    const entrants = node.match.entrants.slice(0, 2);
-    if (trackView && highlight && entrants.length === 2 && highlight(entrants[1])) {
-      entrants.reverse();
+    // every contestant, not just the first two
+    const entrants = entrantsOf(node).slice();
+    if (trackView && highlight) {
+      const mine = entrants.findIndex((e) => highlight(e));
+      if (mine > 0) entrants.unshift(entrants.splice(mine, 1)[0]);
     }
     entrants.forEach((entrant, slot) => {
       drawEntrant(
@@ -309,14 +339,15 @@ function RenderFinalsBracket({
 
     // the spine runs through the song's own box rather than the block centre,
     // so the connector is visible instead of hiding in the gap between boxes
-    const spine = trackView ? -(blockHeight(d) / 2 - d.boxHeight / 2) : 0;
+    const spineOf = (n) =>
+      trackView ? -(nodeHeight(n, d) / 2 - d.boxHeight / 2) : 0;
     for (const child of node.children) {
       connect(
         ctx,
         columnX(child.depth) + d.colWidth,
-        bodyTop + child.centre + spine,
+        bodyTop + child.centre + spineOf(child),
         x,
-        bodyTop + node.centre + spine
+        bodyTop + node.centre + spineOf(node)
       );
     }
   }
@@ -328,7 +359,7 @@ function RenderFinalsBracket({
     const centre = bodyTop + tree.root.centre;
     ctx.font = "bold 10px sans-serif";
     ctx.fillStyle = THEME.gold;
-    ctx.fillText("WINNER", x, HEADER_HEIGHT - 10);
+    ctx.fillText("WINNER", x, bodyTop - 10);
     ctx.font = "bold 13px sans-serif";
     ctx.fillText(fitText(ctx, winner.name, d.winnerWidth - 8), x, centre - 2);
     ctx.font = "10px sans-serif";
@@ -339,12 +370,12 @@ function RenderFinalsBracket({
 
   // ---- third place, under the final and in its column ---------------------
   if (thirdPlace) {
-    const top = bodyTop + tree.root.centre + blockHeight(d) / 2 + 34;
+    const top = bodyTop + tree.root.centre + nodeHeight(tree.root, d) / 2 + 34;
     ctx.font = "bold 10px sans-serif";
     ctx.fillStyle = THEME.faint;
     ctx.textAlign = "left";
     ctx.fillText("THIRD-PLACE MATCH", finalX, top - 10);
-    thirdPlace.matches[0].entrants.slice(0, 2).forEach((entrant, slot) => {
+    thirdPlace.matches[0].entrants.forEach((entrant, slot) => {
       drawEntrant(ctx, finalX, top + slot * (d.boxHeight + d.boxGap), entrant, d, false);
     });
   }
