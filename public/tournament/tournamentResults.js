@@ -149,14 +149,19 @@ function BuildFinalsSummary(tournament) {
  * gives the whole contest. The same walk that names the stages, just run to
  * exhaustion, so the two views cannot disagree about the shape.
  *
+ * `seedMatch` starts the walk somewhere other than the final -- give it a
+ * track's last match and the tree becomes that track's own side of the draw,
+ * which for a first-round exit is the single match it played.
+ *
  * Byes fall out naturally -- a track that arrived without playing simply
  * contributes no child. Tie replays and dead branches can leave matches off the
  * tree entirely, so the count of those is returned rather than quietly dropped.
  */
-function BuildBracketTree(tournament, maxDepth) {
+function BuildBracketTree(tournament, maxDepth, seedMatch) {
   const limit = maxDepth === undefined ? Infinity : maxDepth;
   const { complete, decidingMatch } = GetTournamentStructure(tournament);
-  const final = complete.find((m) => Number(m.match) === decidingMatch);
+  const seed = seedMatch === undefined ? decidingMatch : seedMatch;
+  const final = complete.find((m) => Number(m.match) === seed);
   if (!final) return null;
 
   const ordered = complete
@@ -204,6 +209,45 @@ function entrantKey(entrant) {
   );
 }
 
+/**
+ * One track's run drawn as a bracket: the matches it played, latest on the
+ * right, each carrying the opponent it faced.
+ *
+ * Follows only the queried track rather than every contestant. Walking back
+ * through everyone would pull in the opposite half of the draw -- a champion's
+ * tree becomes the whole contest, which is what /tournament-history already
+ * shows. Here the question is how far this song went, so its own path is the
+ * subject and the opponents are the boxes it beat along the way.
+ *
+ * A first-round exit therefore yields a single match, and a champion yields one
+ * box per round.
+ */
+function BuildTrackBracketTree(tournament, progression) {
+  if (!Array.isArray(progression) || !progression.length) return null;
+
+  const ordered = progression.slice();
+  let node = null;
+  // built from the earliest match forward, so each becomes the child of the next
+  for (const round of ordered) {
+    const match = (tournament.matches || []).find(
+      (m) => isPublicMatch(m) && Number(m.match) === Number(round.match)
+    );
+    if (!match) continue;
+    const described = describeMatch(match);
+    node = { match: described, children: node ? [node] : [], depth: 0 };
+  }
+  if (!node) return null;
+
+  // depth is measured from the last match, which sits on the right
+  const setDepth = (n, depth) => {
+    n.depth = depth;
+    for (const child of n.children) setDepth(child, depth + 1);
+  };
+  setDepth(node, 0);
+
+  return { root: node, unreached: 0 };
+}
+
 /** Top four, as far as the contest actually decided it. */
 function buildPodium(final, thirdPlace) {
   const podium = { winner: null, runnerUp: null, third: null, fourth: null };
@@ -224,5 +268,6 @@ if (typeof module !== "undefined") {
     GetFinishedTournaments,
     BuildFinalsSummary,
     BuildBracketTree,
+    BuildTrackBracketTree,
   };
 }

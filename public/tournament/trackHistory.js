@@ -489,6 +489,23 @@ function GetLiveStandings(tournament) {
 }
 
 /**
+ * Whether an entrant is the given track.
+ *
+ * Uses the same tolerant game comparison the progression does, because the
+ * index merges write-ups of the same game and keeps the fuller one: Rush Hour
+ * is filed under "A Hat in Time: Nyakuza Metro" while the Cameo Contest's own
+ * entrant says "A Hat in Time". Comparing the strings directly fails there, so
+ * anything highlighting a track in a rendered bracket must come through here.
+ */
+function IsSameTrack(entrant, track) {
+  if (!entrant || !track) return false;
+  return (
+    normaliseTitle(entrant.name) === normaliseTitle(track.name) &&
+    sameGame(entrant.title, normaliseTitle(track.title))
+  );
+}
+
+/**
  * A track's run through one tournament: every match it appeared in, in order,
  * with who it beat and by how much.
  */
@@ -789,6 +806,7 @@ if (typeof module !== "undefined") {
     normaliseTitle,
     trackKey,
     isPublicMatch,
+    IsSameTrack,
     isSettledMatch,
     IsTournamentRunning,
     GetLiveStandings,

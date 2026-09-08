@@ -14,6 +14,7 @@ const {
   BuildTrackIndex,
   SummariseTrackRun,
   CountUserVotesForTrack,
+  IsSameTrack,
   IsTournamentRunning,
   normaliseTitle,
   trackKey,
@@ -21,6 +22,12 @@ const {
 const {
   RenderTrackProgression,
 } = require("../../imageprocessing/bracketBuilder.js");
+const {
+  RenderFinalsBracket,
+} = require("../../imageprocessing/finalsBracketBuilder.js");
+const {
+  BuildTrackBracketTree,
+} = require("../../tournament/tournamentResults.js");
 
 // Asset host is configurable rather than baked in, so a dev instance can point
 // somewhere else without editing source.
@@ -40,12 +47,15 @@ const SESSION_TTL_MS = 15 * 60 * 1000;
 // on their own. Keyed by a short id, swept on a timer.
 const sessions = new Map();
 
-function newSession(userId, results) {
+function newSession(userId, results, asBracket) {
   const id = Math.random().toString(36).slice(2, 10);
   sessions.set(id, {
     userId,
     results,
     page: 0,
+    // which way the run is drawn; kept on the session so paging to another
+    // track or switching tournament stays in the view you chose
+    asBracket: Boolean(asBracket),
     // which tournament each track is currently showing, keyed by track
     chosen: new Map(),
     expiresAt: Date.now() + SESSION_TTL_MS,
@@ -204,6 +214,31 @@ function liveFooter(summary) {
   return { text: `${note} · ${FOOTER.text}`, iconURL: FOOTER.iconURL };
 }
 
+/**
+ * The same run drawn as a bracket rather than a list: one box per match, the
+ * song along the top of each with the opponent beneath, and the same closing
+ * sentence the list view uses.
+ */
+function renderAsBracket(tournament, tournamentName, track, summary) {
+  const tree = BuildTrackBracketTree(tournament, summary.progression);
+  if (!tree) return null;
+  const facts = [
+    tournamentName,
+    summary.placement,
+    `${summary.wins}W-${summary.losses}L`,
+    `${summary.totalVotes} votes`,
+  ].join("   ·   ");
+  return RenderFinalsBracket({
+    summary,
+    tree,
+    // a long run would otherwise run off the side of the image
+    compact: summary.progression.length > 6,
+    heading: { title: track.name, subtitle: track.title, facts },
+    footer: summary.exit,
+    highlight: (entrant) => IsSameTrack(entrant, track),
+  });
+}
+
 function buildPage(root, session) {
   const track = session.results[session.page];
   const key = trackKey(track);
@@ -281,11 +316,9 @@ function buildPage(root, session) {
       });
     }
 
-    const png = RenderTrackProgression({
-      track,
-      tournamentName,
-      summary,
-    });
+    const png = session.asBracket
+      ? renderAsBracket(tournament, tournamentName, track, summary)
+      : RenderTrackProgression({ track, tournamentName, summary });
     if (png) {
       const fileName = `bracket-${session.page}-${Date.now()}.png`;
       files.push(new AttachmentBuilder(png, { name: fileName }));
@@ -392,6 +425,14 @@ module.exports = {
     )
     .addBooleanOption((option) =>
       option
+        .setName("as-bracket")
+        .setDescription(
+          "Draw the run as a bracket instead of a round-by-round list."
+        )
+        .setRequired(false)
+    )
+    .addBooleanOption((option) =>
+      option
         .setName("make-public")
         .setDescription("Make the response viewable to the server.")
         .setRequired(false)
@@ -411,7 +452,11 @@ module.exports = {
       });
     }
 
-    const sessionId = newSession(interaction.user.id, results);
+    const sessionId = newSession(
+      interaction.user.id,
+      results,
+      interaction.options.getBoolean("as-bracket")
+    );
     const session = getSession(sessionId);
     return interaction.editReply(renderSession(root, sessionId, session));
   },

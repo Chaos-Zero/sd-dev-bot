@@ -106,31 +106,32 @@ function blockHeight(d) {
   return d.boxHeight * 2 + d.boxGap;
 }
 
-function drawEntrant(ctx, x, y, entrant, d, champion) {
+function drawEntrant(ctx, x, y, entrant, d, champion, highlighted) {
   const won = entrant.won === true;
+  const accent = champion || highlighted;
 
   roundedRect(ctx, x, y, d.colWidth, d.boxHeight, d.radius);
   ctx.fillStyle = won ? "#33363d" : THEME.panel;
   ctx.fill();
   roundedRect(ctx, x, y, d.colWidth, d.boxHeight, d.radius);
-  ctx.strokeStyle = champion ? THEME.gold : won ? THEME.win : THEME.panelEdge;
-  ctx.lineWidth = champion ? 1.8 : 1;
+  ctx.strokeStyle = accent ? THEME.gold : won ? THEME.win : THEME.panelEdge;
+  ctx.lineWidth = accent ? 1.8 : 1;
   ctx.stroke();
 
   const baseline = y + d.boxHeight / 2 + d.nameFont * 0.36;
 
   ctx.font = `bold ${d.pointFont}px sans-serif`;
   ctx.textAlign = "right";
-  ctx.fillStyle = champion ? THEME.gold : won ? THEME.text : THEME.faint;
+  ctx.fillStyle = accent ? THEME.gold : won ? THEME.text : THEME.faint;
   const points = String(entrant.points);
   ctx.fillText(points, x + d.colWidth - 6, baseline);
   const pointsWidth = ctx.measureText(points).width + 12;
 
   ctx.textAlign = "left";
-  ctx.font = won
+  ctx.font = won || highlighted
     ? `bold ${d.nameFont}px sans-serif`
     : `${d.nameFont}px sans-serif`;
-  ctx.fillStyle = won ? THEME.text : THEME.dim;
+  ctx.fillStyle = won || highlighted ? THEME.text : THEME.dim;
   ctx.fillText(
     fitText(ctx, entrant.name, d.colWidth - pointsWidth - 12),
     x + 6,
@@ -186,7 +187,18 @@ function columnName(count) {
  * Render a bracket. `tree` is what BuildBracketTree returns, `summary` supplies
  * the header facts and the podium.
  */
-function RenderFinalsBracket({ tournamentName, summary, tree, compact }) {
+function RenderFinalsBracket({
+  tournamentName,
+  summary,
+  tree,
+  compact,
+  // one track's run rather than a whole contest: its own heading, the same
+  // closing sentence the vertical view uses, and the track picked out in gold
+  // wherever it appears
+  heading,
+  footer,
+  highlight,
+}) {
   if (!tree || !tree.root) return null;
   const d = compact ? DENSITY.compact : DENSITY.normal;
 
@@ -195,15 +207,25 @@ function RenderFinalsBracket({ tournamentName, summary, tree, compact }) {
   const columnX = (depth) => PAD + (maxDepth - depth) * (d.colWidth + d.colGap);
   const finalX = columnX(0);
 
-  const thirdPlace = summary?.rounds?.find((r) => r.stage === "Third-place match");
+  const trackView = Boolean(heading);
+  const thirdPlace = trackView
+    ? null
+    : summary?.rounds?.find((r) => r.stage === "Third-place match");
   const thirdHeight = thirdPlace ? blockHeight(d) + 34 : 0;
 
-  const width = finalX + d.colWidth + 16 + d.winnerWidth + PAD;
+  const footerHeight = footer ? 42 : 0;
+  const treeWidth =
+    finalX + d.colWidth + (trackView ? PAD : 16 + d.winnerWidth + PAD);
+  // A short run gives a narrow tree -- a first-round exit is one box -- which
+  // would crop the heading and the closing line. Measure them and let the text
+  // set the width when it is the wider of the two.
+  const width = Math.max(treeWidth, textWidth(heading, footer) + PAD * 2);
   const bodyTop = HEADER_HEIGHT;
-  const height = Math.max(
-    bodyTop + bodyHeight + PAD,
-    bodyTop + tree.root.centre + blockHeight(d) / 2 + thirdHeight + PAD
-  );
+  const height =
+    Math.max(
+      bodyTop + bodyHeight,
+      bodyTop + tree.root.centre + blockHeight(d) / 2 + thirdHeight
+    ) + footerHeight + PAD;
 
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
@@ -214,25 +236,39 @@ function RenderFinalsBracket({ tournamentName, summary, tree, compact }) {
   ctx.textAlign = "left";
   ctx.font = "bold 21px sans-serif";
   ctx.fillStyle = THEME.text;
-  ctx.fillText(fitText(ctx, tournamentName, width - PAD * 2), PAD, PAD + 19);
+  ctx.fillText(
+    fitText(ctx, heading ? heading.title : tournamentName, width - PAD * 2),
+    PAD,
+    PAD + 19
+  );
 
-  ctx.font = "12px sans-serif";
   ctx.fillStyle = THEME.faint;
-  const facts = [`${summary.entrants} entrants`, `${summary.matches} matches`];
-  if (summary.votes) facts.push(`${summary.votes} votes`);
-  if (summary.lastMatchAt) facts.push(summary.lastMatchAt.slice(0, 10));
-  if (compact && tree.unreached) {
-    facts.push(`${tree.unreached} replays not on the bracket`);
+  if (heading) {
+    ctx.font = "13px sans-serif";
+    ctx.fillStyle = THEME.dim;
+    ctx.fillText(fitText(ctx, heading.subtitle || "", width - PAD * 2), PAD, PAD + 38);
+    ctx.font = "12px sans-serif";
+    ctx.fillStyle = THEME.faint;
+    ctx.fillText(fitText(ctx, heading.facts || "", width - PAD * 2), PAD, PAD + 56);
+  } else {
+    ctx.font = "12px sans-serif";
+    const facts = [`${summary.entrants} entrants`, `${summary.matches} matches`];
+    if (summary.votes) facts.push(`${summary.votes} votes`);
+    if (summary.lastMatchAt) facts.push(summary.lastMatchAt.slice(0, 10));
+    if (compact && tree.unreached) {
+      facts.push(`${tree.unreached} replays not on the bracket`);
+    }
+    ctx.fillText(facts.join("   ·   "), PAD, PAD + 40);
   }
-  ctx.fillText(facts.join("   ·   "), PAD, PAD + 40);
 
   // a rule between the facts and the column headings, so they do not read as
   // one run-on line
   ctx.strokeStyle = THEME.rule;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(PAD, PAD + 54);
-  ctx.lineTo(width - PAD, PAD + 54);
+  const ruleY = heading ? PAD + 70 : PAD + 54;
+  ctx.moveTo(PAD, ruleY);
+  ctx.lineTo(width - PAD, ruleY);
   ctx.stroke();
 
   // ---- column headings ----------------------------------------------------
@@ -241,7 +277,7 @@ function RenderFinalsBracket({ tournamentName, summary, tree, compact }) {
     perColumn.set(node.depth, (perColumn.get(node.depth) || 0) + 1);
   }
   ctx.font = "bold 10px sans-serif";
-  for (const [depth, count] of perColumn) {
+  for (const [depth, count] of trackView ? [] : perColumn) {
     const label = columnName(count);
     if (!label) continue;
     ctx.fillStyle = depth === 0 ? THEME.gold : THEME.faint;
@@ -252,30 +288,41 @@ function RenderFinalsBracket({ tournamentName, summary, tree, compact }) {
   for (const node of nodes) {
     const x = columnX(node.depth);
     const top = bodyTop + node.centre - blockHeight(d) / 2;
-    node.match.entrants.slice(0, 2).forEach((entrant, slot) => {
+    // In a track view the queried song always takes the upper box, so the run
+    // reads as one line across the page with the beaten opponents hanging below
+    // it. Elsewhere the higher score leads, as a bracket normally shows.
+    const entrants = node.match.entrants.slice(0, 2);
+    if (trackView && highlight && entrants.length === 2 && highlight(entrants[1])) {
+      entrants.reverse();
+    }
+    entrants.forEach((entrant, slot) => {
       drawEntrant(
         ctx,
         x,
         top + slot * (d.boxHeight + d.boxGap),
         entrant,
         d,
-        node.depth === 0 && entrant.won === true
+        !trackView && node.depth === 0 && entrant.won === true,
+        highlight ? highlight(entrant) : false
       );
     });
 
+    // the spine runs through the song's own box rather than the block centre,
+    // so the connector is visible instead of hiding in the gap between boxes
+    const spine = trackView ? -(blockHeight(d) / 2 - d.boxHeight / 2) : 0;
     for (const child of node.children) {
       connect(
         ctx,
         columnX(child.depth) + d.colWidth,
-        bodyTop + child.centre,
+        bodyTop + child.centre + spine,
         x,
-        bodyTop + node.centre
+        bodyTop + node.centre + spine
       );
     }
   }
 
   // ---- the winner ---------------------------------------------------------
-  const winner = summary?.podium?.winner;
+  const winner = trackView ? null : summary?.podium?.winner;
   if (winner) {
     const x = finalX + d.colWidth + 16;
     const centre = bodyTop + tree.root.centre;
@@ -302,7 +349,40 @@ function RenderFinalsBracket({ tournamentName, summary, tree, compact }) {
     });
   }
 
+  // ---- closing line, worded exactly as the vertical view ------------------
+  if (footer) {
+    ctx.textAlign = "left";
+    ctx.font = "bold 17px sans-serif";
+    ctx.fillStyle = footerColour(summary);
+    ctx.fillText(footer, PAD, height - PAD - 4);
+  }
+
   return canvas.toBuffer("image/png");
+}
+
+/** Widest of the heading and footer lines, measured at the fonts used below. */
+function textWidth(heading, footer) {
+  if (!heading && !footer) return 0;
+  const scratch = createCanvas(8, 8).getContext("2d");
+  const widths = [];
+  if (heading) {
+    scratch.font = "bold 21px sans-serif";
+    widths.push(scratch.measureText(heading.title || "").width);
+    scratch.font = "13px sans-serif";
+    widths.push(scratch.measureText(heading.subtitle || "").width);
+    scratch.font = "12px sans-serif";
+    widths.push(scratch.measureText(heading.facts || "").width);
+  }
+  if (footer) {
+    scratch.font = "bold 17px sans-serif";
+    widths.push(scratch.measureText(footer).width);
+  }
+  return Math.ceil(Math.max(0, ...widths));
+}
+
+function footerColour(summary) {
+  if (summary?.isChampion) return THEME.gold;
+  return summary?.isPodium ? THEME.text : THEME.dim;
 }
 
 if (typeof module !== "undefined") {
