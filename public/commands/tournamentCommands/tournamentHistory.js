@@ -21,6 +21,10 @@ const {
 const {
   RenderFinalsBracket,
 } = require("../../imageprocessing/finalsBracketBuilder.js");
+const {
+  SafeThumbnail,
+  SafeLink,
+} = require("../../utils/embedSafety.js");
 
 const ASSET_BASE =
   process.env.ASSET_BASE_URL || "http://91.99.239.6/files/assets";
@@ -41,10 +45,7 @@ function getTournamentRoot() {
 }
 
 function winnerThumb(summary) {
-  const winner = summary?.podium?.winner;
-  return winner && winner.videoId
-    ? `https://i1.ytimg.com/vi/${winner.videoId}/mqdefault.jpg`
-    : FALLBACK_THUMB;
+  return SafeThumbnail(summary?.podium?.winner?.videoId, FALLBACK_THUMB);
 }
 
 function render(root, tournamentName, full) {
@@ -62,23 +63,30 @@ function render(root, tournamentName, full) {
     .setFooter(FOOTER);
 
   const winner = summary.podium.winner;
+  // a broken link degrades to plain text rather than pointing at youtube.com
   embed.setDescription(
     winner
-      ? `Won by **[${winner.name}](${winner.link || "https://youtube.com"})**${
+      ? `Won by **${SafeLink(winner.name, winner.link)}**${
           winner.title ? ` — _${winner.title}_` : ""
         }`
       : "_The final ended level, so the contest has no outright winner._"
   );
 
   const files = [];
-  const png = RenderFinalsBracket({
-    tournamentName,
-    summary,
-    tree,
-    // the whole contest is drawn small: 64 first-round matches at readable box
-    // sizes would run to thousands of pixels
-    compact: Boolean(full),
-  });
+  // a failed drawing should cost the picture, not the whole reply
+  let png = null;
+  try {
+    png = RenderFinalsBracket({
+      tournamentName,
+      summary,
+      tree,
+      // the whole contest is drawn small: 64 first-round matches at readable
+      // box sizes would run to thousands of pixels
+      compact: Boolean(full),
+    });
+  } catch (error) {
+    console.error(`Could not draw the bracket for ${tournamentName}:`, error);
+  }
   if (png) {
     const fileName = `bracket-${Date.now()}.png`;
     files.push(new AttachmentBuilder(png, { name: fileName }));

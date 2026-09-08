@@ -2,6 +2,11 @@ const {
   SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
   StringSelectMenuBuilder,
   AttachmentBuilder,
 } = require("discord.js");
@@ -9,6 +14,7 @@ const fs = require("fs");
 const Fuse = require("fuse.js");
 
 eval(fs.readFileSync("./public/main.js") + "");
+eval(fs.readFileSync("./public/utils/adminUtils.js") + "");
 
 const {
   BuildTrackIndex,
@@ -28,6 +34,15 @@ const {
 const {
   BuildTrackBracketTree,
 } = require("../../tournament/tournamentResults.js");
+const {
+  SafeUrl,
+  SafeThumbnail,
+  ExtractYoutubeId,
+} = require("../../utils/embedSafety.js");
+const {
+  GetTournamentEntries,
+  matchEntrantList,
+} = require("../../utils/compatibilityStore.js");
 
 // Asset host is configurable rather than baked in, so a dev instance can point
 // somewhere else without editing source.
@@ -47,7 +62,7 @@ const SESSION_TTL_MS = 15 * 60 * 1000;
 // on their own. Keyed by a short id, swept on a timer.
 const sessions = new Map();
 
-function newSession(userId, results, asBracket) {
+function newSession(userId, results, asBracket, canRepair) {
   const id = Math.random().toString(36).slice(2, 10);
   sessions.set(id, {
     userId,
@@ -56,6 +71,8 @@ function newSession(userId, results, asBracket) {
     // which way the run is drawn; kept on the session so paging to another
     // track or switching tournament stays in the view you chose
     asBracket: Boolean(asBracket),
+    // whether to offer the repair button; re-checked on use, never trusted
+    canRepair: Boolean(canRepair),
     // which tournament each track is currently showing, keyed by track
     chosen: new Map(),
     expiresAt: Date.now() + SESSION_TTL_MS,
@@ -173,10 +190,40 @@ function searchTracks(root, query) {
 // Rendering one page
 // ---------------------------------------------------------------------------
 
+/** A track whose stored link cannot be opened. */
+function hasBrokenLink(track) {
+  return Boolean(track) && !SafeUrl(track.link);
+}
+
+/**
+ * Point a track at a new URL everywhere it appears.
+ *
+ * The same song is stored separately in every match it played, across every
+ * tournament, so a link fixed in one place would still be broken in the next
+ * view. Rewrites the link and the derived videoId on each of them and reports
+ * how many entries moved.
+ */
+function repairTrackLink(root, track, url) {
+  const videoId = ExtractYoutubeId(url);
+  let updated = 0;
+  for (const { data } of GetTournamentEntries(root)) {
+    for (const match of data.matches || []) {
+      if (!match || typeof match !== "object") continue;
+      for (const entrant of matchEntrantList(match)) {
+        if (!IsSameTrack(entrant, track)) continue;
+        entrant.link = url;
+        // only overwrite the id when the new link actually carries one, so a
+        // non-YouTube URL does not blank a working thumbnail
+        if (videoId) entrant.videoId = videoId;
+        updated += 1;
+      }
+    }
+  }
+  return { updated, videoId };
+}
+
 function youtubeThumb(track) {
-  return track.videoId
-    ? `https://i1.ytimg.com/vi/${track.videoId}/mqdefault.jpg`
-    : FALLBACK_THUMB;
+  return SafeThumbnail(track.videoId, FALLBACK_THUMB);
 }
 
 function placementColour(summary) {
@@ -254,18 +301,29 @@ function buildPage(root, session) {
 
   const embed = new EmbedBuilder()
     .setTitle(track.name)
-    .setURL(track.link || null)
+    // archived entrants sometimes carry a page title where the link should be,
+    // and setURL throws on anything that is not a real URL
+    .setURL(SafeUrl(track.link))
     .setColor(placementColour(summary))
     .setThumbnail(youtubeThumb(track))
     .setDescription(
       isRunning
-        ? `_${tournamentName}_\n🔴 **This tournament is still running** — the run so far, up to the last finished match.`
+        ? `_${tournamentName}_\n**This tournament is still running**.`
         : `_${tournamentName}_`
     )
     .setFooter(liveFooter(summary));
 
   if (track.title) {
     embed.setAuthor({ name: track.title.slice(0, 256) });
+  }
+
+  if (hasBrokenLink(track)) {
+    embed.addFields({
+      name: "Link unavailable",
+      value: session.canRepair
+        ? "The stored link for this track is not a working URL. Use the button below to replace it."
+        : "The stored link for this track is not a working URL.",
+    });
   }
 
   const files = [];
@@ -316,9 +374,15 @@ function buildPage(root, session) {
       });
     }
 
-    const png = session.asBracket
-      ? renderAsBracket(tournament, tournamentName, track, summary)
-      : RenderTrackProgression({ track, tournamentName, summary });
+    // a failed drawing should cost the picture, not the whole reply
+    let png = null;
+    try {
+      png = session.asBracket
+        ? renderAsBracket(tournament, tournamentName, track, summary)
+        : RenderTrackProgression({ track, tournamentName, summary });
+    } catch (error) {
+      console.error(`Could not draw ${track.name} in ${tournamentName}:`, error);
+    }
     if (png) {
       const fileName = `bracket-${session.page}-${Date.now()}.png`;
       files.push(new AttachmentBuilder(png, { name: fileName }));
@@ -372,6 +436,21 @@ function buildComponents(sessionId, session, track, tournamentName, running) {
         }))
       );
     rows.push(new ActionRowBuilder().addComponents(menu));
+  }
+
+  // Offered only to admins, and only when the stored link is unusable. The
+  // check is repeated when the button is pressed and again on submit -- a
+  // customId is client-supplied and proves nothing.
+  if (session.canRepair && hasBrokenLink(track)) {
+    rows.push(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`track-history-fixlink:${sessionId}:${session.page}`)
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel("Fix broken link")
+          .setEmoji("🔗")
+      )
+    );
   }
 
   return rows;
@@ -455,7 +534,8 @@ module.exports = {
     const sessionId = newSession(
       interaction.user.id,
       results,
-      interaction.options.getBoolean("as-bracket")
+      interaction.options.getBoolean("as-bracket"),
+      IsDomoAdmin(interaction)
     );
     const session = getSession(sessionId);
     return interaction.editReply(renderSession(root, sessionId, session));
@@ -526,3 +606,103 @@ module.exports.handleTrackHistoryTournament = async (interaction) => {
 
 // exported for tests and for the dev harness
 module.exports.searchTracks = searchTracks;
+
+module.exports.handleTrackHistoryFixLink = async (interaction) => {
+  const [, sessionId, rawPage] = interaction.customId.split(":");
+  const session = await guardSession(interaction, sessionId);
+  if (!session) return;
+  if (!IsDomoAdmin(interaction)) {
+    return interaction.reply({
+      content: "Only the server owner or Domo Admins can change a track's link.",
+      ephemeral: true,
+    });
+  }
+
+  const page = Number(rawPage);
+  const track = session.results[Number.isFinite(page) ? page : session.page];
+  if (!track) {
+    return interaction.reply({
+      content: "That track is no longer in this search.",
+      ephemeral: true,
+    });
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId(`track-history-linkmodal:${sessionId}:${page}`)
+    .setTitle("Replace track link")
+    .addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("new_url")
+          .setLabel(track.name.slice(0, 45))
+          .setPlaceholder("https://youtu.be/...")
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+      )
+    );
+  return interaction.showModal(modal);
+};
+
+module.exports.handleTrackHistoryLinkModal = async (interaction) => {
+  const [, sessionId, rawPage] = interaction.customId.split(":");
+  const session = getSession(sessionId);
+  if (!session || session.userId !== interaction.user.id) {
+    return interaction.reply({
+      content: "That search has expired. Run the command again to retry.",
+      ephemeral: true,
+    });
+  }
+  if (!IsDomoAdmin(interaction)) {
+    return interaction.reply({
+      content: "Only the server owner or Domo Admins can change a track's link.",
+      ephemeral: true,
+    });
+  }
+
+  const url = SafeUrl(interaction.fields.getTextInputValue("new_url"));
+  if (!url) {
+    return interaction.reply({
+      content: "That is not a usable link. It needs to start with http:// or https://.",
+      ephemeral: true,
+    });
+  }
+
+  const page = Number(rawPage);
+  const track = session.results[Number.isFinite(page) ? page : session.page];
+  if (!track) {
+    return interaction.reply({
+      content: "That track is no longer in this search.",
+      ephemeral: true,
+    });
+  }
+
+  await interaction.deferUpdate();
+
+  const db = GetDb();
+  db.read();
+  const root = db.get("tournaments").nth(0).value() || {};
+  const { updated, videoId } = repairTrackLink(root, track, url);
+  if (!updated) {
+    return interaction.followUp({
+      content: "I could not find that track in the database to update.",
+      ephemeral: true,
+    });
+  }
+  db.write();
+
+  // the search index caches by match counts, which a link edit does not change
+  indexCache = { signature: "", tracks: [], fuse: null };
+  track.link = url;
+  if (videoId) track.videoId = videoId;
+
+  await interaction.editReply({
+    ...renderSession(getTournamentRoot(), sessionId, session),
+    attachments: [],
+  });
+  return interaction.followUp({
+    content: `Updated **${track.name}** in ${updated} match ${
+      updated === 1 ? "entry" : "entries"
+    }.`,
+    ephemeral: true,
+  });
+};

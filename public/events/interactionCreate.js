@@ -19,14 +19,21 @@ module.exports = {
       await command.execute(interaction);
     } catch (error) {
       console.error(`Error executing ${interaction.commandName}`);
-      if (error.message.includes("410")) {
-        await interaction.editReply({
-          content:
-            "The requested content is no longer available, has been age restricted, or is region locked.\nPlease try a different link.",
-          ephemeral: false,
-        });
-      }
       console.error(error);
+      const content = String(error && error.message).includes("410")
+        ? "The requested content is no longer available, has been age restricted, or is region locked.\nPlease try a different link."
+        : "Something went wrong running that command. It has been logged -- please try again.";
+      // Without this a command that fails after deferring leaves the caller
+      // looking at "thinking..." for ever.
+      try {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply({ content, embeds: [], components: [] });
+        } else {
+          await interaction.reply({ content, ephemeral: true });
+        }
+      } catch (replyError) {
+        console.error("Could not report the failure to the user:", replyError);
+      }
     }
   },
 };
