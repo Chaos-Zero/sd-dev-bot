@@ -156,8 +156,8 @@ function getDomoHelpCategories() {
         },
         {
           name: "/tournament-my-profile",
-          desc: "Your voting record: hit rate, tournaments, best runs and closest voters.",
-          args: "member (someone else), track (autocomplete), make-public",
+          desc: "Your own voting record: hit rate, tournaments, and closest voters.",
+          args: "make-public",
         },
         {
           name: "/tournament-track-history",

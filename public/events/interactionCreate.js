@@ -3,24 +3,6 @@ const { Events } = require("discord.js");
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
-    // Autocomplete arrives on this event too, and must be answered within three
-    // seconds or the field shows an error to the caller.
-    if (interaction.isAutocomplete()) {
-      const owner = interaction.client.commands.get(interaction.commandName);
-      if (!owner || typeof owner.autocomplete !== "function") return;
-      try {
-        await owner.autocomplete(interaction);
-      } catch (error) {
-        console.error(`Autocomplete for ${interaction.commandName} failed:`, error);
-        try {
-          await interaction.respond([]);
-        } catch (respondError) {
-          // the interaction has already timed out; nothing useful left to do
-        }
-      }
-      return;
-    }
-
     if (!interaction.isChatInputCommand()) return;
 
     const command = interaction.client.commands.get(interaction.commandName);

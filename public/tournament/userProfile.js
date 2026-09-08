@@ -21,6 +21,18 @@ const { isPublicMatch, normaliseTitle } = require("./trackHistory.js");
 // is left off rather than naming a "closest match" from a handful of ballots.
 const MIN_MATCHES_FOR_COMPATIBILITY = 20;
 
+// A percentage over a handful of ballots reads as fact but is not one -- a
+// single vote on a winner is "100%". Fewer than this and the rate is withheld
+// and the raw counts shown instead. Lower than the pairwise bar, because a
+// success rate needs less evidence than a comparison between two members.
+const MIN_MATCHES_FOR_RATE = 10;
+
+// How far a track must have gone before the share of it a member backed means
+// anything: half the longest run in that tournament. Backing a track through
+// both of its two matches is not the same achievement as backing one through
+// four of its six.
+const MIN_RUN_SHARE_OF_TOURNAMENT = 0.5;
+
 /** Did this member back this entrant? Reads both ballot shapes. */
 function votedFor(entrant, userId) {
   const voters = entrant && entrant.voters;
@@ -59,14 +71,11 @@ function BuildUserProfile(tournamentRoot, userId) {
       const outcome = GetWinnerVoteOutcome(match, userId);
       if (!outcome.isValid) continue;
       decided += 1;
-      if (!outcome.participated) continue;
-
-      tVotes += 1;
-      if (outcome.hit) tHits += 1;
-      else tMisses += 1;
-
+      // Counted before the participation test: a track's run length is a fact
+      // about the tournament, not about who voted. Reading it only from matches
+      // this member voted in made every run look as long as their involvement,
+      // so the "half the deepest run" bar was trivially met.
       for (const entrant of matchEntrantList(match)) {
-        if (!votedFor(entrant, userId)) continue;
         const key =
           name + "|" + normaliseTitle(entrant.name) + "|" + normaliseTitle(entrant.title);
         if (!backed.has(key)) {
@@ -77,10 +86,31 @@ function BuildUserProfile(tournamentRoot, userId) {
             link: entrant.link || "",
             videoId: entrant.videoId || "",
             votes: 0,
+            // every decided match this track played, so a member's votes for it
+            // can be read as a share of how far it actually went
+            appearances: 0,
           });
         }
-        backed.get(key).votes += 1;
+        const row = backed.get(key);
+        row.appearances += 1;
+        if (outcome.participated && votedFor(entrant, userId)) row.votes += 1;
       }
+
+      if (!outcome.participated) continue;
+      tVotes += 1;
+      if (outcome.hit) tHits += 1;
+      else tMisses += 1;
+    }
+
+    // the deepest run anyone managed here, which sets the bar below
+    let longestRun = 0;
+    for (const row of backed.values()) {
+      if (row.tournament === name && row.appearances > longestRun) {
+        longestRun = row.appearances;
+      }
+    }
+    for (const row of backed.values()) {
+      if (row.tournament === name) row.longestRun = longestRun;
     }
 
     if (!tVotes) continue;
@@ -105,8 +135,12 @@ function BuildUserProfile(tournamentRoot, userId) {
     hits: hits,
     misses: misses,
     hitRate: votes ? hits / votes : 0,
+    // enough decided matches for the percentage to be worth quoting
+    enoughForRate: votes >= MIN_MATCHES_FOR_RATE,
     perTournament: perTournament,
-    backed: Array.from(backed.values()),
+    backed: Array.from(backed.values()).filter(function (row) {
+      return row.votes > 0;
+    }),
     // a rate off a handful of ballots means nothing; callers use this to decide
     // whether to show a comparison at all
     enoughForCompatibility: votes > MIN_MATCHES_FOR_COMPATIBILITY,
@@ -178,54 +212,32 @@ function FindCompatibleUsers(compatibilityDb, profile, options) {
 }
 
 /**
- * The best a member's picks ever finished.
+ * The tracks a member supported longest.
  *
- * Worked out from each tournament's podium rather than by summarising every
- * track they backed -- a heavy voter has backed 570 of them, and running a full
- * progression over each takes half a second. There are only ever twelve
- * podiums, and "you voted for the winner" is the interesting claim anyway.
+ * Measured as the share of a track's own run they voted for it in: backing
+ * something through all seven of its matches says far more than backing a
+ * champion once in the final.
+ *
+ * Only tracks that went a fair way are eligible -- at least half the deepest
+ * run in that tournament. Without it the list fills with tracks knocked out
+ * immediately, where one vote is the whole run and every entry reads 100%. So
+ * four from six counts and two from two does not.
  */
-function FindBestRuns(tournamentRoot, profile, buildFinalsSummary, limit) {
-  const wanted = new Map();
-  for (const track of profile.backed) {
-    wanted.set(
-      track.tournament + "|" + normaliseTitle(track.name) + "|" + normaliseTitle(track.title),
-      track
-    );
-  }
-
-  const places = [
-    ["winner", "Winner", 0],
-    ["runnerUp", "Runner-up", 1],
-    ["third", "3rd place", 2],
-    ["fourth", "4th place", 3],
-  ];
-
-  const runs = [];
-  for (const entry of GetTournamentEntriesNewestFirst(tournamentRoot)) {
-    const summary = buildFinalsSummary(entry.data);
-    if (!summary || !summary.podium) continue;
-    for (const place of places) {
-      const finisher = summary.podium[place[0]];
-      if (!finisher) continue;
-      const key =
-        entry.name + "|" + normaliseTitle(finisher.name) + "|" + normaliseTitle(finisher.title);
-      const backed = wanted.get(key);
-      if (!backed) continue;
-      runs.push({
-        tournament: entry.name,
-        name: finisher.name,
-        title: finisher.title || "",
-        link: finisher.link || backed.link || "",
-        placement: place[1],
-        rank: place[2],
-        votes: backed.votes,
-      });
-    }
-  }
-
-  return runs
-    .sort((a, b) => a.rank - b.rank || b.votes - a.votes)
+function FindMostBacked(profile, limit) {
+  return profile.backed
+    .filter(function (row) {
+      if (!row.appearances) return false;
+      const bar = Math.ceil((row.longestRun || 0) * MIN_RUN_SHARE_OF_TOURNAMENT);
+      return row.appearances >= Math.max(bar, 1);
+    })
+    .map(function (row) {
+      return Object.assign({}, row, { share: row.votes / row.appearances });
+    })
+    .sort(function (a, b) {
+      return (
+        b.share - a.share || b.appearances - a.appearances || b.votes - a.votes
+      );
+    })
     .slice(0, limit || 4);
 }
 
@@ -233,7 +245,8 @@ if (typeof module !== "undefined") {
   module.exports = {
     BuildUserProfile,
     FindCompatibleUsers,
-    FindBestRuns,
+    FindMostBacked,
     MIN_MATCHES_FOR_COMPATIBILITY,
+    MIN_MATCHES_FOR_RATE,
   };
 }
