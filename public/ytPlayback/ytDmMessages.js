@@ -155,6 +155,11 @@ function getDomoHelpCategories() {
           args: "tournament (defaults to the most recent), full-bracket, show-your-votes, make-public",
         },
         {
+          name: "/tournament-my-profile",
+          desc: "Your voting record: hit rate, tournaments, best runs and closest voters.",
+          args: "member (someone else), track (autocomplete), make-public",
+        },
+        {
           name: "/tournament-track-history",
           desc: "See how a track, or every track from a game, has done across all tournaments, the one running now included.",
           args: "query* (track title or game/series), horizontal (reduced bracket style), make-public",

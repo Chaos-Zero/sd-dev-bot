@@ -25,6 +25,7 @@ const sleep = require("util").promisify(setTimeout);
 const updateEntrantHandlers = require("./public/commands/tournamentCommands/updateEntrant.js");
 const trackHistoryHandlers = require("./public/commands/tournamentCommands/trackHistory.js");
 const tournamentHistoryHandlers = require("./public/commands/tournamentCommands/tournamentHistory.js");
+const myProfileHandlers = require("./public/commands/tournamentCommands/myProfile.js");
 
 eval(fs.readFileSync("./public/main.js") + "");
 eval(fs.readFileSync("./public/api/openai/chat.js") + "");
@@ -437,6 +438,14 @@ bot.on(Events.InteractionCreate, (interaction) => {
     interaction.customId.startsWith("update-entrant-page:")
   ) {
     return routeComponent(interaction, () => updateEntrantHandlers.handleEntrantPage(interaction));
+  }
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId.startsWith("my-profile-tournament:")
+  ) {
+    return routeComponent(interaction, () =>
+      myProfileHandlers.handleProfileTournament(interaction)
+    );
   }
   if (
     interaction.isStringSelectMenu() &&
