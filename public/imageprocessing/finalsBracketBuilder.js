@@ -307,7 +307,7 @@ function RenderFinalsBracket({
   // A key rather than another fact on the header line: the colour needs
   // naming, but whose votes they are is not a property of the tournament.
   if (showVotes) {
-    const label = `- ${
+    const label = ` ${
       voterLabel ? `${voterLabel}'s` : "your"
     } votes highlighted in blue`;
     ctx.font = "10px sans-serif";
