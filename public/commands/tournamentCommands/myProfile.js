@@ -125,7 +125,7 @@ function buildProfileEmbed(profile, info, compatible, mostBacked) {
   // from a handful of ballots.
   if (!profile.enoughForCompatibility) {
     embed.addFields({
-      name: "Closest voters",
+      name: "Most compatible voters",
       value:
         "Needs more than " +
         MIN_MATCHES_FOR_COMPATIBILITY +
@@ -134,7 +134,7 @@ function buildProfileEmbed(profile, info, compatible, mostBacked) {
     });
   } else if (compatible.length) {
     embed.addFields({
-      name: "Closest voters",
+      name: "Most compatible voters",
       value: compatible
         .map(function (row) {
           return (
