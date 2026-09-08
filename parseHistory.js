@@ -103,7 +103,7 @@ const CONTESTS = [
   },
   {
     id: "favlist",
-    name: "Favorite Best VGM List Bracket",
+    name: "Favotites of the Best VGM List",
     channel: "828700869658673222",
     author: "kamakazikila",
     from: "2021-07-30", to: "2021-10-13",
