@@ -227,6 +227,8 @@ function RenderFinalsBracket({
   highlight,
   // mark the boxes the viewer voted for
   showVotes,
+  // whose votes those are, shown against the key in the top corner
+  voterLabel,
 }) {
   if (!tree || !tree.root) return null;
   const d = compact ? DENSITY.compact : DENSITY.normal;
@@ -275,8 +277,9 @@ function RenderFinalsBracket({
   ctx.textAlign = "left";
   ctx.font = "bold 21px sans-serif";
   ctx.fillStyle = THEME.text;
+  const titleRoom = width - PAD * 2 - (showVotes ? 220 : 0);
   ctx.fillText(
-    fitText(ctx, heading ? heading.title : tournamentName, width - PAD * 2),
+    fitText(ctx, heading ? heading.title : tournamentName, titleRoom),
     PAD,
     PAD + 19
   );
@@ -297,8 +300,26 @@ function RenderFinalsBracket({
     if (compact && tree.unreached) {
       facts.push(`${tree.unreached} replays not on the bracket`);
     }
-    if (showVotes) facts.push("your votes in blue");
+
     ctx.fillText(facts.join("   ·   "), PAD, PAD + 40);
+  }
+
+  // A key rather than another fact on the header line: the colour needs
+  // naming, but whose votes they are is not a property of the tournament.
+  if (showVotes) {
+    const label = `- ${
+      voterLabel ? `${voterLabel}'s` : "your"
+    } votes highlighted in blue`;
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillStyle = THEME.faint;
+    ctx.fillText(label, width - PAD, PAD + 12);
+    const labelWidth = ctx.measureText(label).width;
+    ctx.beginPath();
+    ctx.arc(width - PAD - labelWidth - 9, PAD + 8, 4, 0, Math.PI * 2);
+    ctx.fillStyle = THEME.vote;
+    ctx.fill();
+    ctx.textAlign = "left";
   }
 
   // a rule between the facts and the column headings, so they do not read as

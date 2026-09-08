@@ -555,8 +555,12 @@ async function guardSession(interaction, sessionId) {
     return null;
   }
   if (session.userId !== interaction.user.id) {
+    // a public reply can be read by anyone, but driving its controls would
+    // rewrite the message under the person who asked for it
     await interaction.reply({
-      content: "Sorry, these controls belong to whoever ran the command.",
+      content:
+        "These controls belong to whoever ran the command. " +
+        "Run your own copy with:\n```\n/tournament-track-history\n```",
       ephemeral: true,
     });
     return null;

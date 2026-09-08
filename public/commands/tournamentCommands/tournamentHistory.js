@@ -38,6 +38,14 @@ const SELECT_ID = "tournament-history-pick";
 // How far back the default view walks: the final, semis and quarters.
 const FINALS_DEPTH = 2;
 
+/** Who ran this, by id and by the name they show under in this server. */
+function callerOf(interaction) {
+  return {
+    id: interaction.user.id,
+    name: interaction.member?.displayName || interaction.user.username,
+  };
+}
+
 function getTournamentRoot() {
   const db = GetDb();
   db.read();
@@ -48,7 +56,7 @@ function winnerThumb(summary) {
   return SafeThumbnail(summary?.podium?.winner?.videoId, FALLBACK_THUMB);
 }
 
-function render(root, tournamentName, full, viewerId) {
+function render(root, tournamentName, full, viewerId, owner) {
   const tournament = root[tournamentName];
   const summary = BuildFinalsSummary(tournament, viewerId);
   if (!summary) {
@@ -85,6 +93,7 @@ function render(root, tournamentName, full, viewerId) {
       tournamentName,
       summary,
       tree,
+      voterLabel: viewerId && owner ? owner.name : null,
       // the whole contest is drawn small: 64 first-round matches at readable
       // box sizes would run to thousands of pixels
       compact: Boolean(full),
@@ -108,7 +117,9 @@ function render(root, tournamentName, full, viewerId) {
           .setCustomId(
             SELECT_ID +
               (full ? ":full" : ":finals") +
-              (viewerId ? ":votes" : ":novotes")
+              (viewerId ? ":votes" : ":novotes") +
+              ":" +
+              (owner ? owner.id : "")
           )
           .setPlaceholder("Showing: " + tournamentName)
           .addOptions(options)
@@ -186,7 +197,8 @@ module.exports = {
         interaction.options.getBoolean("full-bracket"),
         interaction.options.getBoolean("show-your-votes")
           ? interaction.user.id
-          : null
+          : null,
+        callerOf(interaction)
       )
     );
   },
@@ -195,12 +207,26 @@ module.exports = {
 module.exports.handleHistoryPick = async (interaction) => {
   // the dropdown carries which view it was spawned from, so switching
   // tournament keeps you in the full bracket if that is what you were looking at
-  const full = interaction.customId.includes(":full");
-  // whoever presses the dropdown sees their own votes, not the original
-  // caller's -- the flag says whether to show them, the id comes from the press
-  const viewerId = interaction.customId.endsWith(":votes")
-    ? interaction.user.id
-    : null;
+  const parts = interaction.customId.split(":");
+  const full = parts.includes("full");
+  // only a snowflake counts as an owner, so a message posted before this
+  // segment existed stays usable instead of refusing everyone
+  const last = parts[parts.length - 1] || "";
+  const ownerId = /^\d{5,}$/.test(last) ? last : "";
+
+  // A public reply is visible to everyone, but its controls are not theirs to
+  // drive: one person's picks would otherwise rewrite the message under
+  // everyone else. Point them at their own copy instead.
+  if (ownerId && ownerId !== interaction.user.id) {
+    return interaction.reply({
+      content:
+        "These controls belong to whoever ran the command. " +
+        "Run your own copy with:\n```\n/tournament-history\n```",
+      ephemeral: true,
+    });
+  }
+
+  const viewerId = parts.includes("votes") ? interaction.user.id : null;
   const root = getTournamentRoot();
   const chosen = ResolveTournament(root, interaction.values?.[0]);
   if (!chosen) {
@@ -212,7 +238,7 @@ module.exports.handleHistoryPick = async (interaction) => {
   await interaction.deferUpdate();
   // attachments must be cleared or the previous bracket lingers
   return interaction.editReply({
-    ...render(root, chosen.name, full, viewerId),
+    ...render(root, chosen.name, full, viewerId, callerOf(interaction)),
     attachments: [],
   });
 };
