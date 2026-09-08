@@ -138,9 +138,9 @@ function buildProfileEmbed(profile, info, compatible, mostBacked) {
       value: compatible
         .map(function (row) {
           return (
-            "<@" +
-            row.userId +
-            "> - **" +
+            "**" +
+            row.name +
+            "** - **" +
             row.percent +
             "%** across " +
             row.shared +
@@ -196,6 +196,19 @@ module.exports = {
         return interaction.guild.members.cache.has(id);
       },
     });
+    // A "<@id>" mention is resolved by the reader's client, and in an ephemeral
+    // embed it frequently is not -- the raw id shows instead, which is what the
+    // field was displaying. Only three names are ever shown, so resolve them
+    // here and send plain text.
+    for (const row of compatible) {
+      const other = await interaction.guild.members
+        .fetch(row.userId)
+        .catch(function () {
+          return null;
+        });
+      row.name = other ? other.displayName : "Unknown member";
+    }
+
     const mostBacked = FindMostBacked(profile, 4);
 
     return interaction.editReply({
