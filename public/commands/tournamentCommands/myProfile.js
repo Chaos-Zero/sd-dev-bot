@@ -1,10 +1,4 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  AttachmentBuilder,
-} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 
 eval(fs.readFileSync("./public/main.js") + "");
@@ -25,6 +19,12 @@ const FOOTER = {
   text: "Supradarky's VGM Club",
   iconURL: ASSET_BASE + "/sd-img.png",
 };
+function getTournamentRoot() {
+  const db = GetDb();
+  db.read();
+  return db.get("tournaments").nth(0).value() || {};
+}
+
 // ---------------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------------
