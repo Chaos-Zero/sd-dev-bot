@@ -3,17 +3,24 @@ const {
   EmbedBuilder,
   ActionRowBuilder,
   StringSelectMenuBuilder,
+  AttachmentBuilder,
 } = require("discord.js");
 const fs = require("fs");
 
 eval(fs.readFileSync("./public/main.js") + "");
 
-const { BuildFinalsSummary } = require("../../tournament/tournamentResults.js");
+const {
+  BuildFinalsSummary,
+  BuildBracketTree,
+} = require("../../tournament/tournamentResults.js");
 const {
   BuildTournamentChoices,
   ResolveTournament,
   BuildTournamentOptions,
 } = require("../../tournament/resultsPicker.js");
+const {
+  RenderFinalsBracket,
+} = require("../../imageprocessing/finalsBracketBuilder.js");
 
 const ASSET_BASE =
   process.env.ASSET_BASE_URL || "http://91.99.239.6/files/assets";
@@ -22,13 +29,10 @@ const FOOTER = {
   iconURL: `${ASSET_BASE}/sd-img.png`,
 };
 const FALLBACK_THUMB = `${ASSET_BASE}/album_art.png`;
-const SELECT_ID = "tournament-results-pick";
-const PLACES = [
-  ["winner", "🥇 Winner"],
-  ["runnerUp", "🥈 Runner-up"],
-  ["third", "🥉 Third"],
-  ["fourth", "Fourth"],
-];
+const SELECT_ID = "tournament-history-pick";
+
+// How far back the default view walks: the final, semis and quarters.
+const FINALS_DEPTH = 2;
 
 function getTournamentRoot() {
   const db = GetDb();
@@ -36,69 +40,49 @@ function getTournamentRoot() {
   return db.get("tournaments").nth(0).value() || {};
 }
 
-function trackLine(entrant) {
-  if (!entrant) return null;
-  const name = entrant.link
-    ? `[${entrant.name}](${entrant.link})`
-    : entrant.name;
-  return entrant.title ? `${name}\n_${entrant.title}_` : name;
+function winnerThumb(summary) {
+  const winner = summary?.podium?.winner;
+  return winner && winner.videoId
+    ? `https://i1.ytimg.com/vi/${winner.videoId}/mqdefault.jpg`
+    : FALLBACK_THUMB;
 }
 
-/** One stage as a compact scoreline block. */
-function stageLines(round) {
-  return round.matches
-    .map((match) => {
-      const [first, second] = match.entrants;
-      if (!second) return `${first.name} — ${first.points}`;
-      return `**${first.name}** ${first.points} – ${second.points} ${second.name}`;
-    })
-    .join("\n");
-}
-
-function render(root, tournamentName) {
+function render(root, tournamentName, full) {
   const tournament = root[tournamentName];
   const summary = BuildFinalsSummary(tournament);
   if (!summary) {
     return { content: `No completed matches recorded for **${tournamentName}**.` };
   }
+  const tree = BuildBracketTree(tournament, full ? undefined : FINALS_DEPTH);
 
-  const winner = summary.podium.winner;
   const embed = new EmbedBuilder()
     .setTitle(tournamentName)
     .setColor(0xfaa61a)
-    .setThumbnail(
-      winner && winner.videoId
-        ? `https://i1.ytimg.com/vi/${winner.videoId}/mqdefault.jpg`
-        : FALLBACK_THUMB
-    )
+    .setThumbnail(winnerThumb(summary))
     .setFooter(FOOTER);
 
-  const facts = [`${summary.entrants} entrants`, `${summary.matches} matches`];
-  if (summary.votes) facts.push(`${summary.votes} votes`);
-  if (summary.lastMatchAt) facts.push(`ran to ${summary.lastMatchAt.slice(0, 10)}`);
-  embed.setDescription(`_${facts.join(" · ")}_`);
+  const winner = summary.podium.winner;
+  embed.setDescription(
+    winner
+      ? `Won by **[${winner.name}](${winner.link || "https://youtube.com"})**${
+          winner.title ? ` — _${winner.title}_` : ""
+        }`
+      : "_The final ended level, so the contest has no outright winner._"
+  );
 
-  // The podium first, in full, with links -- this command exists to be read
-  // rather than looked at, so nothing here is truncated.
-  for (const [key, label] of PLACES) {
-    const line = trackLine(summary.podium[key]);
-    if (line) embed.addFields({ name: label, value: line, inline: true });
-  }
-  if (!winner) {
-    embed.addFields({
-      name: "No outright winner",
-      value: "The final ended level.",
-    });
-  }
-
-  // then how it got there, most recent stage first
-  for (const round of [...summary.rounds].reverse()) {
-    if (round.stage === "Final") continue;
-    embed.addFields({ name: round.stage, value: stageLines(round) });
-  }
-  const final = summary.rounds.find((r) => r.stage === "Final");
-  if (final) {
-    embed.addFields({ name: "Final", value: stageLines(final) });
+  const files = [];
+  const png = RenderFinalsBracket({
+    tournamentName,
+    summary,
+    tree,
+    // the whole contest is drawn small: 64 first-round matches at readable box
+    // sizes would run to thousands of pixels
+    compact: Boolean(full),
+  });
+  if (png) {
+    const fileName = `bracket-${Date.now()}.png`;
+    files.push(new AttachmentBuilder(png, { name: fileName }));
+    embed.setImage(`attachment://${fileName}`);
   }
 
   const components = [];
@@ -107,16 +91,17 @@ function render(root, tournamentName) {
     components.push(
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
-          .setCustomId(SELECT_ID)
+          .setCustomId(SELECT_ID + (full ? ":full" : ":finals"))
           .setPlaceholder("Showing: " + tournamentName)
           .addOptions(options)
       )
     );
   }
 
-  return { embeds: [embed], components };
+  return { embeds: [embed], files, components };
 }
 
+// Choices are fixed when the module loads; see resultsPicker.js for why.
 function tournamentChoices() {
   try {
     return BuildTournamentChoices(getTournamentRoot());
@@ -127,8 +112,8 @@ function tournamentChoices() {
 }
 
 const command = new SlashCommandBuilder()
-  .setName("tournament-results")
-  .setDescription("Show the final standings of a finished tournament.")
+  .setName("tournament-history")
+  .setDescription("Show a finished tournament's bracket and how it was won.")
   .addStringOption((option) => {
     option
       .setName("tournament")
@@ -138,6 +123,14 @@ const command = new SlashCommandBuilder()
     if (choices.length) option.addChoices(...choices);
     return option;
   })
+  .addBooleanOption((option) =>
+    option
+      .setName("full-bracket")
+      .setDescription(
+        "Draw the whole tournament rather than just the closing rounds."
+      )
+      .setRequired(false)
+  )
   .addBooleanOption((option) =>
     option
       .setName("make-public")
@@ -162,11 +155,16 @@ module.exports = {
         content: "There are no finished tournaments to show yet.",
       });
     }
-    return interaction.editReply(render(root, chosen.name));
+    return interaction.editReply(
+      render(root, chosen.name, interaction.options.getBoolean("full-bracket"))
+    );
   },
 };
 
-module.exports.handleResultsPick = async (interaction) => {
+module.exports.handleHistoryPick = async (interaction) => {
+  // the dropdown carries which view it was spawned from, so switching
+  // tournament keeps you in the full bracket if that is what you were looking at
+  const full = interaction.customId.endsWith(":full");
   const root = getTournamentRoot();
   const chosen = ResolveTournament(root, interaction.values?.[0]);
   if (!chosen) {
@@ -176,5 +174,9 @@ module.exports.handleResultsPick = async (interaction) => {
     });
   }
   await interaction.deferUpdate();
-  return interaction.editReply(render(root, chosen.name));
+  // attachments must be cleared or the previous bracket lingers
+  return interaction.editReply({
+    ...render(root, chosen.name, full),
+    attachments: [],
+  });
 };

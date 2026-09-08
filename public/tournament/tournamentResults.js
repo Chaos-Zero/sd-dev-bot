@@ -141,6 +141,69 @@ function BuildFinalsSummary(tournament) {
   };
 }
 
+/**
+ * The bracket as a tree, walked backwards from the final: each match's children
+ * are the matches its contestants played immediately before it.
+ *
+ * `maxDepth` of 2 gives the closing rounds (final, semis, quarters); Infinity
+ * gives the whole contest. The same walk that names the stages, just run to
+ * exhaustion, so the two views cannot disagree about the shape.
+ *
+ * Byes fall out naturally -- a track that arrived without playing simply
+ * contributes no child. Tie replays and dead branches can leave matches off the
+ * tree entirely, so the count of those is returned rather than quietly dropped.
+ */
+function BuildBracketTree(tournament, maxDepth) {
+  const limit = maxDepth === undefined ? Infinity : maxDepth;
+  const { complete, decidingMatch } = GetTournamentStructure(tournament);
+  const final = complete.find((m) => Number(m.match) === decidingMatch);
+  if (!final) return null;
+
+  const ordered = complete
+    .slice()
+    .sort(
+      (a, b) => Number(a.round) - Number(b.round) || Number(a.match) - Number(b.match)
+    );
+  const byTrack = new Map();
+  for (const match of ordered) {
+    for (const entrant of matchEntrantList(match)) {
+      const key = entrantKey(entrant);
+      if (!byTrack.has(key)) byTrack.set(key, []);
+      byTrack.get(key).push(match);
+    }
+  }
+
+  const used = new Set([Number(final.match)]);
+  const build = (match, depth) => {
+    const node = { match: describeMatch(match), children: [], depth };
+    if (depth >= limit) return node;
+    for (const entrant of matchEntrantList(match)) {
+      const played = byTrack.get(entrantKey(entrant)) || [];
+      const index = played.indexOf(match);
+      const previous = index > 0 ? played[index - 1] : null;
+      if (!previous) continue;
+      const number = Number(previous.match);
+      if (used.has(number)) continue;
+      used.add(number);
+      node.children.push(build(previous, depth + 1));
+    }
+    return node;
+  };
+
+  const root = build(final, 0);
+  return {
+    root,
+    // matches that never feed the final: byes, replays, abandoned branches
+    unreached: complete.filter((m) => !used.has(Number(m.match))).length,
+  };
+}
+
+function entrantKey(entrant) {
+  return (
+    normaliseTitle(entrant?.name) + "|" + normaliseTitle(entrant?.title)
+  );
+}
+
 /** Top four, as far as the contest actually decided it. */
 function buildPodium(final, thirdPlace) {
   const podium = { winner: null, runnerUp: null, third: null, fourth: null };
@@ -160,5 +223,6 @@ if (typeof module !== "undefined") {
     IsTournamentFinished,
     GetFinishedTournaments,
     BuildFinalsSummary,
+    BuildBracketTree,
   };
 }
