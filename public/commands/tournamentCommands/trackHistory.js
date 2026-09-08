@@ -39,9 +39,14 @@ const {
   SafeThumbnail,
   ExtractYoutubeId,
 } = require("../../utils/embedSafety.js");
+// Aliased on purpose. main.js is eval'd above and pulls in
+// compatibilityStore.js, whose function declarations land in this module's
+// scope -- importing the same names again is a redeclaration and kills the
+// command at load with "Identifier 'matchEntrantList' has already been
+// declared".
 const {
-  GetTournamentEntries,
-  matchEntrantList,
+  GetTournamentEntries: listTournamentEntries,
+  matchEntrantList: entrantsInMatch,
 } = require("../../utils/compatibilityStore.js");
 
 // Asset host is configurable rather than baked in, so a dev instance can point
@@ -206,10 +211,10 @@ function hasBrokenLink(track) {
 function repairTrackLink(root, track, url) {
   const videoId = ExtractYoutubeId(url);
   let updated = 0;
-  for (const { data } of GetTournamentEntries(root)) {
+  for (const { data } of listTournamentEntries(root)) {
     for (const match of data.matches || []) {
       if (!match || typeof match !== "object") continue;
-      for (const entrant of matchEntrantList(match)) {
+      for (const entrant of entrantsInMatch(match)) {
         if (!IsSameTrack(entrant, track)) continue;
         entrant.link = url;
         // only overwrite the id when the new link actually carries one, so a
