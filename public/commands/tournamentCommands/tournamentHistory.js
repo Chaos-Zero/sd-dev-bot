@@ -67,7 +67,7 @@ function render(root, tournamentName, full) {
   embed.setDescription(
     winner
       ? `Won by **${SafeLink(winner.name, winner.link)}**${
-          winner.title ? ` — _${winner.title}_` : ""
+          winner.title ? ` - _${winner.title}_` : ""
         }`
       : "_The final ended level, so the contest has no outright winner._"
   );

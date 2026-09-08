@@ -196,8 +196,8 @@ function RenderTrackProgression({ track, tournamentName, summary }) {
   const liveNote = !summary.isRunning
     ? ""
     : summary.stillIn
-    ? "This tournament is still being played — the run is not over"
-    : "This tournament is still being played — later rounds are still to come";
+    ? "This tournament is still being played - the run is not over"
+    : "This tournament is still being played - later rounds are still to come";
   const bodyHeight =
     rounds.reduce((total, round) => total + rowHeight(round) + LAYOUT.rowGap, 0) -
     LAYOUT.rowGap;

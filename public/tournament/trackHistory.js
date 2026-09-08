@@ -698,16 +698,16 @@ const PODIUM = new Set(["Winner", "Runner-up", "3rd place", "4th place"]);
  */
 function describeRoundsLeft(tracksRemaining, roundsRemaining) {
   if (!roundsRemaining) return "Still in the running";
-  if (tracksRemaining === 2) return "Still in the running — the final left to play";
+  if (tracksRemaining === 2) return "Still in the running - the final left to play";
   if (tracksRemaining === 4) {
-    return "Still in the running — the semi-finals and the final left to play";
+    return "Still in the running - the semi-finals and the final left to play";
   }
   const rounds =
     roundsRemaining === 1 ? "1 more round" : `${roundsRemaining} more rounds`;
   // The field is only worth quoting once it is a field: "1 tracks left" reads
   // as a bug, and "2 tracks left" is the final, which is already named above.
   const field = tracksRemaining > 2 ? `, ${tracksRemaining} tracks left` : "";
-  return `Still in the running — ${rounds} to play${field}`;
+  return `Still in the running - ${rounds} to play${field}`;
 }
 
 /**
