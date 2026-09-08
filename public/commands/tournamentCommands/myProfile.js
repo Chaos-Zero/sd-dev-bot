@@ -51,16 +51,23 @@ function buildProfileEmbed(profile, info, compatible, mostBacked) {
     return embed;
   }
 
+  const contests =
+    profile.tournaments === 1 ? "1 tournament" : profile.tournaments + " tournaments";
+
   // A percentage off a couple of ballots reads as fact but is not one, so it is
   // withheld until there is enough behind it. The counts are shown regardless.
   embed.setDescription(
     profile.enoughForRate
-      ? "Backed the winner in **" +
+      ? "Backed winners in **" +
           percent(profile.hitRate) +
-          "** of the matches they voted in."
-      : "_Needs " +
+          "** of matches, in " +
+          contests +
+          "."
+      : "Voted in " +
+          contests +
+          ". _Needs " +
           MIN_MATCHES_FOR_RATE +
-          " matches voted in before a success rate is worth quoting._"
+          " matches before a success rate is worth quoting._"
   );
 
   embed.addFields(
@@ -69,11 +76,6 @@ function buildProfileEmbed(profile, info, compatible, mostBacked) {
     {
       name: "Votes cast",
       value: String(profile.votes),
-      inline: true,
-    },
-    {
-      name: "Tournaments",
-      value: String(profile.tournaments),
       inline: true,
     }
   );
@@ -87,7 +89,7 @@ function buildProfileEmbed(profile, info, compatible, mostBacked) {
     embed.addFields({
       name: "Best tournament run",
       value:
-        best.name + " — " + percent(best.hitRate) + " over " + best.votes + " votes",
+        best.name + " - " + percent(best.hitRate) + " over " + best.votes + " votes",
       inline: false,
     });
   }
@@ -101,16 +103,17 @@ function buildProfileEmbed(profile, info, compatible, mostBacked) {
             ? "[" + row.name + "](" + SafeUrl(row.link) + ")"
             : row.name;
           return (
+            "*" +
+            row.tournament +
+            "*\n" +
             label +
-            " — **" +
+            " - **" +
             Math.round(row.share * 100) +
             "%** of its run (" +
             row.votes +
             "/" +
             row.appearances +
-            ") _" +
-            row.tournament +
-            "_"
+            ")"
           );
         })
         .join("\n"),
@@ -137,7 +140,7 @@ function buildProfileEmbed(profile, info, compatible, mostBacked) {
           return (
             "<@" +
             row.userId +
-            "> — **" +
+            "> - **" +
             row.percent +
             "%** across " +
             row.shared +
