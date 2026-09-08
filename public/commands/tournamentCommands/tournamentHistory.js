@@ -48,13 +48,18 @@ function winnerThumb(summary) {
   return SafeThumbnail(summary?.podium?.winner?.videoId, FALLBACK_THUMB);
 }
 
-function render(root, tournamentName, full) {
+function render(root, tournamentName, full, viewerId) {
   const tournament = root[tournamentName];
-  const summary = BuildFinalsSummary(tournament);
+  const summary = BuildFinalsSummary(tournament, viewerId);
   if (!summary) {
     return { content: `No completed matches recorded for **${tournamentName}**.` };
   }
-  const tree = BuildBracketTree(tournament, full ? undefined : FINALS_DEPTH);
+  const tree = BuildBracketTree(
+    tournament,
+    full ? undefined : FINALS_DEPTH,
+    undefined,
+    viewerId
+  );
 
   const embed = new EmbedBuilder()
     .setTitle(tournamentName)
@@ -83,6 +88,7 @@ function render(root, tournamentName, full) {
       // the whole contest is drawn small: 64 first-round matches at readable
       // box sizes would run to thousands of pixels
       compact: Boolean(full),
+      showVotes: Boolean(viewerId),
     });
   } catch (error) {
     console.error(`Could not draw the bracket for ${tournamentName}:`, error);
@@ -99,7 +105,11 @@ function render(root, tournamentName, full) {
     components.push(
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
-          .setCustomId(SELECT_ID + (full ? ":full" : ":finals"))
+          .setCustomId(
+            SELECT_ID +
+              (full ? ":full" : ":finals") +
+              (viewerId ? ":votes" : ":novotes")
+          )
           .setPlaceholder("Showing: " + tournamentName)
           .addOptions(options)
       )
@@ -141,6 +151,12 @@ const command = new SlashCommandBuilder()
   )
   .addBooleanOption((option) =>
     option
+      .setName("show-your-votes")
+      .setDescription("Mark the tracks you voted for in blue.")
+      .setRequired(false)
+  )
+  .addBooleanOption((option) =>
+    option
       .setName("make-public")
       .setDescription("Make the response viewable to the server.")
       .setRequired(false)
@@ -164,7 +180,14 @@ module.exports = {
       });
     }
     return interaction.editReply(
-      render(root, chosen.name, interaction.options.getBoolean("full-bracket"))
+      render(
+        root,
+        chosen.name,
+        interaction.options.getBoolean("full-bracket"),
+        interaction.options.getBoolean("show-your-votes")
+          ? interaction.user.id
+          : null
+      )
     );
   },
 };
@@ -172,7 +195,12 @@ module.exports = {
 module.exports.handleHistoryPick = async (interaction) => {
   // the dropdown carries which view it was spawned from, so switching
   // tournament keeps you in the full bracket if that is what you were looking at
-  const full = interaction.customId.endsWith(":full");
+  const full = interaction.customId.includes(":full");
+  // whoever presses the dropdown sees their own votes, not the original
+  // caller's -- the flag says whether to show them, the id comes from the press
+  const viewerId = interaction.customId.endsWith(":votes")
+    ? interaction.user.id
+    : null;
   const root = getTournamentRoot();
   const chosen = ResolveTournament(root, interaction.values?.[0]);
   if (!chosen) {
@@ -184,7 +212,7 @@ module.exports.handleHistoryPick = async (interaction) => {
   await interaction.deferUpdate();
   // attachments must be cleared or the previous bracket lingers
   return interaction.editReply({
-    ...render(root, chosen.name, full),
+    ...render(root, chosen.name, full, viewerId),
     attachments: [],
   });
 };

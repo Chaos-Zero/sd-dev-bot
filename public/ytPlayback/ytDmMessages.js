@@ -152,7 +152,7 @@ function getDomoHelpCategories() {
         {
           name: "/tournament-history",
           desc: "A finished tournament's bracket, from the quarter-finals to the winner.",
-          args: "tournament (defaults to the most recent), full-bracket, make-public",
+          args: "tournament (defaults to the most recent), full-bracket, show-your-votes, make-public",
         },
         {
           name: "/tournament-track-history",

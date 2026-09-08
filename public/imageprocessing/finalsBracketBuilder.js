@@ -29,6 +29,7 @@ const THEME = {
   win: "#3ba55d",
   loss: "#ed4245",
   gold: "#faa61a",
+  vote: "#57c7ff",
   line: "#4e5058",
   rule: "#3f4147",
 };
@@ -118,12 +119,19 @@ function entrantsOf(node) {
   return (node && node.match && node.match.entrants) || [];
 }
 
-function drawEntrant(ctx, x, y, entrant, d, champion, highlighted) {
+function drawEntrant(ctx, x, y, entrant, d, champion, highlighted, showVotes) {
   const won = entrant.won === true;
-  const accent = champion || highlighted;
+  // A box the viewer voted for is blue and outranks every other colour, so a
+  // ballot stays readable even on the champion's own box.
+  const voted = Boolean(showVotes && entrant.youVoted);
+  const accent = voted || champion || highlighted;
   // the song being tracked turns red in the match it lost, so the exit is
   // obvious at a glance rather than needing the scores read
-  const accentColour = highlighted && entrant.won === false ? THEME.loss : THEME.gold;
+  const accentColour = voted
+    ? THEME.vote
+    : highlighted && entrant.won === false
+    ? THEME.loss
+    : THEME.gold;
 
   roundedRect(ctx, x, y, d.colWidth, d.boxHeight, d.radius);
   ctx.fillStyle = won ? "#33363d" : THEME.panel;
@@ -143,10 +151,10 @@ function drawEntrant(ctx, x, y, entrant, d, champion, highlighted) {
   const pointsWidth = ctx.measureText(points).width + 12;
 
   ctx.textAlign = "left";
-  ctx.font = won || highlighted
+  ctx.font = won || highlighted || voted
     ? `bold ${d.nameFont}px sans-serif`
     : `${d.nameFont}px sans-serif`;
-  ctx.fillStyle = won || highlighted ? THEME.text : THEME.dim;
+  ctx.fillStyle = won || highlighted || voted ? THEME.text : THEME.dim;
   ctx.fillText(
     fitText(ctx, entrant.name, d.colWidth - pointsWidth - 12),
     x + 6,
@@ -217,6 +225,8 @@ function RenderFinalsBracket({
   heading,
   footer,
   highlight,
+  // mark the boxes the viewer voted for
+  showVotes,
 }) {
   if (!tree || !tree.root) return null;
   const d = compact ? DENSITY.compact : DENSITY.normal;
@@ -287,6 +297,7 @@ function RenderFinalsBracket({
     if (compact && tree.unreached) {
       facts.push(`${tree.unreached} replays not on the bracket`);
     }
+    if (showVotes) facts.push("your votes in blue");
     ctx.fillText(facts.join("   ·   "), PAD, PAD + 40);
   }
 
@@ -333,7 +344,8 @@ function RenderFinalsBracket({
         entrant,
         d,
         !trackView && node.depth === 0 && entrant.won === true,
-        highlight ? highlight(entrant) : false
+        highlight ? highlight(entrant) : false,
+        showVotes
       );
     });
 
@@ -376,7 +388,16 @@ function RenderFinalsBracket({
     ctx.textAlign = "left";
     ctx.fillText("THIRD-PLACE MATCH", finalX, top - 10);
     thirdPlace.matches[0].entrants.forEach((entrant, slot) => {
-      drawEntrant(ctx, finalX, top + slot * (d.boxHeight + d.boxGap), entrant, d, false);
+      drawEntrant(
+        ctx,
+        finalX,
+        top + slot * (d.boxHeight + d.boxGap),
+        entrant,
+        d,
+        false,
+        false,
+        showVotes
+      );
     });
   }
 

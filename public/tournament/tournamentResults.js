@@ -44,7 +44,23 @@ function GetFinishedTournaments(tournamentRoot) {
   );
 }
 
-function describeEntrant(entrant, winner) {
+/**
+ * Whether a user backed this entrant. Reads both ballot shapes, since a ranked
+ * ballot stores its voters as {first, second} rather than a flat array.
+ */
+function didVoteFor(entrant, userId) {
+  if (!userId) return false;
+  const voters = entrant?.voters;
+  if (Array.isArray(voters)) return voters.includes(userId);
+  if (voters && typeof voters === "object") {
+    const first = Array.isArray(voters.first) ? voters.first : [];
+    const second = Array.isArray(voters.second) ? voters.second : [];
+    return first.includes(userId) || second.includes(userId);
+  }
+  return false;
+}
+
+function describeEntrant(entrant, winner, userId) {
   return {
     name: entrant.name,
     title: entrant.title || "",
@@ -52,10 +68,11 @@ function describeEntrant(entrant, winner) {
     videoId: entrant.videoId || "",
     points: Number(entrant.points) || 0,
     won: winner ? entrant === winner : null,
+    youVoted: didVoteFor(entrant, userId),
   };
 }
 
-function describeMatch(match) {
+function describeMatch(match, userId) {
   const entrants = matchEntrantList(match);
   const winner = matchWinner(entrants);
   const sorted = entrants
@@ -64,9 +81,9 @@ function describeMatch(match) {
   return {
     match: Number(match.match),
     round: Number(match.round),
-    entrants: sorted.map((e) => describeEntrant(e, winner)),
+    entrants: sorted.map((e) => describeEntrant(e, winner, userId)),
     // null when the match was tied, so callers report a tie rather than a win
-    winner: winner ? describeEntrant(winner, winner) : null,
+    winner: winner ? describeEntrant(winner, winner, userId) : null,
     margin:
       sorted.length > 1
         ? (Number(sorted[0].points) || 0) - (Number(sorted[1].points) || 0)
@@ -82,7 +99,7 @@ function describeMatch(match) {
  * where exactly the right number of matches qualify. A contest with no
  * identifiable quarter-finals still returns its final.
  */
-function BuildFinalsSummary(tournament) {
+function BuildFinalsSummary(tournament, userId) {
   if (!tournament) return null;
   const { complete, decidingMatch, thirdPlaceMatches, stages } =
     GetTournamentStructure(tournament);
@@ -95,15 +112,15 @@ function BuildFinalsSummary(tournament) {
   for (const match of complete) {
     const number = Number(match.match);
     if (number === decidingMatch) {
-      final = describeMatch(match);
+      final = describeMatch(match, userId);
       continue;
     }
     if (thirdPlaceMatches.has(number)) {
-      thirdPlace.push(describeMatch(match));
+      thirdPlace.push(describeMatch(match, userId));
       continue;
     }
     const stage = stages.get(number);
-    if (stage) byStage[stage].push(describeMatch(match));
+    if (stage) byStage[stage].push(describeMatch(match, userId));
   }
 
   const order = (list) => list.sort((a, b) => a.match - b.match);
@@ -157,7 +174,7 @@ function BuildFinalsSummary(tournament) {
  * contributes no child. Tie replays and dead branches can leave matches off the
  * tree entirely, so the count of those is returned rather than quietly dropped.
  */
-function BuildBracketTree(tournament, maxDepth, seedMatch) {
+function BuildBracketTree(tournament, maxDepth, seedMatch, userId) {
   const limit = maxDepth === undefined ? Infinity : maxDepth;
   const { complete, decidingMatch } = GetTournamentStructure(tournament);
   const seed = seedMatch === undefined ? decidingMatch : seedMatch;
@@ -180,7 +197,7 @@ function BuildBracketTree(tournament, maxDepth, seedMatch) {
 
   const used = new Set([Number(final.match)]);
   const build = (match, depth) => {
-    const node = { match: describeMatch(match), children: [], depth };
+    const node = { match: describeMatch(match, userId), children: [], depth };
     if (depth >= limit) return node;
     for (const entrant of matchEntrantList(match)) {
       const played = byTrack.get(entrantKey(entrant)) || [];
@@ -222,7 +239,7 @@ function entrantKey(entrant) {
  * A first-round exit therefore yields a single match, and a champion yields one
  * box per round.
  */
-function BuildTrackBracketTree(tournament, progression) {
+function BuildTrackBracketTree(tournament, progression, userId) {
   if (!Array.isArray(progression) || !progression.length) return null;
 
   const ordered = progression.slice();
@@ -233,7 +250,7 @@ function BuildTrackBracketTree(tournament, progression) {
       (m) => isPublicMatch(m) && Number(m.match) === Number(round.match)
     );
     if (!match) continue;
-    const described = describeMatch(match);
+    const described = describeMatch(match, userId);
     node = { match: described, children: node ? [node] : [], depth: 0 };
   }
   if (!node) return null;
